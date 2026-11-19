@@ -1,4 +1,4 @@
-import { useRef, type MutableRefObject } from 'react';
+import { useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -53,49 +53,61 @@ function CameraRig({
   orbitEnabled: boolean;
 }) {
   const { camera } = useThree();
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const desiredPosRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].position));
+  const desiredTargetRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].target));
   const targetRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].target));
-  const lastAnchorRef = useRef<CameraAnchorId>(anchorId);
   const isTransitioningRef = useRef(true);
 
-  useFrame((_, delta) => {
-    const dt = Math.min(delta, 0.05);
+  useLayoutEffect(() => {
     const pose = CAMERA_ANCHORS[anchorId];
     desiredPosRef.current.set(pose.position[0], pose.position[1], pose.position[2]);
-
-    if (lastAnchorRef.current !== anchorId) {
-      lastAnchorRef.current = anchorId;
-      isTransitioningRef.current = true;
+    desiredTargetRef.current.set(pose.target[0], pose.target[1], pose.target[2]);
+    isTransitioningRef.current = true;
+    if (controlsRef.current) {
+      controlsRef.current.enabled = false;
     }
+  }, [anchorId, orbitEnabled]);
 
+  useFrame((_, delta) => {
     if (!orbitEnabled || isTransitioningRef.current) {
+      if (controlsRef.current) {
+        controlsRef.current.enabled = false;
+      }
+
+      const dt = Math.min(delta, 0.05);
       camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 5, dt);
       camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 5, dt);
       camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 5, dt);
-      if (orbitEnabled && camera.position.distanceTo(desiredPosRef.current) < 0.08) {
-        isTransitioningRef.current = false;
-      }
-    }
 
-    targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, pose.target[0], 6, dt);
-    targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, pose.target[1], 6, dt);
-    targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, pose.target[2], 6, dt);
+      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 6, dt);
+      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 6, dt);
+      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 6, dt);
 
-    if (!orbitEnabled) {
       camera.lookAt(targetRef.current);
+
+      if (
+        orbitEnabled &&
+        camera.position.distanceTo(desiredPosRef.current) < 0.08 &&
+        targetRef.current.distanceTo(desiredTargetRef.current) < 0.08
+      ) {
+        isTransitioningRef.current = false;
+        if (controlsRef.current) {
+          controlsRef.current.target.copy(desiredTargetRef.current);
+          controlsRef.current.enabled = true;
+          controlsRef.current.update();
+        }
+      }
     }
   });
 
-  if (!orbitEnabled) return null;
-
-  const pose = CAMERA_ANCHORS[anchorId];
   return (
     <OrbitControls
+      ref={controlsRef}
       makeDefault
       enableDamping
       dampingFactor={0.08}
       enablePan={false}
-      target={[pose.target[0], pose.target[1], pose.target[2]]}
       minDistance={2.8}
       maxDistance={9.5}
       maxPolarAngle={Math.PI * 0.48}

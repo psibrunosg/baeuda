@@ -8,6 +8,39 @@ import { CONCEPT_VISUALS } from '../content/lesson1Cafe';
 
 const CONSTELLATION_Y = 6.4;
 
+type Point3Tuple = [number, number, number];
+
+interface EdgeSegment {
+  key: string;
+  from: ConceptId;
+  to: ConceptId;
+  isContrast: boolean;
+  primaryPoints: [Point3Tuple, Point3Tuple];
+  secondaryPoints?: [Point3Tuple, Point3Tuple];
+}
+
+const LESSON1_EDGE_SEGMENTS: readonly EdgeSegment[] = LESSON1_EDGES.map((edge) => {
+  const p1 = CONCEPT_VISUALS[edge.from].position3D;
+  const p2 = CONCEPT_VISUALS[edge.to].position3D;
+  const isContrast = edge.kind === 'contrast';
+  return {
+    key: `${edge.from}-${edge.to}`,
+    from: edge.from,
+    to: edge.to,
+    isContrast,
+    primaryPoints: [
+      [p1[0], p1[1], p1[2]],
+      [p2[0], p2[1], p2[2]],
+    ],
+    secondaryPoints: isContrast
+      ? [
+          [p1[0], p1[1] + 0.05, p1[2]],
+          [p2[0], p2[1] + 0.05, p2[2]],
+        ]
+      : undefined,
+  };
+});
+
 interface Constellation3DProps {
   nodes: Partial<Record<ConceptId, ConceptNode>>;
   selectedConcept: ConceptId | null;
@@ -180,33 +213,24 @@ export function Constellation3D({
           </mesh>
 
           {/* Semantic & Contrast Edges */}
-          {LESSON1_EDGES.map((edge) => {
+          {LESSON1_EDGE_SEGMENTS.map((edge) => {
             if (!nodes[edge.from] || !nodes[edge.to]) return null;
-            const p1 = CONCEPT_VISUALS[edge.from].position3D;
-            const p2 = CONCEPT_VISUALS[edge.to].position3D;
-            const isContrast = edge.kind === 'contrast';
 
             return (
-              <group key={`${edge.from}-${edge.to}`}>
+              <group key={edge.key}>
                 <Line
-                  points={[
-                    [p1[0], p1[1], p1[2]],
-                    [p2[0], p2[1], p2[2]],
-                  ]}
-                  color={isContrast ? '#fbbf24' : '#94a3b8'}
-                  lineWidth={isContrast ? 2.2 : 1.2}
-                  dashed={isContrast}
+                  points={edge.primaryPoints}
+                  color={edge.isContrast ? '#fbbf24' : '#94a3b8'}
+                  lineWidth={edge.isContrast ? 2.2 : 1.2}
+                  dashed={edge.isContrast}
                   dashSize={0.14}
                   gapSize={0.09}
                   transparent
-                  opacity={isContrast ? 0.9 : 0.45}
+                  opacity={edge.isContrast ? 0.9 : 0.45}
                 />
-                {isContrast && (
+                {edge.secondaryPoints && (
                   <Line
-                    points={[
-                      [p1[0], p1[1] + 0.05, p1[2]],
-                      [p2[0], p2[1] + 0.05, p2[2]],
-                    ]}
+                    points={edge.secondaryPoints}
                     color="#38bdf8"
                     lineWidth={1.6}
                     dashed
