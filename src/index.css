@@ -34,6 +34,20 @@ body,
   overflow: hidden;
 }
 
+/* Subtle cinematic miniature vignette (inspired by Tidewater / Claybound lens finish) */
+.app-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 248, 236, 0) 58%,
+    rgba(30, 18, 10, 0.22) 100%
+  );
+}
+
 .icon-btn {
   display: inline-flex;
   align-items: center;

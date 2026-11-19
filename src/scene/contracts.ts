@@ -10,11 +10,11 @@ export interface CameraPose {
 
 export const CAMERA_ANCHORS: Record<CameraAnchorId, CameraPose> = {
   cam_mapa: { position: [5.4, 4.6, 6.2], target: [0, 0.7, 0] },
-  cam_balcao: { position: [0, 1.55, 1.85], target: [0, 1.12, -0.45] },
-  cam_contraste: { position: [0, 1.48, 1.55], target: [0, 1.05, -0.15] },
-  cam_despejo: { position: [0.15, 1.58, 1.4], target: [0, 1.02, 0.05] },
-  cam_caixa: { position: [0.45, 1.52, 1.55], target: [0.1, 1.06, 0.05] },
-  cam_constelacao: { position: [0, 7.2, 4.2], target: [0, 6.4, 0] },
+  cam_balcao: { position: [0, 1.64, 2.38], target: [0, 1.24, -0.35] },
+  cam_contraste: { position: [0, 1.62, 2.26], target: [-0.08, 1.18, -0.15] },
+  cam_despejo: { position: [0.14, 1.66, 1.82], target: [0.04, 1.1, 0.08] },
+  cam_caixa: { position: [0.35, 1.62, 2.05], target: [0.06, 1.14, 0.08] },
+  cam_constelacao: { position: [0, 7.15, 5.45], target: [0, 6.85, 0] },
 };
 
 const VALID_PROPS = new Set<string>([
