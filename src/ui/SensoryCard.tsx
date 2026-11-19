@@ -1,6 +1,11 @@
 import { CONCEPT_VISUALS } from '../content/lesson1Cafe';
 import { getContrastPartner, STAGE_RANK } from '../domain/constellation';
 import type { ConceptId, ConceptNode } from '../domain/types';
+import { PourIcon } from './PourIcon';
+
+function renderConceptIcon(id: ConceptId, symbol: string) {
+  return id === 'pour' ? <PourIcon /> : symbol;
+}
 
 interface SensoryCardProps {
   node: ConceptNode | null;
@@ -44,7 +49,7 @@ export function SensoryCard({
               fontSize: 24,
             }}
           >
-            {visual.iconSymbol}
+            {renderConceptIcon(node.id, visual.iconSymbol)}
           </span>
           <div className="stage-dots" aria-label={node.stage}>
             {[1, 2, 3].map((level) => (
@@ -93,9 +98,9 @@ export function SensoryCard({
               fontSize: 20,
             }}
           >
-            <span>{visual.iconSymbol}</span>
+            <span>{renderConceptIcon(node.id, visual.iconSymbol)}</span>
             <span>↔</span>
-            <span>{contrastVisual.iconSymbol}</span>
+            <span>{renderConceptIcon(contrastId, contrastVisual.iconSymbol)}</span>
           </button>
         )}
 

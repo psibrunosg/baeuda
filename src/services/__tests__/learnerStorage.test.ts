@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { applyLesson1Outcome, createInitialProfile } from '../../domain/learnerMemory';
 import { loadProfile, resetProfile, saveProfile, STORAGE_KEY } from '../learnerStorage';
 
@@ -21,6 +21,10 @@ function createMemoryStorage(): Storage {
 }
 
 describe('learnerStorage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('saves and restores a valid LearnerProfile', () => {
     const storage = createMemoryStorage();
     const saved = applyLesson1Outcome(createInitialProfile(), {
@@ -62,5 +66,20 @@ describe('learnerStorage', () => {
     saveProfile(createInitialProfile(), storage);
     resetProfile(storage);
     expect(storage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  it('falls back to createInitialProfile when window.localStorage getter throws SecurityError', () => {
+    const restrictedWindow = {};
+    Object.defineProperty(restrictedWindow, 'localStorage', {
+      get() {
+        throw new DOMException('Blocked in sandboxed context', 'SecurityError');
+      },
+    });
+    vi.stubGlobal('window', restrictedWindow);
+
+    expect(() => loadProfile()).not.toThrow();
+    expect(loadProfile()).toEqual(createInitialProfile());
+    expect(() => saveProfile(createInitialProfile())).not.toThrow();
+    expect(() => resetProfile()).not.toThrow();
   });
 });

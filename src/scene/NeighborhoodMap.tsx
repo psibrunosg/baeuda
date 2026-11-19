@@ -158,7 +158,7 @@ export function NeighborhoodMap({
             <meshStandardMaterial color="#fbbf24" metalness={0.6} roughness={0.3} />
           </mesh>
           {/* Pulsing floor ring beneath the door */}
-          <mesh ref={pulseRingRef} position={[0, -0.62, 0.35]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh ref={pulseRingRef} position={[0, -0.59, 0.35]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.42, 0.56, 32]} />
             <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} />
           </mesh>

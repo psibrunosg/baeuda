@@ -1,5 +1,6 @@
 import type { LessonPhase } from '../domain/lessonEngine';
 import type { ActiveView } from '../scene/ExperienceCanvas';
+import { PourIcon } from './PourIcon';
 
 interface LessonHudProps {
   activeView: ActiveView;
@@ -76,7 +77,7 @@ export function LessonHud({
                 justifyContent: 'center',
               }}
             >
-              🫗
+              <PourIcon />
             </span>
           </button>
         </div>

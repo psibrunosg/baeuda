@@ -5,10 +5,14 @@ export const STORAGE_KEY = 'baeuda.learnerProfile.v1';
 
 function resolveStorage(storage?: Storage): Storage | null {
   if (storage) return storage;
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage;
+  try {
+    if (typeof window !== 'undefined') {
+      return window.localStorage ?? null;
+    }
+    return null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 function isValidProfile(value: unknown): value is LearnerProfile {

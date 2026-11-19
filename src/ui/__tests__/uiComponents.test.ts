@@ -131,7 +131,9 @@ describe('LessonHud', () => {
 
     expect(markup).toContain('aria-label="Pour"');
     expect(markup).toContain('180deg');
-    expect(markup).toContain('🫗');
+    expect(markup).toContain('<svg');
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).not.toContain('🫗');
     expect(markup).toContain('aria-label="Help"');
     expect(visibleText(markup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
     expect(markup).not.toMatch(FORBIDDEN_PORTUGUESE_PATTERN);
@@ -230,6 +232,18 @@ describe('SensoryCard', () => {
       }),
     );
     expect(voiceMarkup.match(/stage-dot lit/g)).toHaveLength(3);
+
+    const pourMarkup = renderToStaticMarkup(
+      createElement(SensoryCard, {
+        node: makeNode('pour', 'root'),
+        isListening: false,
+        ...handlers,
+      }),
+    );
+    expect(pourMarkup).toContain('<svg');
+    expect(pourMarkup).toContain('aria-hidden="true"');
+    expect(pourMarkup).not.toContain('🫗');
+    expect(visibleText(pourMarkup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
   });
 });
 

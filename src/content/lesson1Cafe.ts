@@ -122,7 +122,7 @@ export const CONCEPT_VISUALS: Record<ConceptId, ConceptVisualMeta> = {
   water: { id: 'water', color: '#6ec5e9', position3D: [0.95, 0.85, -0.2], iconSymbol: '💧' },
   hot: { id: 'hot', color: '#f97316', position3D: [-1.25, 1.35, -0.75], iconSymbol: '🔥' },
   cold: { id: 'cold', color: '#38bdf8', position3D: [1.35, 1.35, -0.75], iconSymbol: '❄️' },
-  pour: { id: 'pour', color: '#eab308', position3D: [0.1, -0.35, 0.45], iconSymbol: '🫗' },
+  pour: { id: 'pour', color: '#eab308', position3D: [0.1, -0.35, 0.45], iconSymbol: '💧' },
 };
 
 export const LESSON1_CAFE_SCRIPT: Lesson1Script = {

@@ -2,6 +2,7 @@ export interface VoiceCaptureCallbacks {
   onLevel: (normalizedLevel: number) => void;
   onDetected: () => void;
   onUnavailable: () => void;
+  onTimeout?: () => void;
 }
 
 export interface VoiceCaptureHandle {
@@ -43,21 +44,26 @@ export async function startVoiceCapture(
     return { stop: () => {} };
   }
 
-  let ctx: AudioContext;
+  let ctx: AudioContext | undefined;
   let source: MediaStreamAudioSourceNode;
   let analyser: AnalyserNode;
   try {
     ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
     source = ctx.createMediaStreamSource(stream);
     analyser = ctx.createAnalyser();
     analyser.fftSize = 512;
     source.connect(analyser);
   } catch {
     stream.getTracks().forEach((t) => t.stop());
+    ctx?.close().catch(() => {});
     callbacks.onUnavailable();
     return { stop: () => {} };
   }
 
+  const audioCtx = ctx;
   const buffer = new Float32Array(analyser.fftSize);
   let rafId = 0;
   let stopped = false;
@@ -71,13 +77,13 @@ export async function startVoiceCapture(
     if (rafId) cancelAnimationFrame(rafId);
     source.disconnect();
     stream.getTracks().forEach((t) => t.stop());
-    ctx.close().catch(() => {});
+    audioCtx.close().catch(() => {});
     callbacks.onLevel(0);
   };
 
   const tick = (now: number) => {
     if (stopped) return;
-    const dt = Math.min(now - lastTick, 100);
+    const dt = Math.max(0, Math.min(now - lastTick, 100));
     lastTick = now;
 
     analyser.getFloatTimeDomainData(buffer);
@@ -100,6 +106,7 @@ export async function startVoiceCapture(
 
     if (now - startedAt >= MAX_LISTEN_MS) {
       stop();
+      callbacks.onTimeout?.();
       return;
     }
 

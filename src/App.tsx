@@ -52,6 +52,9 @@ export default function App() {
   const voiceTokenRef = useRef(0);
   const unmountedRef = useRef(false);
   const hesitationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasMountedRef = useRef(false);
+  const skipNextPersistRef = useRef(false);
+  const persistedProfileRef = useRef(profile);
 
   const audioPlayer = useMemo(
     () =>
@@ -75,6 +78,23 @@ export default function App() {
       }
     };
   }, [audioPlayer]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      persistedProfileRef.current = profile;
+      return;
+    }
+    if (persistedProfileRef.current === profile) {
+      return;
+    }
+    persistedProfileRef.current = profile;
+    saveProfile(profile);
+  }, [profile]);
 
   const stopVoice = useCallback(() => {
     voiceTokenRef.current += 1;
@@ -110,7 +130,6 @@ export default function App() {
         } else if (effect.type === 'commit_profile') {
           profileRef.current = effect.profile;
           setProfile(effect.profile);
-          saveProfile(effect.profile);
           setActiveView('constellation');
         }
       }
@@ -143,11 +162,7 @@ export default function App() {
   useEffect(() => {
     if (activeView === 'map') return;
     const id = setInterval(() => {
-      setProfile((prev) => {
-        const next = { ...prev, immersionSeconds: prev.immersionSeconds + 1 };
-        saveProfile(next);
-        return next;
-      });
+      setProfile((prev) => ({ ...prev, immersionSeconds: prev.immersionSeconds + 1 }));
     }, 1000);
     return () => clearInterval(id);
   }, [activeView]);
@@ -249,26 +264,32 @@ export default function App() {
       stopVoice();
       const token = voiceTokenRef.current;
       setIsListening(true);
+      const isCurrent = () => voiceTokenRef.current === token && !unmountedRef.current;
+      const clearListening = () => {
+        voiceHandleRef.current = null;
+        setIsListening(false);
+        setVoiceLevel(0);
+      };
       const handle = await startVoiceCapture({
         onLevel: (level) => {
-          if (voiceTokenRef.current !== token || unmountedRef.current) return;
+          if (!isCurrent()) return;
           setVoiceLevel(level);
         },
         onDetected: () => {
-          if (voiceTokenRef.current !== token || unmountedRef.current) return;
-          voiceHandleRef.current = null;
-          setIsListening(false);
-          setVoiceLevel(0);
+          if (!isCurrent()) return;
+          clearListening();
           onSuccess();
         },
         onUnavailable: () => {
-          if (voiceTokenRef.current !== token || unmountedRef.current) return;
-          voiceHandleRef.current = null;
-          setIsListening(false);
-          setVoiceLevel(0);
+          if (!isCurrent()) return;
+          clearListening();
+        },
+        onTimeout: () => {
+          if (!isCurrent()) return;
+          clearListening();
         },
       });
-      if (voiceTokenRef.current !== token || unmountedRef.current) {
+      if (!isCurrent()) {
         handle.stop();
         return;
       }
@@ -285,11 +306,8 @@ export default function App() {
   const handleQuickEcho = useCallback(
     (conceptId: ConceptId) =>
       beginVoiceCapture(() => {
-        setProfile((prev) => {
-          const next = promoteConceptToVoice(prev, conceptId, new Date().toISOString());
-          saveProfile(next);
-          return next;
-        });
+        const nowIso = new Date().toISOString();
+        setProfile((prev) => promoteConceptToVoice(prev, conceptId, nowIso));
         audioPlayer.play(CONCEPT_AUDIO_KEY[conceptId]);
       }),
     [audioPlayer, beginVoiceCapture],
@@ -336,6 +354,7 @@ export default function App() {
     const freshLesson = createLesson1State();
     profileRef.current = freshProfile;
     lessonRef.current = freshLesson;
+    skipNextPersistRef.current = true;
     setProfile(freshProfile);
     setLesson(freshLesson);
     setSelectedConcept(null);
@@ -402,7 +421,10 @@ export default function App() {
         isListening={isListening}
         voiceLevel={voiceLevel}
         onStartCafe={handleEnterCafe}
-        onRequestHelp={() => dispatch({ type: 'HELP_REQUESTED' })}
+        onRequestHelp={() => {
+          stopVoice();
+          dispatch({ type: 'HELP_REQUESTED' });
+        }}
         onStartMic={handleStartMic}
         onSilentWave={handleSilentWave}
         onHoldPourStart={handlePourStart}
@@ -441,11 +463,9 @@ export default function App() {
             stopVoice();
             dispatch({ type: 'VOICE_DETECTED' });
           } else if (activeView === 'constellation' && selectedConcept) {
-            setProfile((prev) => {
-              const next = promoteConceptToVoice(prev, selectedConcept, new Date().toISOString());
-              saveProfile(next);
-              return next;
-            });
+            stopVoice();
+            const nowIso = new Date().toISOString();
+            setProfile((prev) => promoteConceptToVoice(prev, selectedConcept, nowIso));
           }
         }}
         onResetProfile={handleReset}
