@@ -1,0 +1,298 @@
+:root {
+  --bg-warm: #f4e7d3;
+  --surface-glass: rgba(255, 250, 242, 0.84);
+  --surface-dark: rgba(15, 23, 42, 0.86);
+  --accent-amber: #ea580c;
+  --accent-gold: #f59e0b;
+  --accent-mint: #10b981;
+  --ink-dark: #1f2937;
+  --ink-light: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-warm);
+}
+
+.app-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.top-nav {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 20;
+}
+
+.pill-toggle {
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
+}
+
+.pill-toggle button {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  position: relative;
+}
+
+.pill-toggle button.active {
+  background: var(--accent-amber);
+  color: #fff;
+}
+
+.star-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #fbbf24;
+  color: #1f2937;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-pill {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-dark);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+}
+
+.hud-bottom-center {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  z-index: 20;
+}
+
+.play-btn {
+  width: 72px;
+  height: 72px;
+  background: var(--accent-amber);
+  color: #fff;
+  font-size: 28px;
+}
+
+.help-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 28px;
+  width: 54px;
+  height: 54px;
+  background: var(--surface-glass);
+  color: var(--ink-dark);
+  font-size: 24px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+}
+
+.mic-btn {
+  width: 74px;
+  height: 74px;
+  background: var(--accent-mint);
+  color: #fff;
+  font-size: 30px;
+}
+
+.wave-btn {
+  width: 58px;
+  height: 58px;
+  background: var(--surface-glass);
+  color: var(--ink-dark);
+  font-size: 26px;
+}
+
+.pour-ring {
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  touch-action: none;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+}
+
+.sensory-card {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: var(--surface-dark);
+  color: var(--ink-light);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sensory-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stage-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.stage-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.stage-dot.lit {
+  background: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
+}
+
+.dev-container {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(340px, calc(100vw - 170px));
+}
+
+.dev-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dev-badge {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(15, 23, 42, 0.78);
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.dev-caption-pill {
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #fef3c7;
+  font-size: 13px;
+  line-height: 1.35;
+  backdrop-filter: blur(8px);
+}
+
+.dev-caption-meta {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.dev-drawer {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e2e8f0;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dev-actions button {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
