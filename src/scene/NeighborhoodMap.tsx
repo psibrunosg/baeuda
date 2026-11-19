@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import type * as THREE from 'three';
 import type { LocationStatus } from '../domain/types';
@@ -18,6 +18,20 @@ export function NeighborhoodMap({
   const puff1Ref = useRef<THREE.Mesh>(null);
   const puff2Ref = useRef<THREE.Mesh>(null);
   const miniLeoArmRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    if (!visible) {
+      document.body.style.cursor = 'auto';
+    }
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
+  }, [visible]);
+
+  useLayoutEffect(() => {
+    if (puff1Ref.current) puff1Ref.current.position.y = 2.75;
+    if (puff2Ref.current) puff2Ref.current.position.y = 3.1;
+  }, []);
 
   useFrame((state) => {
     if (!visible) return;
@@ -46,6 +60,15 @@ export function NeighborhoodMap({
   const handleDoorClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     onEnterCafe();
+  };
+
+  const handleDoorPointerOver = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    document.body.style.cursor = 'pointer';
+  };
+
+  const handleDoorPointerOut = () => {
+    document.body.style.cursor = 'auto';
   };
 
   return (
@@ -80,14 +103,18 @@ export function NeighborhoodMap({
         </mesh>
 
         {/* Chimney steam puffs */}
-        <mesh ref={puff1Ref} position={[0.8, 2.75, -0.45]}>
-          <sphereGeometry args={[0.35, 10, 10]} />
-          <meshStandardMaterial color="#fff8ee" transparent opacity={0.55} roughness={1} />
-        </mesh>
-        <mesh ref={puff2Ref} position={[0.88, 3.1, -0.45]}>
-          <sphereGeometry args={[0.35, 10, 10]} />
-          <meshStandardMaterial color="#fff8ee" transparent opacity={0.4} roughness={1} />
-        </mesh>
+        <group position={[0.8, 0, -0.45]}>
+          <mesh ref={puff1Ref}>
+            <sphereGeometry args={[0.35, 10, 10]} />
+            <meshStandardMaterial color="#fff8ee" transparent opacity={0.55} roughness={1} />
+          </mesh>
+        </group>
+        <group position={[0.88, 0, -0.45]}>
+          <mesh ref={puff2Ref}>
+            <sphereGeometry args={[0.35, 10, 10]} />
+            <meshStandardMaterial color="#fff8ee" transparent opacity={0.4} roughness={1} />
+          </mesh>
+        </group>
 
         {/* Striped awning */}
         <mesh position={[0, 1.62, 1.25]} rotation={[0.32, 0, 0]} castShadow>
@@ -119,13 +146,8 @@ export function NeighborhoodMap({
           name="prop_cafe_door"
           position={[0.55, 0.65, 1.02]}
           onClick={handleDoorClick}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            document.body.style.cursor = 'pointer';
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = 'auto';
-          }}
+          onPointerOver={handleDoorPointerOver}
+          onPointerOut={handleDoorPointerOut}
         >
           <mesh castShadow>
             <boxGeometry args={[0.72, 1.28, 0.08]} />
@@ -147,6 +169,8 @@ export function NeighborhoodMap({
           name="prop_cafe_door"
           position={[1.15, 0, 1.38]}
           onClick={handleDoorClick}
+          onPointerOver={handleDoorPointerOver}
+          onPointerOut={handleDoorPointerOut}
         >
           <mesh position={[0, 0.38, 0]} castShadow>
             <capsuleGeometry args={[0.14, 0.28, 6, 12]} />

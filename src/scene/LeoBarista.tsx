@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useAnimations, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -54,7 +54,7 @@ function LeoGlb({
     if (!next || next === activeActionRef.current) return;
 
     const prev = activeActionRef.current;
-    const isOneShot = animation !== IDLE_CLIP;
+    const isOneShot = next !== actions[IDLE_CLIP] && animation !== IDLE_CLIP;
 
     next.reset();
     next.setLoop(isOneShot ? THREE.LoopOnce : THREE.LoopRepeat, isOneShot ? 1 : Infinity);
@@ -119,6 +119,12 @@ function LeoGreybox({
   const mouthRef = useRef<THREE.Mesh>(null);
   const browRef = useRef<THREE.Group>(null);
 
+  useLayoutEffect(() => {
+    if (browRef.current) {
+      browRef.current.position.y = 0.068;
+    }
+  }, []);
+
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
@@ -126,8 +132,8 @@ function LeoGreybox({
     // Gentle idle breathing
     if (rootRef.current) {
       const shiverX = animation === 'shiver_cold' ? Math.sin(t * 28) * 0.015 : 0;
-      rootRef.current.position.x = THREE.MathUtils.damp(rootRef.current.position.x, position[0] + shiverX, 16, dt);
-      rootRef.current.position.y = position[1] + Math.sin(t * 2.1) * 0.012;
+      rootRef.current.position.x = THREE.MathUtils.damp(rootRef.current.position.x, shiverX, 16, dt);
+      rootRef.current.position.y = Math.sin(t * 2.1) * 0.012;
     }
 
     // Head pose by animation
@@ -236,8 +242,9 @@ function LeoGreybox({
   });
 
   return (
-    <group ref={rootRef} name="Leo_Barista_Greybox" position={position}>
-      {/* Torso + Olive Barista Apron */}
+    <group name="Leo_Barista_Greybox" position={position}>
+      <group ref={rootRef}>
+        {/* Torso + Olive Barista Apron */}
       <mesh position={[0, 1.05, 0]} castShadow>
         <capsuleGeometry args={[0.22, 0.38, 8, 16]} />
         <meshStandardMaterial color="#f5e6d3" roughness={0.82} />
@@ -268,15 +275,17 @@ function LeoGreybox({
           <meshStandardMaterial color="#1f2937" roughness={0.2} />
         </mesh>
         {/* Eyebrows */}
-        <group ref={browRef} position={[0, 0.068, 0.185]}>
-          <mesh position={[-0.068, 0, 0]}>
-            <boxGeometry args={[0.055, 0.014, 0.012]} />
-            <meshStandardMaterial color="#4a3122" />
-          </mesh>
-          <mesh position={[0.068, 0, 0]}>
-            <boxGeometry args={[0.055, 0.014, 0.012]} />
-            <meshStandardMaterial color="#4a3122" />
-          </mesh>
+        <group position={[0, 0, 0.185]}>
+          <group ref={browRef}>
+            <mesh position={[-0.068, 0, 0]}>
+              <boxGeometry args={[0.055, 0.014, 0.012]} />
+              <meshStandardMaterial color="#4a3122" />
+            </mesh>
+            <mesh position={[0.068, 0, 0]}>
+              <boxGeometry args={[0.055, 0.014, 0.012]} />
+              <meshStandardMaterial color="#4a3122" />
+            </mesh>
+          </group>
         </group>
         {/* Lip-sync mouth */}
         <mesh ref={mouthRef} position={[0, -0.075, 0.186]}>
@@ -307,6 +316,7 @@ function LeoGreybox({
           <sphereGeometry args={[0.062, 10, 10]} />
           <meshStandardMaterial color="#f2c6a0" roughness={0.75} />
         </mesh>
+      </group>
       </group>
     </group>
   );

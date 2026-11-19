@@ -1,4 +1,4 @@
-import { Suspense, useRef, type MutableRefObject } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -52,8 +52,49 @@ function SteamParticles({ position, intensity = 1 }: { position: [number, number
   );
 }
 
-function CafeGlb({ onPropTap }: { onPropTap: (prop: PropName) => void }) {
+function useGlobalPourRelease(active: boolean, onPourEnd: () => void) {
+  useEffect(() => {
+    if (!active) return;
+    const handleRelease = () => {
+      onPourEnd();
+    };
+    window.addEventListener('pointerup', handleRelease);
+    window.addEventListener('pointercancel', handleRelease);
+    return () => {
+      window.removeEventListener('pointerup', handleRelease);
+      window.removeEventListener('pointercancel', handleRelease);
+    };
+  }, [active, onPourEnd]);
+}
+
+interface CafeGlbProps {
+  phase: LessonPhase;
+  activePourLiquid: 'coffee' | 'water' | null;
+  mysteryBoxVisible: boolean;
+  onPropTap: (prop: PropName) => void;
+  onPourStart: () => void;
+  onPourEnd: () => void;
+}
+
+function CafeGlb({
+  phase,
+  activePourLiquid,
+  mysteryBoxVisible,
+  onPropTap,
+  onPourStart,
+  onPourEnd,
+}: CafeGlbProps) {
   const { scene } = useGLTF('/models/cafe_esquina.glb');
+
+  useGlobalPourRelease(phase === 'action_pour', onPourEnd);
+
+  useEffect(() => {
+    const mysteryBox = scene.getObjectByName('prop_box_mystery');
+    if (mysteryBox) {
+      mysteryBox.visible = mysteryBoxVisible;
+    }
+  }, [scene, mysteryBoxVisible]);
+
   return (
     <primitive
       object={scene}
@@ -61,6 +102,32 @@ function CafeGlb({ onPropTap }: { onPropTap: (prop: PropName) => void }) {
         e.stopPropagation();
         const prop = findPropName(e.object);
         if (prop) onPropTap(prop);
+      }}
+      onPointerMove={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        document.body.style.cursor = findPropName(e.object) ? 'pointer' : 'auto';
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto';
+      }}
+      onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+        if (phase !== 'action_pour') return;
+        const prop = findPropName(e.object);
+        const expectedVessel: PropName | null =
+          activePourLiquid === 'coffee'
+            ? 'prop_jar_coffee'
+            : activePourLiquid === 'water'
+              ? 'prop_water_cold'
+              : null;
+        if (prop && prop === expectedVessel) {
+          e.stopPropagation();
+          onPourStart();
+        }
+      }}
+      onPointerUp={(e: ThreeEvent<PointerEvent>) => {
+        if (phase !== 'action_pour') return;
+        e.stopPropagation();
+        onPourEnd();
       }}
     />
   );
@@ -86,6 +153,29 @@ function CafeGreybox({
   const boxRef = useRef<THREE.Group>(null);
   const glowRingRef = useRef<THREE.Mesh>(null);
 
+  const showIntroProps = phase === 'counter_intro' || phase === 'map_arrival';
+  const showContrastProps = phase === 'thermal_contrast';
+  const showPourProps = phase === 'action_pour';
+  const showChoiceProps = phase === 'personal_choice' || phase === 'micro_echo' || phase === 'farewell_constellation';
+
+  useGlobalPourRelease(phase === 'action_pour', onPourEnd);
+
+  useLayoutEffect(() => {
+    if (!showPourProps) return;
+    if (fillMeshRef.current) {
+      fillMeshRef.current.visible = false;
+    }
+    if (streamRef.current) {
+      streamRef.current.visible = false;
+    }
+  }, [showPourProps]);
+
+  useLayoutEffect(() => {
+    if (showChoiceProps && boxRef.current) {
+      boxRef.current.position.y = mysteryBoxVisible ? 0.97 : 1.9;
+    }
+  }, [showChoiceProps]);
+
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
@@ -96,13 +186,13 @@ function CafeGreybox({
       const active = pouring && activePourLiquid === 'coffee';
       jarPourRef.current.position.x = THREE.MathUtils.damp(
         jarPourRef.current.position.x,
-        active ? 0.22 : 0.45,
+        active ? -0.23 : 0,
         8,
         dt,
       );
       jarPourRef.current.position.y = THREE.MathUtils.damp(
         jarPourRef.current.position.y,
-        active ? 1.24 : 0.96,
+        active ? 0.27 : 0,
         8,
         dt,
       );
@@ -118,13 +208,13 @@ function CafeGreybox({
       const active = pouring && activePourLiquid === 'water';
       waterPourRef.current.position.x = THREE.MathUtils.damp(
         waterPourRef.current.position.x,
-        active ? 0.22 : 0.45,
+        active ? -0.23 : 0,
         8,
         dt,
       );
       waterPourRef.current.position.y = THREE.MathUtils.damp(
         waterPourRef.current.position.y,
-        active ? 1.26 : 0.96,
+        active ? 0.29 : 0,
         8,
         dt,
       );
@@ -148,7 +238,7 @@ function CafeGreybox({
     }
 
     if (boxRef.current) {
-      const targetY = mysteryBoxVisible ? 0.96 : 1.9;
+      const targetY = mysteryBoxVisible ? 0.97 : 1.9;
       boxRef.current.position.y = THREE.MathUtils.damp(boxRef.current.position.y, targetY, 6, dt);
     }
 
@@ -171,11 +261,6 @@ function CafeGreybox({
 
   const isHighlighted = (prop: PropName) => highlightedProp === prop;
   const contrastBoost = hintMode === 'contrast';
-
-  const showIntroProps = phase === 'counter_intro' || phase === 'map_arrival';
-  const showContrastProps = phase === 'thermal_contrast';
-  const showPourProps = phase === 'action_pour';
-  const showChoiceProps = phase === 'personal_choice' || phase === 'micro_echo' || phase === 'farewell_constellation';
 
   return (
     <group
@@ -391,7 +476,7 @@ function CafeGreybox({
               <meshStandardMaterial color="#fff7ed" transparent opacity={0.85} roughness={0.2} />
             </mesh>
             {/* Dynamic liquid level rising inside cup */}
-            <mesh ref={fillMeshRef} position={[0, 0.05, 0]} visible={false}>
+            <mesh ref={fillMeshRef}>
               <cylinderGeometry args={[0.092, 0.078, 0.14, 16]} />
               <meshStandardMaterial
                 color={activePourLiquid === 'water' ? '#38bdf8' : '#4a2511'}
@@ -401,67 +486,69 @@ function CafeGreybox({
           </group>
 
           {/* Pouring stream */}
-          <mesh ref={streamRef} position={[0.03, 1.19, 0.12]} visible={false}>
-            <cylinderGeometry args={[0.014, 0.018, 0.24, 10]} />
-            <meshStandardMaterial
-              color={activePourLiquid === 'water' ? '#7dd3fc' : '#5c2e14'}
-              roughness={0.15}
-            />
-          </mesh>
+          <group position={[0.03, 1.19, 0.12]}>
+            <mesh ref={streamRef}>
+              <cylinderGeometry args={[0.014, 0.018, 0.24, 10]} />
+              <meshStandardMaterial
+                color={activePourLiquid === 'water' ? '#7dd3fc' : '#5c2e14'}
+                roughness={0.15}
+              />
+            </mesh>
+          </group>
 
           {activePourLiquid === 'coffee' && (
-            <group
-              ref={jarPourRef}
-              name="prop_jar_coffee"
-              position={[0.45, 0.97, 0.12]}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                onPourStart();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-                onPourEnd();
-              }}
-              onPointerOut={onPourEnd}
-            >
-              <mesh position={[0, 0.14, 0]} castShadow>
-                <cylinderGeometry args={[0.09, 0.12, 0.28, 18]} />
-                <meshStandardMaterial
-                  color="#4b2e1e"
-                  emissive="#f59e0b"
-                  emissiveIntensity={0.25}
-                  roughness={0.25}
-                />
-              </mesh>
+            <group position={[0.45, 0.97, 0.12]}>
+              <group
+                ref={jarPourRef}
+                name="prop_jar_coffee"
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  onPourStart();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  onPourEnd();
+                }}
+              >
+                <mesh position={[0, 0.14, 0]} castShadow>
+                  <cylinderGeometry args={[0.09, 0.12, 0.28, 18]} />
+                  <meshStandardMaterial
+                    color="#4b2e1e"
+                    emissive="#f59e0b"
+                    emissiveIntensity={0.25}
+                    roughness={0.25}
+                  />
+                </mesh>
+              </group>
             </group>
           )}
 
           {activePourLiquid === 'water' && (
-            <group
-              ref={waterPourRef}
-              name="prop_water_cold"
-              position={[0.45, 0.97, 0.12]}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                onPourStart();
-              }}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-                onPourEnd();
-              }}
-              onPointerOut={onPourEnd}
-            >
-              <mesh position={[0, 0.15, 0]} castShadow>
-                <cylinderGeometry args={[0.075, 0.085, 0.3, 18]} />
-                <meshStandardMaterial
-                  color="#7dd3fc"
-                  transparent
-                  opacity={0.82}
-                  emissive="#38bdf8"
-                  emissiveIntensity={0.28}
-                  roughness={0.12}
-                />
-              </mesh>
+            <group position={[0.45, 0.97, 0.12]}>
+              <group
+                ref={waterPourRef}
+                name="prop_water_cold"
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  onPourStart();
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  onPourEnd();
+                }}
+              >
+                <mesh position={[0, 0.15, 0]} castShadow>
+                  <cylinderGeometry args={[0.075, 0.085, 0.3, 18]} />
+                  <meshStandardMaterial
+                    color="#7dd3fc"
+                    transparent
+                    opacity={0.82}
+                    emissive="#38bdf8"
+                    emissiveIntensity={0.28}
+                    roughness={0.12}
+                  />
+                </mesh>
+              </group>
             </group>
           )}
         </group>
@@ -522,20 +609,21 @@ function CafeGreybox({
 
           {/* Mystery box hook for Lesson 2 */}
           <group
-            ref={boxRef}
             name="prop_box_mystery"
-            position={[0.42, mysteryBoxVisible ? 0.97 : 1.9, 0.22]}
+            position={[0.42, 0, 0.22]}
             visible={mysteryBoxVisible}
           >
-            <mesh position={[0, 0.11, 0]} castShadow>
-              <boxGeometry args={[0.3, 0.22, 0.24]} />
-              <meshStandardMaterial color="#d4a373" roughness={0.82} />
-            </mesh>
-            <mesh position={[0, 0.11, 0]}>
-              <boxGeometry args={[0.31, 0.04, 0.25]} />
-              <meshStandardMaterial color="#b91c1c" roughness={0.65} />
-            </mesh>
-            <SteamParticles position={[0, 0.25, 0]} intensity={0.8} />
+            <group ref={boxRef}>
+              <mesh position={[0, 0.11, 0]} castShadow>
+                <boxGeometry args={[0.3, 0.22, 0.24]} />
+                <meshStandardMaterial color="#d4a373" roughness={0.82} />
+              </mesh>
+              <mesh position={[0, 0.11, 0]}>
+                <boxGeometry args={[0.31, 0.04, 0.25]} />
+                <meshStandardMaterial color="#b91c1c" roughness={0.65} />
+              </mesh>
+              <SteamParticles position={[0, 0.25, 0]} intensity={0.8} />
+            </group>
           </group>
         </group>
       )}
@@ -545,6 +633,16 @@ function CafeGreybox({
 
 export function CafeScene(props: CafeSceneProps) {
   const { assetMode, visible, ...greyboxProps } = props;
+
+  useEffect(() => {
+    if (!visible) {
+      document.body.style.cursor = 'auto';
+    }
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
+  }, [visible]);
+
   if (!visible) return null;
 
   const greybox = <CafeGreybox {...greyboxProps} />;
@@ -552,7 +650,14 @@ export function CafeScene(props: CafeSceneProps) {
     return (
       <ModelErrorBoundary fallback={greybox}>
         <Suspense fallback={greybox}>
-          <CafeGlb onPropTap={greyboxProps.onPropTap} />
+          <CafeGlb
+            phase={greyboxProps.phase}
+            activePourLiquid={greyboxProps.activePourLiquid}
+            mysteryBoxVisible={greyboxProps.mysteryBoxVisible}
+            onPropTap={greyboxProps.onPropTap}
+            onPourStart={greyboxProps.onPourStart}
+            onPourEnd={greyboxProps.onPourEnd}
+          />
         </Suspense>
       </ModelErrorBoundary>
     );
