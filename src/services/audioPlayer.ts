@@ -81,6 +81,13 @@ export function createAudioPlayer(options: CreateAudioPlayerOptions = {}): Audio
       fallbackTimer = null;
     }
     fallbackActive = false;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // Ignore speechSynthesis cancel errors in restricted sandboxes
+      }
+    }
     if (activeAudio) {
       activeAudio.onended = null;
       activeAudio.onerror = null;
@@ -102,6 +109,21 @@ export function createAudioPlayer(options: CreateAudioPlayerOptions = {}): Audio
     fallbackStartMs = Date.now();
     fallbackRate = rate;
     fallbackActive = true;
+
+    if (
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window &&
+      typeof SpeechSynthesisUtterance !== 'undefined'
+    ) {
+      try {
+        const utter = new SpeechSynthesisUtterance(entry.phrase);
+        utter.lang = 'en-US';
+        utter.rate = Math.max(0.6, Math.min(1.4, rate));
+        window.speechSynthesis.speak(utter);
+      } catch {
+        // Fallback timer still drives visemes and completion
+      }
+    }
 
     emitStatus({
       mode: 'fallback',

@@ -247,6 +247,10 @@ export function NeighborhoodMap({
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement | null)?.isContentEditable) {
+        return;
+      }
       const code = e.code;
       if (
         code === 'KeyW' ||
@@ -325,8 +329,10 @@ export function NeighborhoodMap({
     const avatar = avatarGroupRef.current;
     if (!avatar) return;
 
-    const minX = marketLocked ? MARKET_BORDER_X : -10.2;
-    const maxX = plazaLocked ? PLAZA_BORDER_X : 10.2;
+    // Allow walking freely along the South Promenade (z > 2.2) so Bakery/shops are always reachable for quests
+    const onSouthPromenade = avatar.position.z > 2.2;
+    const minX = marketLocked && !onSouthPromenade ? MARKET_BORDER_X : -10.2;
+    const maxX = plazaLocked && !onSouthPromenade ? PLAZA_BORDER_X : 10.2;
 
     const keys = keysRef.current;
     let dx = 0;

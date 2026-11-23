@@ -325,13 +325,13 @@ describe('GuidancePill', () => {
 });
 
 describe('App', () => {
-  it('renders the initial map shell with TopNav, LessonHud play button, GuidancePill, and DebugAudioBar', () => {
+  it('renders the initial map shell cleanly without DEV chrome by default', () => {
     const markup = renderToStaticMarkup(createElement(App));
 
     expect(markup).toContain('class="app-shell"');
     expect(markup).toContain('00:00');
     expect(markup).toContain('aria-label="Enter"');
-    expect(markup).toContain('DEV · map_arrival');
+    expect(markup).not.toContain('DEV · map_arrival');
     expect(markup).toContain('data-immersion-tier="onboarding"');
   });
 });

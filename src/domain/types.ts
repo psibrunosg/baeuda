@@ -70,6 +70,8 @@ export interface LearnerProfile {
   completedLessonIds: string[];
   completedCafeCycles?: CafeCycleId[];
   streetDiscoveries?: string[];
+  inventoryIds?: string[];
+  completedQuestIds?: string[];
   locations: Record<LocationId, LocationStatus>;
   constellation: Partial<Record<ConceptId, ConceptNode>>;
 }

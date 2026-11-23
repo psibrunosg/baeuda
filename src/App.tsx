@@ -45,8 +45,13 @@ export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>('map');
   const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
   const [activeCuriosityId, setActiveCuriosityId] = useState<string | null>(null);
-  const [inventoryIds, setInventoryIds] = useState<string[]>([]);
-  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>([]);
+  const [inventoryIds, setInventoryIds] = useState<string[]>(() => profile.inventoryIds ?? []);
+  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>(
+    () => profile.completedQuestIds ?? [],
+  );
+  const isDevMode =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('dev') === '1';
   const [activeCafeCycle, setActiveCafeCycle] =
     useState<Exclude<CafeCycleId, 'cafe_c1_drinks'>>('cafe_c2_food');
   const [marketStage, setMarketStage] = useState<MarketStage>('explore');
@@ -119,12 +124,29 @@ export default function App() {
       persistedProfileRef.current = profile;
       return;
     }
-    if (persistedProfileRef.current === profile) {
+    const merged: LearnerProfile = {
+      ...profile,
+      inventoryIds,
+      completedQuestIds,
+    };
+    const prev = persistedProfileRef.current;
+    const onlyClockChanged =
+      prev.immersionSeconds !== merged.immersionSeconds &&
+      prev.completedLessonIds === merged.completedLessonIds &&
+      prev.completedCafeCycles === merged.completedCafeCycles &&
+      prev.streetDiscoveries === merged.streetDiscoveries &&
+      prev.locations === merged.locations &&
+      prev.constellation === merged.constellation &&
+      prev.inventoryIds === merged.inventoryIds &&
+      prev.completedQuestIds === merged.completedQuestIds;
+
+    // Throttle pure 1s clock ticks to every 15s; persist all real progress immediately
+    if (onlyClockChanged && merged.immersionSeconds % 15 !== 0) {
       return;
     }
-    persistedProfileRef.current = profile;
-    saveProfile(profile);
-  }, [profile]);
+    persistedProfileRef.current = merged;
+    saveProfile(merged);
+  }, [profile, inventoryIds, completedQuestIds]);
 
   const stopVoice = useCallback(() => {
     voiceTokenRef.current += 1;
@@ -135,6 +157,22 @@ export default function App() {
       setVoiceLevel(0);
     }
   }, []);
+
+  // Escape key exits interiors or closes CuriosityModal / BadgesHub
+  useEffect(() => {
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (activeCuriosityId) {
+        setActiveCuriosityId(null);
+      } else if (activeView !== 'map') {
+        audioPlayer.stop();
+        stopVoice();
+        setActiveView('map');
+      }
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [activeCuriosityId, activeView, audioPlayer, stopVoice]);
 
   const resetPourState = useCallback(() => {
     pourProgressRef.current = 0;
@@ -488,6 +526,9 @@ export default function App() {
     setProfile(freshProfile);
     setLesson(freshLesson);
     setSelectedConcept(null);
+    setActiveCuriosityId(null);
+    setInventoryIds([]);
+    setCompletedQuestIds([]);
     setActiveView('map');
   }, [audioPlayer, resetPourState, stopVoice]);
 
@@ -692,20 +733,40 @@ export default function App() {
         />
       )}
 
-      <DebugAudioBar
-        audioStatus={audioStatus}
-        phase={lesson.phase}
-        assetMode={assetMode}
-        onToggleAssetMode={() => setAssetMode((m) => (m === 'greybox' ? 'glb' : 'greybox'))}
-        onJumpPhase={handleJumpPhase}
-        onSimulateVoice={() => {
-          if (activeView === 'lesson' && lesson.phase === 'micro_echo') {
-            stopVoice();
-            dispatch({ type: 'VOICE_DETECTED' });
-          }
-        }}
-        onResetProfile={handleReset}
-      />
+      {activeView !== 'map' && activeView !== 'badges' && (
+        <button
+          type="button"
+          className="back-street-btn"
+          aria-label="Back to street"
+          onClick={() => handleSelectView('map')}
+        >
+          ← Street
+        </button>
+      )}
+
+      {!isDevMode && audioStatus.phrase && !activeCuriosityId && (
+        <div className="speech-subtitle-pill" role="status" aria-live="polite">
+          <span>{audioStatus.isPlaying ? '🔊' : '✓'}</span>
+          <span>“{audioStatus.phrase}”</span>
+        </div>
+      )}
+
+      {isDevMode && (
+        <DebugAudioBar
+          audioStatus={audioStatus}
+          phase={lesson.phase}
+          assetMode={assetMode}
+          onToggleAssetMode={() => setAssetMode((m) => (m === 'greybox' ? 'glb' : 'greybox'))}
+          onJumpPhase={handleJumpPhase}
+          onSimulateVoice={() => {
+            if (activeView === 'lesson' && lesson.phase === 'micro_echo') {
+              stopVoice();
+              dispatch({ type: 'VOICE_DETECTED' });
+            }
+          }}
+          onResetProfile={handleReset}
+        />
+      )}
     </main>
   );
 }

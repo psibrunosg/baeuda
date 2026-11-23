@@ -104,8 +104,10 @@ function CameraRig({
     if (isMapView && cameraMode === 'third_person') {
       if (controlsRef.current) controlsRef.current.enabled = false;
       const p = avatarPoseRef.current;
-      desiredPosRef.current.set(p.x, 2.25, p.z + 3.45);
-      desiredTargetRef.current.set(p.x, 0.85, p.z - 0.85);
+      // Keep camera z strictly in front of south-side buildings (z <= 3.15) to prevent wall clipping
+      const safeCamZ = Math.min(p.z + 2.45, 3.15);
+      desiredPosRef.current.set(p.x, 2.75, safeCamZ);
+      desiredTargetRef.current.set(p.x, 0.82, p.z - 0.95);
       camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 6.5, dt);
       camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 6.5, dt);
       camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 6.5, dt);
@@ -119,10 +121,12 @@ function CameraRig({
     if (isMapView && cameraMode === 'first_person') {
       if (controlsRef.current) controlsRef.current.enabled = false;
       const p = avatarPoseRef.current;
-      const lookX = p.x + Math.sin(p.yaw) * 2.5;
-      const lookZ = p.z + Math.cos(p.yaw) * 2.5;
-      desiredPosRef.current.set(p.x, 0.84, p.z);
-      desiredTargetRef.current.set(lookX, 0.78, lookZ);
+      const eyeX = p.x + Math.sin(p.yaw) * 0.22;
+      const eyeZ = p.z + Math.cos(p.yaw) * 0.22;
+      const lookX = p.x + Math.sin(p.yaw) * 2.8;
+      const lookZ = p.z + Math.cos(p.yaw) * 2.8;
+      desiredPosRef.current.set(eyeX, 0.9, eyeZ);
+      desiredTargetRef.current.set(lookX, 0.84, lookZ);
       camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 10, dt);
       camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 10, dt);
       camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 10, dt);
