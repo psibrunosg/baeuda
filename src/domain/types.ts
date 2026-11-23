@@ -256,7 +256,11 @@ export type SpeechKey =
   | 'job_barber'
   | 'world_barber_pole'
   | 'world_barber_chair'
-  | 'world_barber_scissors';
+  | 'world_barber_scissors'
+  | 'job_librarian'
+  | 'world_book_read'
+  | 'world_book_pencil'
+  | 'world_book_backpack';
 
 export interface CounterDemoBeat {
   prop: PropName;

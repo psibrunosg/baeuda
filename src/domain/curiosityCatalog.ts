@@ -240,6 +240,27 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
     discoveryKey: 'world_barber_scissors',
     collectible: { itemId: 'scissors', icon: '✂️', label: 'Scissors' },
   },
+  job_librarian: {
+    id: 'job_librarian',
+    category: 'profession',
+    icon: '📚',
+    question: 'What is this job?',
+    canonicalAnswer: 'Librarian',
+    acceptedAnswers: ['librarian', 'a librarian', 'bookseller', 'teacher'],
+    speechKey: 'job_librarian',
+    discoveryKey: 'world_job_librarian',
+  },
+  city_book: {
+    id: 'city_book',
+    category: 'city',
+    icon: '📖',
+    question: 'What do you read here?',
+    canonicalAnswer: 'Book',
+    acceptedAnswers: ['book', 'a book', 'books', 'story'],
+    speechKey: 'world_book_read',
+    discoveryKey: 'world_book_read',
+    collectible: { itemId: 'book', icon: '📖', label: 'Book' },
+  },
 };
 
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {

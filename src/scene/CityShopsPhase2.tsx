@@ -866,3 +866,273 @@ export function InteractiveBarberShop({
     </group>
   );
 }
+
+/**
+ * Unique Librarian / Bookseller NPC: cozy mustard sweater, round glasses, warm smile.
+ */
+function LibrarianNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.15 + Math.sin(t * 9.5) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#5c3527" roughness={0.75} />
+      </mesh>
+      <mesh position={[0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#5c3527" roughness={0.75} />
+      </mesh>
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#d97706" roughness={0.88} />
+      </mesh>
+      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#d97706" roughness={0.88} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#f0bfa0" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#d97706" roughness={0.88} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#f0bfa0" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.132, 16, 16]} />
+          <meshStandardMaterial color="#f0bfa0" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.042, 0.012, 0.125]}>
+          <torusGeometry args={[0.026, 0.006, 8, 14]} />
+          <meshStandardMaterial color="#78350f" roughness={0.35} />
+        </mesh>
+        <mesh position={[0.042, 0.012, 0.125]}>
+          <torusGeometry args={[0.026, 0.006, 8, 14]} />
+          <meshStandardMaterial color="#78350f" roughness={0.35} />
+        </mesh>
+        <mesh position={[0, 0.06, -0.015]} castShadow>
+          <sphereGeometry args={[0.138, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
+          <meshStandardMaterial color="#57534e" roughness={0.86} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 9: Livraria & Papelaria Interativa (Bookshop & Stationery)
+ * Mounted on the Far South-West sidewalk facing -z toward the boulevard.
+ * 4 interactive everyday props + clickable Librarian profession:
+ * 1) Colorful Outdoor Bookshelf -> opens Curiosity Card ("What do you read here?" -> Book, collects 📖)
+ * 2) Notebook & Yellow Pencil Stand -> wiggles pencil ("Notebook and pencil! Write your name!")
+ * 3) School Backpack Pedestal -> hops backpack ("Backpack! Ready for school!")
+ * 4) Librarian NPC -> opens Curiosity Card ("What is this job?" -> Librarian)
+ */
+export function InteractiveBookshop({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+  onInspectCuriosity,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+  const pencilRef = useRef<THREE.Group>(null);
+  const backpackRef = useRef<THREE.Group>(null);
+  const pencilWiggleRef = useRef(0);
+  const backpackHopRef = useRef(0);
+  const npcWaveRef = useRef(0);
+
+  const glow = isNight ? 1.5 : 0.65;
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+    if (pencilWiggleRef.current > 0) {
+      pencilWiggleRef.current = Math.max(0, pencilWiggleRef.current - dt * 1.5);
+      if (pencilRef.current) {
+        pencilRef.current.rotation.z = -0.35 + Math.sin(pencilWiggleRef.current * Math.PI * 6) * 0.25;
+      }
+    }
+    if (backpackHopRef.current > 0) {
+      backpackHopRef.current = Math.max(0, backpackHopRef.current - dt * 1.7);
+      if (backpackRef.current) {
+        backpackRef.current.position.y = 0.56 + Math.sin(backpackHopRef.current * Math.PI) * 0.14;
+      }
+    } else if (backpackRef.current) {
+      backpackRef.current.position.y = 0.56;
+    }
+  });
+
+  return (
+    <group name="Shop_Interactive_Bookshop" position={position} rotation={[0, rotationY, 0]}>
+      {/* Warm Forest-Green & Cream Bookshop Building */}
+      <RoundedBox args={[2.45, 2.02, 1.8]} radius={0.04} smoothness={2} position={[0, 1.01, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#d9e7dc" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.86} />
+      </RoundedBox>
+      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
+        <meshStandardMaterial color="#166534" roughness={0.8} />
+      </RoundedBox>
+
+      {/* Iconic 3D Open Book Emblem on Roof (zero text) */}
+      <group position={[0, 2.42, -0.62]}>
+        <RoundedBox args={[0.26, 0.06, 0.34]} radius={0.01} smoothness={2} position={[-0.13, 0, 0]} rotation={[0, 0, -0.25]} castShadow>
+          <meshStandardMaterial color="#fffbeb" roughness={0.7} />
+        </RoundedBox>
+        <RoundedBox args={[0.26, 0.06, 0.34]} radius={0.01} smoothness={2} position={[0.13, 0, 0]} rotation={[0, 0, 0.25]} castShadow>
+          <meshStandardMaterial color="#fffbeb" roughness={0.7} />
+        </RoundedBox>
+      </group>
+
+      {/* Cozy Lit Bookshop Window facing street (-z) */}
+      <group position={[0, 0.98, -0.92]}>
+        <RoundedBox args={[1.72, 0.9, 0.07]} radius={0.02} smoothness={2}>
+          <meshStandardMaterial color="#5a3827" roughness={0.78} />
+        </RoundedBox>
+        <mesh position={[0, 0, -0.04]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[1.56, 0.76]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 1: Outdoor Wooden Bookshelf (opens Curiosity Card: Book!) */}
+      <group
+        position={[-0.22, 0, -1.24]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_book');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.92, 0.56, 0.38]} radius={0.025} smoothness={2} position={[0, 0.28, 0]} castShadow>
+          <meshStandardMaterial color="#7a4e32" roughness={0.84} />
+        </RoundedBox>
+        {[
+          { x: -0.3, color: '#ef4444', h: 0.26 },
+          { x: -0.15, color: '#2563eb', h: 0.3 },
+          { x: 0, color: '#eab308', h: 0.25 },
+          { x: 0.15, color: '#16a34a', h: 0.28 },
+          { x: 0.3, color: '#9333ea', h: 0.27 },
+        ].map((b, i) => (
+          <RoundedBox
+            key={i}
+            args={[0.11, b.h, 0.22]}
+            radius={0.01}
+            smoothness={2}
+            position={[b.x, 0.56 + b.h / 2, 0]}
+            castShadow
+          >
+            <meshStandardMaterial color={b.color} roughness={0.65} />
+          </RoundedBox>
+        ))}
+      </group>
+
+      {/* INTERACTIVE 2: Notebook & Giant Yellow Pencil Stand */}
+      <group
+        position={[0.58, 0, -1.24]}
+        onClick={(e) => {
+          e.stopPropagation();
+          pencilWiggleRef.current = 1;
+          onTriggerAudio('world_book_pencil', [position[0] + 0.58, 0.08, position[2] - 1.24]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.42, 0.52, 0.34]} radius={0.02} smoothness={2} position={[0, 0.26, 0]} castShadow>
+          <meshStandardMaterial color="#f5ebd8" roughness={0.82} />
+        </RoundedBox>
+        <group ref={pencilRef} position={[0, 0.72, 0]} rotation={[0, 0, -0.35]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.036, 0.036, 0.36, 8]} />
+            <meshStandardMaterial color="#facc15" roughness={0.5} />
+          </mesh>
+          <mesh position={[0, -0.22, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.036, 0.09, 8]} />
+            <meshStandardMaterial color="#f5d0a9" roughness={0.75} />
+          </mesh>
+          <mesh position={[0, 0.2, 0]}>
+            <cylinderGeometry args={[0.036, 0.036, 0.06, 8]} />
+            <meshStandardMaterial color="#f472b6" roughness={0.7} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 3: School Backpack Pedestal */}
+      <group
+        position={[1.18, 0, -0.96]}
+        onClick={(e) => {
+          e.stopPropagation();
+          backpackHopRef.current = 1;
+          onTriggerAudio('world_book_backpack', [position[0] + 1.18, 0.08, position[2] - 0.96]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.38, 0.42, 0.34]} radius={0.02} smoothness={2} position={[0, 0.21, 0]} castShadow>
+          <meshStandardMaterial color="#e7dac5" roughness={0.84} />
+        </RoundedBox>
+        <group ref={backpackRef} position={[0, 0.56, 0]}>
+          <RoundedBox args={[0.28, 0.32, 0.18]} radius={0.05} smoothness={2} castShadow>
+            <meshStandardMaterial color="#dc2626" roughness={0.72} />
+          </RoundedBox>
+          <RoundedBox args={[0.2, 0.14, 0.08]} radius={0.03} smoothness={2} position={[0, -0.05, -0.1]}>
+            <meshStandardMaterial color="#2563eb" roughness={0.72} />
+          </RoundedBox>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 4: Librarian NPC facing street (-z) */}
+      <group
+        position={[-0.98, 0, -1.2]}
+        rotation={[0, Math.PI, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          npcWaveRef.current = 2.0;
+          onInspectCuriosity?.('job_librarian');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <LibrarianNpc waveTimerRef={npcWaveRef} />
+      </group>
+    </group>
+  );
+}

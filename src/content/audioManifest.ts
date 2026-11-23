@@ -964,6 +964,34 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.55, viseme: 'viseme_ee' },
     { at: 1.85, viseme: null },
   ]),
+  job_librarian: line('job_librarian', 'Librarian! Loves books and reading!', 2050, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.55, viseme: 'viseme_ee' },
+    { at: 1.1, viseme: 'viseme_mbp' },
+    { at: 1.6, viseme: 'viseme_ee' },
+    { at: 1.95, viseme: null },
+  ]),
+  world_book_read: line('world_book_read', 'Good book! Read a story!', 1800, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_oo' },
+    { at: 1.7, viseme: null },
+  ]),
+  world_book_pencil: line('world_book_pencil', 'Notebook and pencil! Write your name!', 2050, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.55, viseme: 'viseme_mbp' },
+    { at: 1.1, viseme: 'viseme_aa' },
+    { at: 1.6, viseme: 'viseme_ee' },
+    { at: 1.95, viseme: null },
+  ]),
+  world_book_backpack: line('world_book_backpack', 'Backpack! Ready for school!', 1850, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.45, viseme: 'viseme_oo' },
+    { at: 1.75, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

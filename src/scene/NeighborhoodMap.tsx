@@ -20,7 +20,12 @@ import {
   InteractiveTechShop,
   InteractiveTireShop,
 } from './CityShops';
-import { InteractiveBarberShop, InteractivePetShop, InteractivePharmacy } from './CityShopsPhase2';
+import {
+  InteractiveBarberShop,
+  InteractiveBookshop,
+  InteractivePetShop,
+  InteractivePharmacy,
+} from './CityShopsPhase2';
 import {
   AcrossStreetPromenade,
   BackgroundBakery,
@@ -651,6 +656,20 @@ export function NeighborhoodMap({
       <InteractiveBarberShop
         position={[9.95, 0.06, -0.45]}
         rotationY={-0.26}
+        isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
+      <InteractiveBookshop
+        position={[-10.0, 0.06, 4.15]}
+        rotationY={0.28}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
