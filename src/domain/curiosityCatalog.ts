@@ -261,6 +261,27 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
     discoveryKey: 'world_book_read',
     collectible: { itemId: 'book', icon: '📖', label: 'Book' },
   },
+  job_chef: {
+    id: 'job_chef',
+    category: 'profession',
+    icon: '👨‍🍳',
+    question: 'What is this job?',
+    canonicalAnswer: 'Chef',
+    acceptedAnswers: ['chef', 'a chef', 'cook', 'a cook'],
+    speechKey: 'job_chef',
+    discoveryKey: 'world_job_chef',
+  },
+  city_pizza: {
+    id: 'city_pizza',
+    category: 'city',
+    icon: '🍕',
+    question: 'What food is this?',
+    canonicalAnswer: 'Pizza',
+    acceptedAnswers: ['pizza', 'a pizza', 'cheese pizza'],
+    speechKey: 'world_pizza_slice',
+    discoveryKey: 'world_pizza_slice',
+    collectible: { itemId: 'pizza', icon: '🍕', label: 'Pizza' },
+  },
 };
 
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {

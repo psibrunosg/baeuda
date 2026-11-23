@@ -1136,3 +1136,314 @@ export function InteractiveBookshop({
     </group>
   );
 }
+
+/**
+ * Unique Pizzeria Chef NPC: white chef jacket, red neckerchief, tall chef hat, friendly wave.
+ */
+function ChefNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.2 + Math.sin(t * 10) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#18181b" roughness={0.65} />
+      </mesh>
+      <mesh position={[0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#18181b" roughness={0.65} />
+      </mesh>
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.85} />
+      </mesh>
+      {/* Red Italian chef scarf */}
+      <mesh position={[0, 0.44, 0.02]} rotation={[0.15, 0, 0]}>
+        <torusGeometry args={[0.072, 0.018, 8, 16]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.8} />
+      </mesh>
+      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#e8b896" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#e8b896" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.132, 16, 16]} />
+          <meshStandardMaterial color="#e8b896" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        {/* Chef toque hat */}
+        <mesh position={[0, 0.14, 0]} castShadow>
+          <cylinderGeometry args={[0.115, 0.11, 0.09, 14]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.21, 0]} castShadow>
+          <sphereGeometry args={[0.12, 12, 12]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.85} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 10: Pizzaria Interativa (Neighborhood Italian Pizzeria)
+ * Mounted on the Far South-East sidewalk facing -z toward the boulevard.
+ * 4 interactive everyday props + clickable Chef profession:
+ * 1) Hot Pepperoni Pizza Table -> opens Curiosity Card ("What food is this?" -> Pizza, collects 🍕)
+ * 2) Chalkboard Menu Stand -> wiggles ("Menu! What would you like to eat?")
+ * 3) Plate, Fork & Knife Bistro Table -> hops plate ("Plate, fork, and knife! Let us eat!")
+ * 4) Chef NPC -> opens Curiosity Card ("What is this job?" -> Chef)
+ */
+export function InteractivePizzeria({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+  onInspectCuriosity,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+  const menuRef = useRef<THREE.Group>(null);
+  const plateRef = useRef<THREE.Group>(null);
+  const menuWiggleRef = useRef(0);
+  const plateHopRef = useRef(0);
+  const npcWaveRef = useRef(0);
+
+  const glow = isNight ? 1.5 : 0.65;
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+    if (menuWiggleRef.current > 0) {
+      menuWiggleRef.current = Math.max(0, menuWiggleRef.current - dt * 1.5);
+      if (menuRef.current) {
+        menuRef.current.rotation.z = Math.sin(menuWiggleRef.current * Math.PI * 6) * 0.14;
+      }
+    } else if (menuRef.current) {
+      menuRef.current.rotation.z = 0;
+    }
+    if (plateHopRef.current > 0) {
+      plateHopRef.current = Math.max(0, plateHopRef.current - dt * 1.7);
+      if (plateRef.current) {
+        plateRef.current.position.y = 0.56 + Math.sin(plateHopRef.current * Math.PI) * 0.12;
+      }
+    } else if (plateRef.current) {
+      plateRef.current.position.y = 0.56;
+    }
+  });
+
+  return (
+    <group name="Shop_Interactive_Pizzeria" position={position} rotation={[0, rotationY, 0]}>
+      {/* Warm Terracotta & Cream Italian Pizzeria */}
+      <RoundedBox args={[2.45, 2.02, 1.8]} radius={0.04} smoothness={2} position={[0, 1.01, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#f6d5b0" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.86} />
+      </RoundedBox>
+      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
+        <meshStandardMaterial color="#b91c1c" roughness={0.8} />
+      </RoundedBox>
+
+      {/* Italian Red-White-Green Striped Awning facing street (-z) */}
+      <group position={[0, 1.48, -1.14]} rotation={[-0.28, 0, 0]}>
+        {['#16a34a', '#ffffff', '#dc2626', '#ffffff', '#16a34a'].map((color, i) => (
+          <RoundedBox
+            key={i}
+            args={[0.43, 0.09, 0.58]}
+            radius={0.02}
+            smoothness={2}
+            position={[-0.86 + i * 0.43, 0, 0]}
+            castShadow
+          >
+            <meshStandardMaterial color={color} roughness={0.82} />
+          </RoundedBox>
+        ))}
+      </group>
+
+      {/* Iconic 3D Pizza Emblem on Roof (zero text) */}
+      <group position={[0, 2.44, -0.62]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.24, 0.24, 0.06, 18]} />
+          <meshStandardMaterial color="#eab308" roughness={0.55} />
+        </mesh>
+        {[
+          [-0.08, 0.04, -0.05],
+          [0.09, 0.04, 0.04],
+          [-0.02, 0.04, 0.09],
+        ].map(([px, py, pz], i) => (
+          <mesh key={i} position={[px, py, pz]}>
+            <cylinderGeometry args={[0.045, 0.045, 0.02, 10]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.5} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Warm Lit Pizzeria Window (-z) */}
+      <group position={[0, 0.96, -0.92]}>
+        <RoundedBox args={[1.68, 0.86, 0.07]} radius={0.02} smoothness={2}>
+          <meshStandardMaterial color="#7c2d12" roughness={0.8} />
+        </RoundedBox>
+        <mesh position={[0, 0, -0.04]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[1.52, 0.72]} />
+          <meshStandardMaterial color="#fde68a" emissive="#f59e0b" emissiveIntensity={glow} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 1: Hot Pizza Table (opens Curiosity Card: Pizza!) */}
+      <group
+        position={[-0.22, 0, -1.26]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_pizza');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <mesh position={[0, 0.28, 0]} castShadow>
+          <cylinderGeometry args={[0.04, 0.06, 0.56, 10]} />
+          <meshStandardMaterial color="#27272a" roughness={0.5} />
+        </mesh>
+        <mesh position={[0, 0.56, 0]} castShadow>
+          <cylinderGeometry args={[0.34, 0.34, 0.05, 18]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.7} />
+        </mesh>
+        {/* Golden cheesy pizza with pepperoni */}
+        <mesh position={[0, 0.61, 0]} castShadow>
+          <cylinderGeometry args={[0.24, 0.25, 0.04, 18]} />
+          <meshStandardMaterial color="#facc15" roughness={0.55} />
+        </mesh>
+        {[
+          [-0.09, 0.635, -0.06],
+          [0.1, 0.635, 0.04],
+          [-0.02, 0.635, 0.1],
+          [0.06, 0.635, -0.09],
+        ].map(([px, py, pz], i) => (
+          <mesh key={i} position={[px, py, pz]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.015, 10]} />
+            <meshStandardMaterial color="#b91c1c" roughness={0.5} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* INTERACTIVE 2: Chalkboard Menu Stand */}
+      <group
+        ref={menuRef}
+        position={[-0.92, 0, -1.22]}
+        onClick={(e) => {
+          e.stopPropagation();
+          menuWiggleRef.current = 1;
+          onTriggerAudio('world_pizza_menu', [position[0] - 0.92, 0.08, position[2] - 1.22]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.38, 0.62, 0.08]} radius={0.02} smoothness={2} position={[0, 0.34, 0]} castShadow>
+          <meshStandardMaterial color="#5a3827" roughness={0.84} />
+        </RoundedBox>
+        <mesh position={[0, 0.36, -0.044]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[0.3, 0.48]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 3: Plate, Fork & Knife Table */}
+      <group
+        position={[0.52, 0, -1.26]}
+        onClick={(e) => {
+          e.stopPropagation();
+          plateHopRef.current = 1;
+          onTriggerAudio('world_pizza_plate', [position[0] + 0.52, 0.08, position[2] - 1.26]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <mesh position={[0, 0.28, 0]} castShadow>
+          <cylinderGeometry args={[0.04, 0.06, 0.56, 10]} />
+          <meshStandardMaterial color="#27272a" roughness={0.5} />
+        </mesh>
+        <mesh position={[0, 0.54, 0]} castShadow>
+          <cylinderGeometry args={[0.3, 0.3, 0.04, 18]} />
+          <meshStandardMaterial color="#f5ebd8" roughness={0.7} />
+        </mesh>
+        <group ref={plateRef} position={[0, 0.56, 0]}>
+          <mesh position={[0, 0.02, 0]}>
+            <cylinderGeometry args={[0.15, 0.13, 0.025, 16]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.25} />
+          </mesh>
+          <mesh position={[-0.2, 0.02, 0]}>
+            <boxGeometry args={[0.025, 0.015, 0.18]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.85} roughness={0.2} />
+          </mesh>
+          <mesh position={[0.2, 0.02, 0]}>
+            <boxGeometry args={[0.025, 0.015, 0.18]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.85} roughness={0.2} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 4: Chef NPC facing street (-z) */}
+      <group
+        position={[1.05, 0, -1.2]}
+        rotation={[0, Math.PI, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          npcWaveRef.current = 2.0;
+          onInspectCuriosity?.('job_chef');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <ChefNpc waveTimerRef={npcWaveRef} />
+      </group>
+    </group>
+  );
+}

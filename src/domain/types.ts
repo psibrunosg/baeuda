@@ -260,7 +260,11 @@ export type SpeechKey =
   | 'job_librarian'
   | 'world_book_read'
   | 'world_book_pencil'
-  | 'world_book_backpack';
+  | 'world_book_backpack'
+  | 'job_chef'
+  | 'world_pizza_slice'
+  | 'world_pizza_menu'
+  | 'world_pizza_plate';
 
 export interface CounterDemoBeat {
   prop: PropName;
