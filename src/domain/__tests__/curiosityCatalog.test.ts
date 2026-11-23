@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { checkCuriosityAnswer, CURIOSITY_CATALOG } from '../curiosityCatalog';
 
 describe('curiosityCatalog', () => {
-  it('contains 6 rich fruit crates and 6 neighborhood professions', () => {
+  it('contains 6 rich fruit crates and neighborhood professions', () => {
     const items = Object.values(CURIOSITY_CATALOG);
     expect(items.filter((i) => i.category === 'fruit')).toHaveLength(6);
-    expect(items.filter((i) => i.category === 'profession')).toHaveLength(6);
+    expect(items.filter((i) => i.category === 'profession').length).toBeGreaterThanOrEqual(7);
   });
 
   it('validates typed or spoken English answers flexibly', () => {

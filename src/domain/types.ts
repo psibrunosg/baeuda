@@ -244,7 +244,11 @@ export type SpeechKey =
   | 'world_tire_oil'
   | 'world_clothes_shoes'
   | 'world_tech_headphones'
-  | 'world_construction_ladder';
+  | 'world_construction_ladder'
+  | 'job_pharmacist'
+  | 'world_pharmacy_medicine'
+  | 'world_pharmacy_bandaid'
+  | 'world_pharmacy_thermometer';
 
 export interface CounterDemoBeat {
   prop: PropName;

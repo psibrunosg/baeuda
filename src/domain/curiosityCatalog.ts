@@ -178,6 +178,27 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
     discoveryKey: 'world_tech_headphones',
     collectible: { itemId: 'headphones', icon: '🎧', label: 'Headphones' },
   },
+  job_pharmacist: {
+    id: 'job_pharmacist',
+    category: 'profession',
+    icon: '💊',
+    question: 'What is this job?',
+    canonicalAnswer: 'Pharmacist',
+    acceptedAnswers: ['pharmacist', 'a pharmacist', 'doctor', 'chemist'],
+    speechKey: 'job_pharmacist',
+    discoveryKey: 'world_job_pharmacist',
+  },
+  city_bandaid: {
+    id: 'city_bandaid',
+    category: 'city',
+    icon: '🩹',
+    question: 'What is in the first-aid box?',
+    canonicalAnswer: 'Band-aid',
+    acceptedAnswers: ['bandaid', 'band aid', 'bandage', 'first aid'],
+    speechKey: 'world_pharmacy_bandaid',
+    discoveryKey: 'world_pharmacy_bandaid',
+    collectible: { itemId: 'bandaid', icon: '🩹', label: 'Band-aid' },
+  },
 };
 
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {

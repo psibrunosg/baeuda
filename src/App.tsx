@@ -422,6 +422,8 @@ export default function App() {
       }
       if (key === 'world_bakery_bread') {
         setInventoryIds((prev) => (prev.includes('bread') ? prev : [...prev, 'bread']));
+      } else if (key === 'world_pharmacy_medicine') {
+        setInventoryIds((prev) => (prev.includes('medicine') ? prev : [...prev, 'medicine']));
       }
     },
     [audioPlayer],

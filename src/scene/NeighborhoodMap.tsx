@@ -20,6 +20,7 @@ import {
   InteractiveTechShop,
   InteractiveTireShop,
 } from './CityShops';
+import { InteractivePharmacy } from './CityShopsPhase2';
 import {
   AcrossStreetPromenade,
   BackgroundBakery,
@@ -608,6 +609,20 @@ export function NeighborhoodMap({
       <InteractiveConstructionSite
         position={[7.45, 0.06, 4.35]}
         rotationY={-0.22}
+        isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
+      <InteractivePharmacy
+        position={[-7.25, 0.06, -0.55]}
+        rotationY={0.18}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
