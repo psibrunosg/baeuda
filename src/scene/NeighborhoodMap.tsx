@@ -13,7 +13,7 @@ import {
   PlazaMusicianNpc,
 } from './StylizedCharacters';
 import { StreetMicroEvents } from './StreetMicroEvents';
-import { InteractiveBakery } from './CityShops';
+import { InteractiveBakery, InteractiveTireShop } from './CityShops';
 import {
   AcrossStreetPromenade,
   BackgroundBakery,
@@ -504,6 +504,19 @@ export function NeighborhoodMap({
       <InteractiveBakery
         position={[-4.55, 0.06, 4.45]}
         rotationY={0.16}
+        isNight={timeOfDay === 'night'}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
+      <InteractiveTireShop
+        position={[4.65, 0.06, 4.42]}
+        rotationY={-0.16}
         isNight={timeOfDay === 'night'}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);

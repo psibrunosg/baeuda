@@ -209,7 +209,10 @@ export type SpeechKey =
   | 'cafe_a1_like_done'
   | 'world_bakery_bread'
   | 'world_bakery_oven'
-  | 'world_bakery_bell';
+  | 'world_bakery_bell'
+  | 'world_tire_pump'
+  | 'world_tire_wheel'
+  | 'world_tire_fix';
 
 export interface CounterDemoBeat {
   prop: PropName;

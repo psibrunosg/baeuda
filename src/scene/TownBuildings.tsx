@@ -482,20 +482,6 @@ export function AcrossStreetPromenade({ isNight }: { isNight: boolean }) {
 
       {/* Parked Retro City Car along the south curb */}
       <RetroParkedCar position={[-2.95, 0.06, 2.25]} rotationY={0.04} color="#60a5fa" isNight={isNight} />
-
-      {/* Across-the-Street Corner Gelateria / Newsstand (far-right foreground) */}
-      <group position={[5.1, 0.06, 4.45]}>
-        <RoundedBox args={[2.4, 2.0, 1.85]} radius={0.05} smoothness={2} position={[0, 1.0, 0]} castShadow receiveShadow>
-          <meshStandardMaterial color="#f4d9c6" bumpMap={textures.plasterBump} bumpScale={0.01} roughness={0.88} />
-        </RoundedBox>
-        <RoundedBox args={[2.58, 0.24, 2.02]} radius={0.04} smoothness={2} position={[0, 2.1, 0]} castShadow>
-          <meshStandardMaterial color="#3b82f6" roughness={0.82} />
-        </RoundedBox>
-        <mesh position={[0, 0.88, -0.94]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[1.25, 0.82]} />
-          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
-        </mesh>
-      </group>
     </group>
   );
 }

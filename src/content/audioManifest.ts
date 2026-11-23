@@ -636,6 +636,26 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.5, viseme: 'viseme_ee' },
     { at: 1.8, viseme: null },
   ]),
+  world_tire_pump: line('world_tire_pump', 'Pump air! Full tire!', 1700, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_fv' },
+    { at: 1.35, viseme: 'viseme_aa' },
+    { at: 1.6, viseme: null },
+  ]),
+  world_tire_wheel: line('world_tire_wheel', 'Spin the wheel! Ready to drive!', 1950, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.5, viseme: 'viseme_ee' },
+    { at: 1.05, viseme: 'viseme_ee' },
+    { at: 1.55, viseme: 'viseme_aa' },
+    { at: 1.85, viseme: null },
+  ]),
+  world_tire_fix: line('world_tire_fix', 'Wrench! Fix the car!', 1650, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.5, viseme: 'viseme_fv' },
+    { at: 1.0, viseme: 'viseme_aa' },
+    { at: 1.55, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
