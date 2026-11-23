@@ -524,6 +524,23 @@ export default function App() {
     [audioPlayer, showRewardToast],
   );
 
+  const handleEnterPizzeria = useCallback(() => {
+    audioPlayer.stop();
+    stopVoice();
+    resetPourState();
+    setMinimapOpen(false);
+    setActiveCuriosityId(null);
+    setActiveView('pizzeria');
+  }, [audioPlayer, resetPourState, stopVoice]);
+
+  const handleCompletePizzeria = useCallback(() => {
+    setProfile((prev) =>
+      updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pizzeria_kitchen'), 20)),
+    );
+    showRewardToast('🍕 Hot pizza made! +20 🪙 earned!');
+    setActiveView('map');
+  }, [showRewardToast]);
+
   const handleMapBlockedBump = useCallback(() => {
     setMapBlockedHint(true);
     if (mapBlockedTimerRef.current) {
@@ -631,7 +648,9 @@ export default function App() {
             ? plazaStage === 'explore'
               ? 'plaza_explore'
               : 'plaza_rhythm'
-            : activeView === 'map'
+            : activeView === 'pizzeria'
+              ? 'pizzeria_kitchen'
+              : activeView === 'map'
               ? mapBlockedHint
                 ? 'map_locked_border'
                 : 'map_explore'
@@ -678,6 +697,8 @@ export default function App() {
         onCompleteCafeCycle={handleCompleteCafeCycle}
         onEnterMarket={handleEnterMarket}
         onEnterPlaza={handleEnterPlaza}
+        onEnterPizzeria={handleEnterPizzeria}
+        onCompletePizzeria={handleCompletePizzeria}
         onMarketStageChange={setMarketStage}
         onCompleteMarket={handleCompleteMarket}
         onPlazaStageChange={setPlazaStage}
@@ -814,6 +835,7 @@ export default function App() {
             }));
             setMinimapOpen(false);
           }}
+          onEnterPizzeria={handleEnterPizzeria}
           onClose={() => setMinimapOpen(false)}
         />
       )}

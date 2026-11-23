@@ -285,7 +285,12 @@ export type SpeechKey =
   | 'job_postal'
   | 'world_post_package'
   | 'world_post_letter'
-  | 'world_bank_atm';
+  | 'world_bank_atm'
+  | 'pizza_kitchen_intro'
+  | 'pizza_step_dough'
+  | 'pizza_step_sauce'
+  | 'pizza_step_cheese'
+  | 'pizza_step_done';
 
 export interface CounterDemoBeat {
   prop: PropName;

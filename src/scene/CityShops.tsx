@@ -11,6 +11,7 @@ export interface InteractiveShopProps {
   isNight: boolean;
   onTriggerAudio: (key: SpeechKey, ringPos: [number, number, number]) => void;
   onInspectCuriosity?: (curiosityId: string) => void;
+  onEnterInterior?: () => void;
 }
 
 function setPointer(over: boolean) {

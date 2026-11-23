@@ -28,10 +28,15 @@ export const CITY_DIRECTORY: readonly CityDirectoryEntry[] = [
 
 interface CityMinimapModalProps {
   onSelectLocation: (entry: CityDirectoryEntry) => void;
+  onEnterPizzeria?: () => void;
   onClose: () => void;
 }
 
-export function CityMinimapModal({ onSelectLocation, onClose }: CityMinimapModalProps) {
+export function CityMinimapModal({
+  onSelectLocation,
+  onEnterPizzeria,
+  onClose,
+}: CityMinimapModalProps) {
   const north = CITY_DIRECTORY.filter((e) => e.side === 'north');
   const south = CITY_DIRECTORY.filter((e) => e.side === 'south');
 
@@ -83,6 +88,23 @@ export function CityMinimapModal({ onSelectLocation, onClose }: CityMinimapModal
             </button>
           ))}
         </div>
+
+        {onEnterPizzeria && (
+          <div className="minimap-interiors-bar">
+            <span className="minimap-section-label" style={{ margin: 0 }}>Playable 3D Interiors</span>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="minimap-card"
+                style={{ flexDirection: 'row', gap: 8, padding: '8px 14px' }}
+                onClick={onEnterPizzeria}
+              >
+                <span aria-hidden="true">🍕</span>
+                <span className="minimap-name">Enter Pizzeria Kitchen</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

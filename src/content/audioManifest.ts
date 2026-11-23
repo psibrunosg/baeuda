@@ -1048,6 +1048,41 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.45, viseme: 'viseme_mbp' },
     { at: 1.8, viseme: null },
   ]),
+  pizza_kitchen_intro: line('pizza_kitchen_intro', 'Let us make a pizza! Tap the dough!', 2150, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.55, viseme: 'viseme_mbp' },
+    { at: 1.15, viseme: 'viseme_aa' },
+    { at: 1.7, viseme: 'viseme_oo' },
+    { at: 2.05, viseme: null },
+  ]),
+  pizza_step_dough: line('pizza_step_dough', 'Golden pizza dough! Now add tomato sauce!', 2250, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.55, viseme: 'viseme_mbp' },
+    { at: 1.15, viseme: 'viseme_aa' },
+    { at: 1.75, viseme: 'viseme_oo' },
+    { at: 2.15, viseme: null },
+  ]),
+  pizza_step_sauce: line('pizza_step_sauce', 'Red tomato sauce! Now add yellow cheese!', 2250, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.55, viseme: 'viseme_oo' },
+    { at: 1.15, viseme: 'viseme_aa' },
+    { at: 1.75, viseme: 'viseme_ee' },
+    { at: 2.15, viseme: null },
+  ]),
+  pizza_step_cheese: line('pizza_step_cheese', 'Melted cheese! Now add pepperoni and basil!', 2300, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.6, viseme: 'viseme_ee' },
+    { at: 1.2, viseme: 'viseme_mbp' },
+    { at: 1.8, viseme: 'viseme_ee' },
+    { at: 2.2, viseme: null },
+  ]),
+  pizza_step_done: line('pizza_step_done', 'Hot pizza is ready! Delicious!', 2050, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.5, viseme: 'viseme_mbp' },
+    { at: 1.05, viseme: 'viseme_ee' },
+    { at: 1.55, viseme: 'viseme_oo' },
+    { at: 1.95, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

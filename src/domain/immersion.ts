@@ -41,6 +41,7 @@ export type GuidanceContext =
   | 'market_basket'
   | 'plaza_explore'
   | 'plaza_rhythm'
+  | 'pizzeria_kitchen'
   | 'constellation';
 
 export interface GuidanceSegment {
@@ -301,6 +302,29 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: 'fast', highlight: true },
       { text: ' and ' },
       { text: 'slow', highlight: true },
+    ],
+  },
+  pizzeria_kitchen: {
+    onboarding: [{ text: 'Toque nos ingredientes na bancada para montar a pizza' }],
+    blended: [
+      { text: 'Monte a pizza: ' },
+      { text: 'dough', highlight: true },
+      { text: ' · ' },
+      { text: 'sauce', highlight: true },
+      { text: ' · ' },
+      { text: 'cheese', highlight: true },
+      { text: ' · ' },
+      { text: 'pepperoni', highlight: true },
+    ],
+    immersive: [
+      { text: 'Build the pizza: tap ' },
+      { text: 'dough', highlight: true },
+      { text: ', ' },
+      { text: 'sauce', highlight: true },
+      { text: ', ' },
+      { text: 'cheese', highlight: true },
+      { text: ' & ' },
+      { text: 'toppings', highlight: true },
     ],
   },
   constellation: {

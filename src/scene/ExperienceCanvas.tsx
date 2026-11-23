@@ -22,9 +22,10 @@ import { CafeScene } from './CafeScene';
 import { LeoBarista } from './LeoBarista';
 import { MarketScene, type MarketStage } from './MarketScene';
 import { NeighborhoodMap, type AvatarPose } from './NeighborhoodMap';
+import { PizzeriaScene } from './PizzeriaScene';
 import { PlazaScene, type PlazaStage } from './PlazaScene';
 
-export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'badges';
+export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'pizzeria' | 'badges';
 export type CameraMode = 'third_person' | 'first_person' | 'overview';
 
 export interface ExperienceCanvasProps {
@@ -58,6 +59,8 @@ export interface ExperienceCanvasProps {
   onCompleteCafeCycle?: (cycleId: CafeCycleId, concepts: readonly ConceptId[]) => void;
   onEnterMarket?: () => void;
   onEnterPlaza?: () => void;
+  onEnterPizzeria?: () => void;
+  onCompletePizzeria?: () => void;
   onMarketStageChange?: (stage: MarketStage) => void;
   onCompleteMarket?: () => void;
   onPlazaStageChange?: (stage: PlazaStage) => void;
@@ -193,12 +196,13 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isCafeCycle = props.activeView === 'cafe_cycle';
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
+  const isPizzeria = props.activeView === 'pizzeria';
   const isNightMap = isMap && props.timeOfDay === 'night';
   const isRainyMap = isMap && props.weather === 'rainy';
 
   const effectiveAnchor: CameraAnchorId = isMap
     ? 'cam_mapa'
-    : isCafeCycle
+    : isCafeCycle || isPizzeria
       ? 'cam_balcao'
       : isMarket
         ? 'cam_mercado'
@@ -324,6 +328,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         onEnterCafe={props.onEnterCafe}
         onEnterMarket={props.onEnterMarket}
         onEnterPlaza={props.onEnterPlaza}
+        onEnterPizzeria={props.onEnterPizzeria}
         onExploreObject={props.onExploreObject}
         onInspectCuriosity={props.onInspectCuriosity}
         onMapBlockedBump={props.onMapBlockedBump}
@@ -343,6 +348,12 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         onStageChange={props.onPlazaStageChange ?? (() => {})}
         onPlayAudio={props.onExploreObject ?? (() => {})}
         onComplete={props.onCompletePlaza ?? (() => {})}
+      />
+
+      <PizzeriaScene
+        visible={isPizzeria}
+        onPlayAudio={props.onExploreObject ?? (() => {})}
+        onComplete={props.onCompletePizzeria ?? (() => {})}
       />
 
       <CafeScene
