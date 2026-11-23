@@ -116,6 +116,12 @@ export type SpeechKey =
   | 'world_bicycle'
   | 'world_flowers'
   | 'world_light'
+  | 'world_light_on'
+  | 'world_light_off'
+  | 'world_water_flowers'
+  | 'world_day_sun'
+  | 'world_night_light'
+  | 'world_cat_water'
   | 'world_table'
   | 'world_water_fountain';
 

@@ -9,6 +9,7 @@ import {
   type LessonPhase,
 } from './domain/lessonEngine';
 import { createInitialProfile, promoteConceptToVoice } from './domain/learnerMemory';
+import type { GuidanceContext } from './domain/immersion';
 import type { ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
@@ -16,6 +17,7 @@ import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapt
 import type { AssetMode } from './scene/contracts';
 import { ExperienceCanvas, type ActiveView } from './scene/ExperienceCanvas';
 import { DebugAudioBar } from './ui/DebugAudioBar';
+import { GuidancePill } from './ui/GuidancePill';
 import { LessonHud } from './ui/LessonHud';
 import { SensoryCard } from './ui/SensoryCard';
 import { TopNav } from './ui/TopNav';
@@ -27,6 +29,8 @@ export default function App() {
   const [profile, setProfile] = useState<LearnerProfile>(() => loadProfile());
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
+  const [timeOfDay, setTimeOfDay] = useState<'day' | 'night'>('day');
+  const [mapBlockedHint, setMapBlockedHint] = useState(false);
   const [assetMode, setAssetMode] = useState<AssetMode>('greybox');
   const [selectedConcept, setSelectedConcept] = useState<ConceptId | null>(null);
   const [pourProgressUi, setPourProgressUi] = useState(0);
@@ -52,6 +56,7 @@ export default function App() {
   const voiceTokenRef = useRef(0);
   const unmountedRef = useRef(false);
   const hesitationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mapBlockedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasMountedRef = useRef(false);
   const skipNextPersistRef = useRef(false);
   const persistedProfileRef = useRef(profile);
@@ -75,6 +80,10 @@ export default function App() {
       if (hesitationTimerRef.current) {
         clearTimeout(hesitationTimerRef.current);
         hesitationTimerRef.current = null;
+      }
+      if (mapBlockedTimerRef.current) {
+        clearTimeout(mapBlockedTimerRef.current);
+        mapBlockedTimerRef.current = null;
       }
     };
   }, [audioPlayer]);
@@ -188,6 +197,10 @@ export default function App() {
       if (hesitationTimerRef.current) {
         clearTimeout(hesitationTimerRef.current);
         hesitationTimerRef.current = null;
+      }
+      if (mapBlockedTimerRef.current) {
+        clearTimeout(mapBlockedTimerRef.current);
+        mapBlockedTimerRef.current = null;
       }
     };
   }, [activeView, lesson.awaitingInput, lesson.phase, lesson.roundIndex, audioStatus.isPlaying, dispatch]);
@@ -320,6 +333,26 @@ export default function App() {
     [audioPlayer],
   );
 
+  const handleToggleTimeOfDay = useCallback(() => {
+    setTimeOfDay((prev) => {
+      const next = prev === 'day' ? 'night' : 'day';
+      audioPlayer.play(next === 'night' ? 'world_night_light' : 'world_day_sun');
+      return next;
+    });
+  }, [audioPlayer]);
+
+  const handleMapBlockedBump = useCallback(() => {
+    setMapBlockedHint(true);
+    if (mapBlockedTimerRef.current) {
+      clearTimeout(mapBlockedTimerRef.current);
+    }
+    mapBlockedTimerRef.current = setTimeout(() => {
+      if (!unmountedRef.current) {
+        setMapBlockedHint(false);
+      }
+    }, 3200);
+  }, []);
+
   const handleSelectConcept = useCallback(
     (id: ConceptId) => {
       stopVoice();
@@ -386,6 +419,23 @@ export default function App() {
   const starCount = Object.keys(profile.constellation).length;
   const selectedNode = selectedConcept ? (profile.constellation[selectedConcept] ?? null) : null;
 
+  const guidanceContext: GuidanceContext =
+    activeView === 'constellation'
+      ? 'constellation'
+      : activeView === 'map'
+        ? mapBlockedHint
+          ? 'map_locked_border'
+          : 'map_explore'
+        : lesson.phase === 'action_pour'
+          ? 'cafe_pour'
+          : lesson.phase === 'personal_choice'
+            ? 'cafe_choice'
+            : lesson.phase === 'micro_echo'
+              ? 'cafe_echo'
+              : lesson.awaitingInput
+                ? 'cafe_tap_prop'
+                : 'cafe_listen';
+
   return (
     <main className="app-shell">
       <ExperienceCanvas
@@ -394,6 +444,7 @@ export default function App() {
         cameraAnchor={lesson.cameraAnchor}
         cafeStatus={profile.locations.cafe}
         locations={profile.locations}
+        timeOfDay={timeOfDay}
         phase={lesson.phase}
         leoAnim={lesson.leoAnim}
         speechRef={audioPlayer.speechRef}
@@ -409,6 +460,7 @@ export default function App() {
         selectedConcept={selectedConcept}
         onEnterCafe={handleEnterCafe}
         onExploreObject={handleExploreObject}
+        onMapBlockedBump={handleMapBlockedBump}
         onPropTap={handlePropTap}
         onPourStart={handlePourStart}
         onPourEnd={handlePourEnd}
@@ -419,8 +471,20 @@ export default function App() {
         activeView={activeView}
         starCount={starCount}
         immersionSeconds={profile.immersionSeconds}
+        timeOfDay={timeOfDay}
+        onToggleTimeOfDay={handleToggleTimeOfDay}
         onSelectView={handleSelectView}
       />
+
+      {!(activeView === 'constellation' && selectedNode) && (
+        <GuidancePill
+          context={guidanceContext}
+          starCount={starCount}
+          darkSurface={
+            activeView === 'constellation' || (activeView === 'map' && timeOfDay === 'night')
+          }
+        />
+      )}
 
       <LessonHud
         activeView={activeView}

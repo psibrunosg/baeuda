@@ -310,3 +310,67 @@ body,
   font-size: 11px;
   cursor: pointer;
 }
+
+.time-toggle-btn {
+  width: 44px;
+  height: 44px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(10px);
+  font-size: 19px;
+}
+
+.guidance-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 102px;
+  transform: translateX(-50%);
+  z-index: 18;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(92vw, 480px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.88);
+  color: var(--ink-dark);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.guidance-pill-dark {
+  background: rgba(15, 23, 42, 0.82);
+  color: var(--ink-light);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.guidance-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.guidance-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.35);
+}
+
+.guidance-dot.lit {
+  background: var(--accent-amber);
+}
+
+.guidance-keyword {
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.guidance-pill-dark .guidance-keyword {
+  color: #fbbf24;
+}

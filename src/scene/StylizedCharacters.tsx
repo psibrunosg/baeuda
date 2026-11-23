@@ -393,3 +393,66 @@ export function PlazaMusicianNpc({ fogged = false }: { fogged?: boolean }) {
     </group>
   );
 }
+
+/**
+ * Cute Café Cat NPC for the emergent outdoor water-bowl micro-event:
+ * warm caramel body, pointed ears, wagging tail, happy hop when hydrated.
+ */
+export function CafeCatNpc({ happy = false }: { happy?: boolean }) {
+  const catRef = useRef<THREE.Group>(null);
+  const tailRef = useRef<THREE.Mesh>(null);
+  const textures = useMemo(() => getCafeTextures(), []);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (catRef.current) {
+      catRef.current.position.y = happy
+        ? Math.abs(Math.sin(t * 7.5)) * 0.09
+        : Math.sin(t * 2.4) * 0.008;
+    }
+    if (tailRef.current) {
+      tailRef.current.rotation.z = Math.sin(t * (happy ? 10 : 3.2)) * 0.35;
+    }
+  });
+
+  return (
+    <group ref={catRef}>
+      {/* Sitting cat body */}
+      <mesh position={[0, 0.12, 0]} castShadow>
+        <capsuleGeometry args={[0.085, 0.1, 8, 12]} />
+        <meshStandardMaterial color="#e69f5c" bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.88} />
+      </mesh>
+      {/* Cream belly patch */}
+      <mesh position={[0, 0.11, 0.068]}>
+        <sphereGeometry args={[0.055, 10, 10]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.9} />
+      </mesh>
+      {/* Head + triangular ears */}
+      <group position={[0, 0.27, 0.02]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.092, 14, 14]} />
+          <meshStandardMaterial color="#e69f5c" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.86} />
+        </mesh>
+        <mesh position={[-0.055, 0.085, 0]} rotation={[0, 0, 0.25]} castShadow>
+          <coneGeometry args={[0.032, 0.065, 4]} />
+          <meshStandardMaterial color="#d9823b" roughness={0.88} />
+        </mesh>
+        <mesh position={[0.055, 0.085, 0]} rotation={[0, 0, -0.25]} castShadow>
+          <coneGeometry args={[0.032, 0.065, 4]} />
+          <meshStandardMaterial color="#d9823b" roughness={0.88} />
+        </mesh>
+        <CharacterEyes z={0.08} y={0.01} spread={0.032} />
+        {/* Tiny pink nose */}
+        <mesh position={[0, -0.012, 0.09]}>
+          <sphereGeometry args={[0.012, 8, 8]} />
+          <meshStandardMaterial color="#f472b6" roughness={0.6} />
+        </mesh>
+      </group>
+      {/* Wagging tail */}
+      <mesh ref={tailRef} position={[0, 0.13, -0.09]} rotation={[0.55, 0, 0]} castShadow>
+        <capsuleGeometry args={[0.018, 0.14, 4, 8]} />
+        <meshStandardMaterial color="#d9823b" roughness={0.88} />
+      </mesh>
+    </group>
+  );
+}

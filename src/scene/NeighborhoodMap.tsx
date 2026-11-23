@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -6,6 +6,7 @@ import type { LocationId, LocationStatus, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
 import {
+  CafeCatNpc,
   LearnerAvatar,
   MarketVendorNpc,
   MiniLeoGreeter,
@@ -15,9 +16,11 @@ import {
 interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
+  timeOfDay?: 'day' | 'night';
   visible: boolean;
   onEnterCafe: () => void;
   onExploreObject?: (key: SpeechKey) => void;
+  onMapBlockedBump?: () => void;
 }
 
 const WALK_SPEED = 2.4;
@@ -157,9 +160,11 @@ function DistrictBarrier({
 export function NeighborhoodMap({
   cafeStatus,
   locations,
+  timeOfDay = 'day',
   visible,
   onEnterCafe,
   onExploreObject,
+  onMapBlockedBump,
 }: NeighborhoodMapProps) {
   const pulseRingRef = useRef<THREE.Mesh>(null);
   const puff1Ref = useRef<THREE.Mesh>(null);
@@ -167,6 +172,12 @@ export function NeighborhoodMap({
   const fountainRingRef = useRef<THREE.Mesh>(null);
   const exploreRingRef = useRef<THREE.Mesh>(null);
   const exploreTimerRef = useRef(0);
+  const catDropRef = useRef<THREE.Mesh>(null);
+
+  // Parallel Talk interactive world states (cause -> effect + spoken English)
+  const [streetlampOn, setStreetlampOn] = useState(true);
+  const [flowersBloomed, setFlowersBloomed] = useState(false);
+  const [catBowlFilled, setCatBowlFilled] = useState(false);
 
   // Walkable learner avatar state (all refs, zero per-frame React re-renders)
   const avatarGroupRef = useRef<THREE.Group>(null);
@@ -251,6 +262,11 @@ export function NeighborhoodMap({
       fountainRingRef.current.scale.set(ripple, ripple, 1);
     }
 
+    if (catDropRef.current && !catBowlFilled) {
+      catDropRef.current.position.y = 0.34 + Math.sin(t * 3.6) * 0.04;
+      catDropRef.current.rotation.y = t * 1.4;
+    }
+
     if (exploreRingRef.current) {
       if (exploreTimerRef.current > 0) {
         exploreTimerRef.current = Math.max(0, exploreTimerRef.current - dt);
@@ -287,6 +303,7 @@ export function NeighborhoodMap({
       if ((marketLocked && nextX < minX) || (plazaLocked && nextX > maxX)) {
         if (blockedBumpRef.current <= 0.05) {
           blockedBumpRef.current = 1;
+          onMapBlockedBump?.();
         }
       }
 
@@ -307,6 +324,7 @@ export function NeighborhoodMap({
           blockedBumpRef.current <= 0.05
         ) {
           blockedBumpRef.current = 1;
+          onMapBlockedBump?.();
         }
       }
 
@@ -712,10 +730,20 @@ export function NeighborhoodMap({
           ))}
         </group>
 
-        {/* Cozy Vintage Streetlamp (interactive: "Light.") */}
+        {/* Cozy Vintage Streetlamp (Parallel Talk toggle: "Light on!" / "Light off!") */}
         <group
           position={[-2.28, 0.02, 1.48]}
-          onClick={handleExploreTap('world_light', [-2.28, 0.07, 0.93])}
+          onClick={(e) => {
+            e.stopPropagation();
+            const next = !streetlampOn;
+            setStreetlampOn(next);
+            onExploreObject?.(next ? 'world_light_on' : 'world_light_off');
+            if (exploreRingRef.current) {
+              exploreRingRef.current.position.set(-2.28, 0.07, 0.93);
+              exploreRingRef.current.visible = true;
+              exploreTimerRef.current = 0.9;
+            }
+          }}
           onPointerOver={handleDoorPointerOver}
           onPointerOut={handleDoorPointerOut}
         >
@@ -726,20 +754,82 @@ export function NeighborhoodMap({
           <mesh position={[0, 1.98, 0]}>
             <sphereGeometry args={[0.14, 14, 14]} />
             <meshStandardMaterial
-              color="#fef9c3"
+              color={streetlampOn ? '#fef9c3' : '#94a3b8'}
               emissive="#fbbf24"
-              emissiveIntensity={1.35}
+              emissiveIntensity={streetlampOn ? (timeOfDay === 'night' ? 2.2 : 1.35) : 0}
               roughness={0.2}
             />
           </mesh>
-          <mesh position={[0, 1.98, 0]}>
-            <sphereGeometry args={[0.24, 12, 12]} />
-            <meshBasicMaterial color="#fde68a" transparent opacity={0.18} depthWrite={false} />
-          </mesh>
+          {streetlampOn && (
+            <mesh position={[0, 1.98, 0]}>
+              <sphereGeometry args={[0.26, 12, 12]} />
+              <meshBasicMaterial
+                color="#fde68a"
+                transparent
+                opacity={timeOfDay === 'night' ? 0.34 : 0.18}
+                depthWrite={false}
+              />
+            </mesh>
+          )}
+          <pointLight
+            position={[0, 1.88, 0]}
+            intensity={streetlampOn ? (timeOfDay === 'night' ? 4.5 : 0.8) : 0}
+            distance={6}
+            decay={2}
+            color="#ffd27d"
+          />
           <mesh position={[0, 2.13, 0]} castShadow>
             <coneGeometry args={[0.18, 0.12, 12]} />
             <meshStandardMaterial color="#27272a" metalness={0.65} roughness={0.4} />
           </mesh>
+        </group>
+
+        {/* Emergent Micro-Event: Café Cat + Interactive Water Bowl (zero dialogue!) */}
+        <group
+          position={[-0.78, 0.02, 1.48]}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCatBowlFilled(true);
+            onExploreObject?.('world_cat_water');
+            if (exploreRingRef.current) {
+              exploreRingRef.current.position.set(-0.78, 0.07, 0.93);
+              exploreRingRef.current.visible = true;
+              exploreTimerRef.current = 0.9;
+            }
+          }}
+          onPointerOver={handleDoorPointerOver}
+          onPointerOut={handleDoorPointerOut}
+        >
+          <group position={[-0.14, 0, -0.02]} rotation={[0, 0.55, 0]}>
+            <CafeCatNpc happy={catBowlFilled} />
+          </group>
+          {/* Ceramic water bowl */}
+          <mesh position={[0.14, 0.04, 0.04]} castShadow>
+            <cylinderGeometry args={[0.095, 0.11, 0.07, 16]} />
+            <meshStandardMaterial color="#e07a5f" roughness={0.4} />
+          </mesh>
+          {/* Shimmering blue water inside bowl once filled */}
+          <mesh position={[0.14, catBowlFilled ? 0.072 : 0.045, 0.04]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.078, 16]} />
+            <meshStandardMaterial
+              color={catBowlFilled ? '#22b8f0' : '#4a3728'}
+              emissive={catBowlFilled ? '#0ea5e9' : '#000000'}
+              emissiveIntensity={catBowlFilled ? 0.35 : 0}
+              roughness={0.12}
+            />
+          </mesh>
+          {/* Floating visual droplet cue above empty bowl (zero text!) */}
+          {!catBowlFilled && (
+            <mesh ref={catDropRef} geometry={geos.droplet} position={[0.14, 0.34, 0.04]} scale={0.62}>
+              <meshPhysicalMaterial
+                color="#38bdf8"
+                emissive="#0ea5e9"
+                emissiveIntensity={0.65}
+                roughness={0.08}
+                clearcoat={1}
+              />
+            </mesh>
+          )}
         </group>
 
         {/* Sidewalk Wooden A-Frame Easel (icon-only, zero text) */}
@@ -762,7 +852,7 @@ export function NeighborhoodMap({
           </mesh>
         </group>
 
-        {/* Lush Flowering Bushes flanking café corners (interactive: "Flowers.") */}
+        {/* Lush Flowering Bushes flanking café corners (Parallel Talk: "Water... flowers!") */}
         {[
           [-1.52, 0.14, 0.58],
           [1.5, 0.14, 0.46],
@@ -770,7 +860,17 @@ export function NeighborhoodMap({
           <group
             key={idx}
             position={[bx, by, bz]}
-            onClick={handleExploreTap('world_flowers', [bx, 0.07, bz - 0.55])}
+            scale={flowersBloomed ? 1.18 : 1}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFlowersBloomed((prev) => !prev);
+              onExploreObject?.('world_water_flowers');
+              if (exploreRingRef.current) {
+                exploreRingRef.current.position.set(bx, 0.07, bz - 0.55);
+                exploreRingRef.current.visible = true;
+                exploreTimerRef.current = 0.9;
+              }
+            }}
             onPointerOver={handleDoorPointerOver}
             onPointerOut={handleDoorPointerOut}
           >

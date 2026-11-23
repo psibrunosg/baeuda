@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { ConceptNode } from '../../domain/types';
 import { DebugAudioBar } from '../DebugAudioBar';
+import { GuidancePill } from '../GuidancePill';
 import { LessonHud } from '../LessonHud';
 import { SensoryCard } from '../SensoryCard';
 import { TopNav } from '../TopNav';
@@ -297,14 +298,40 @@ describe('DebugAudioBar', () => {
   });
 });
 
+describe('GuidancePill', () => {
+  it('renders progressive immersion stages from onboarding PT -> blended PT+EN -> immersive EN', () => {
+    const onboarding = renderToStaticMarkup(
+      createElement(GuidancePill, { context: 'cafe_pour', starCount: 0 }),
+    );
+    expect(onboarding).toContain('data-immersion-tier="onboarding"');
+    expect(onboarding).toContain('Segure o botão ou a jarra para servir');
+    expect(onboarding.match(/guidance-dot lit/g)).toHaveLength(1);
+
+    const blended = renderToStaticMarkup(
+      createElement(GuidancePill, { context: 'cafe_pour', starCount: 4 }),
+    );
+    expect(blended).toContain('data-immersion-tier="blended"');
+    expect(blended).toContain('<strong class="guidance-keyword">pour</strong>');
+    expect(blended.match(/guidance-dot lit/g)).toHaveLength(2);
+
+    const immersive = renderToStaticMarkup(
+      createElement(GuidancePill, { context: 'cafe_pour', starCount: 6 }),
+    );
+    expect(immersive).toContain('data-immersion-tier="immersive"');
+    expect(immersive).toContain('Hold to ');
+    expect(immersive).toContain('<strong class="guidance-keyword">pour</strong>');
+    expect(immersive.match(/guidance-dot lit/g)).toHaveLength(3);
+  });
+});
+
 describe('App', () => {
-  it('renders the initial map shell with TopNav, LessonHud play button, and DebugAudioBar', () => {
+  it('renders the initial map shell with TopNav, LessonHud play button, GuidancePill, and DebugAudioBar', () => {
     const markup = renderToStaticMarkup(createElement(App));
 
     expect(markup).toContain('class="app-shell"');
     expect(markup).toContain('00:00');
     expect(markup).toContain('aria-label="Enter"');
     expect(markup).toContain('DEV · map_arrival');
-    expect(markup).not.toMatch(FORBIDDEN_PORTUGUESE_PATTERN);
+    expect(markup).toContain('data-immersion-tier="onboarding"');
   });
 });

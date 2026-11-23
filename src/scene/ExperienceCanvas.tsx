@@ -28,6 +28,7 @@ export interface ExperienceCanvasProps {
   cameraAnchor: CameraAnchorId;
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
+  timeOfDay?: 'day' | 'night';
   phase: LessonPhase;
   leoAnim: LeoAnimation;
   speechRef: SpeechClockRef;
@@ -43,6 +44,7 @@ export interface ExperienceCanvasProps {
   selectedConcept: ConceptId | null;
   onEnterCafe: () => void;
   onExploreObject?: (key: SpeechKey) => void;
+  onMapBlockedBump?: () => void;
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
@@ -123,6 +125,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isConstellation = props.activeView === 'constellation';
   const isMap = props.activeView === 'map';
   const isLesson = props.activeView === 'lesson';
+  const isNightMap = isMap && props.timeOfDay === 'night';
 
   const effectiveAnchor: CameraAnchorId = isConstellation
     ? 'cam_constelacao'
@@ -130,7 +133,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       ? 'cam_mapa'
       : props.cameraAnchor;
 
-  const bgColor = isConstellation ? '#0a1024' : '#f3e5cf';
+  const bgColor = isConstellation ? '#0a1024' : isNightMap ? '#1b2642' : '#f3e5cf';
 
   return (
     <Canvas
@@ -180,17 +183,17 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       {/* Warm sky-to-wood bounce lighting */}
       <hemisphereLight
         args={[
-          isConstellation ? '#93c5fd' : '#fff6e6',
-          isConstellation ? '#1e1b4b' : '#8b5e3c',
-          isConstellation ? 0.5 : 0.85,
+          isConstellation || isNightMap ? '#93c5fd' : '#fff6e6',
+          isConstellation || isNightMap ? '#1e1b4b' : '#8b5e3c',
+          isConstellation ? 0.5 : isNightMap ? 0.45 : 0.85,
         ]}
       />
 
-      {/* Key sunlight with wide shadow frustum and acne-free bias */}
+      {/* Key sunlight / moonlight with wide shadow frustum and acne-free bias */}
       <directionalLight
         position={[4.2, 6.4, 4.6]}
-        intensity={isConstellation ? 0.8 : 1.55}
-        color="#ffe9c7"
+        intensity={isConstellation ? 0.8 : isNightMap ? 0.52 : 1.55}
+        color={isNightMap ? '#bfd7ff' : '#ffe9c7'}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -226,9 +229,11 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       <NeighborhoodMap
         cafeStatus={props.cafeStatus}
         locations={props.locations}
+        timeOfDay={props.timeOfDay}
         visible={isMap}
         onEnterCafe={props.onEnterCafe}
         onExploreObject={props.onExploreObject}
+        onMapBlockedBump={props.onMapBlockedBump}
       />
 
       <CafeScene

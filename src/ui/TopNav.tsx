@@ -4,6 +4,8 @@ interface TopNavProps {
   activeView: ActiveView;
   starCount: number;
   immersionSeconds: number;
+  timeOfDay?: 'day' | 'night';
+  onToggleTimeOfDay?: () => void;
   onSelectView: (view: 'map' | 'constellation') => void;
 }
 
@@ -18,10 +20,23 @@ export function TopNav({
   activeView,
   starCount,
   immersionSeconds,
+  timeOfDay = 'day',
+  onToggleTimeOfDay,
   onSelectView,
 }: TopNavProps) {
   return (
     <nav className="top-nav" aria-label="Navigation">
+      {activeView === 'map' && onToggleTimeOfDay && (
+        <button
+          type="button"
+          className="icon-btn time-toggle-btn"
+          aria-label={timeOfDay === 'day' ? 'Night' : 'Day'}
+          onClick={onToggleTimeOfDay}
+        >
+          {timeOfDay === 'day' ? '🌙' : '☀️'}
+        </button>
+      )}
+
       <div className="clock-pill" aria-label="Immersion time">
         <span aria-hidden="true">⏱</span>
         <span>{formatClock(immersionSeconds)}</span>

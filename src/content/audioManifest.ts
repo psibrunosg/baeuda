@@ -315,6 +315,41 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 0.0, viseme: 'viseme_aa' },
     { at: 0.72, viseme: null },
   ]),
+  world_light_on: line('world_light_on', 'Light on!', 1050, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.48, viseme: 'viseme_oo' },
+    { at: 0.92, viseme: null },
+  ]),
+  world_light_off: line('world_light_off', 'Light off!', 1050, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.48, viseme: 'viseme_oo' },
+    { at: 0.72, viseme: 'viseme_fv' },
+    { at: 0.94, viseme: null },
+  ]),
+  world_water_flowers: line('world_water_flowers', 'Water... flowers!', 1400, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.35, viseme: 'viseme_aa' },
+    { at: 0.78, viseme: 'viseme_fv' },
+    { at: 1.05, viseme: 'viseme_aa' },
+    { at: 1.3, viseme: null },
+  ]),
+  world_day_sun: line('world_day_sun', 'Day! Sun.', 1150, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.58, viseme: 'viseme_aa' },
+    { at: 1.02, viseme: null },
+  ]),
+  world_night_light: line('world_night_light', 'Night! Light.', 1200, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.62, viseme: 'viseme_aa' },
+    { at: 1.08, viseme: null },
+  ]),
+  world_cat_water: line('world_cat_water', 'Water! Good cat!', 1450, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.36, viseme: 'viseme_aa' },
+    { at: 0.78, viseme: 'viseme_oo' },
+    { at: 1.1, viseme: 'viseme_aa' },
+    { at: 1.35, viseme: null },
+  ]),
   world_table: line('world_table', 'Table.', 900, [
     { at: 0.0, viseme: 'viseme_ee' },
     { at: 0.76, viseme: null },
