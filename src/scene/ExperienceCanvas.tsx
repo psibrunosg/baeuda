@@ -169,7 +169,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
     >
       <color attach="background" args={[bgColor]} />
-      <fog attach="fog" args={[bgColor, isConstellation ? 14 : 8.2, isConstellation ? 34 : 20]} />
+      <fog attach="fog" args={[bgColor, isConstellation ? 14 : 11.5, isConstellation ? 34 : 28]} />
 
       {/* Studio & warm café IBL reflections (no external HDR download required) */}
       <Environment resolution={256} frames={1} environmentIntensity={isConstellation ? 0.55 : 0.72}>

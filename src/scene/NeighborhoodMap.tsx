@@ -14,8 +14,10 @@ import {
 } from './StylizedCharacters';
 import { StreetMicroEvents } from './StreetMicroEvents';
 import {
+  AcrossStreetPromenade,
   BackgroundBakery,
   BackgroundClocktower,
+  BackgroundTownhouse,
   CityRainParticles,
   PatioStringLights,
 } from './TownBuildings';
@@ -35,7 +37,7 @@ interface NeighborhoodMapProps {
 
 const WALK_SPEED = 2.4;
 const WALK_Z_MIN = -0.85;
-const WALK_Z_MAX = 2.55;
+const WALK_Z_MAX = 3.35;
 const MARKET_BORDER_X = -2.05;
 const PLAZA_BORDER_X = 2.05;
 
@@ -407,20 +409,20 @@ export function NeighborhoodMap({
 
   return (
     <group name="Neighborhood_Diorama">
-      {/* Grounded studio AO across the expanded town island */}
+      {/* Grounded studio AO across the full miniature city plateau */}
       <ContactShadows
         frames={1}
-        position={[0, 0.012, 0]}
-        opacity={0.32}
-        scale={18}
+        position={[0, 0.012, 0.6]}
+        opacity={0.3}
+        scale={24}
         blur={2.4}
-        far={3.5}
+        far={4}
         color="#4a3728"
       />
 
-      {/* Expanded Diorama Town Island: warm terracotta soil rim + sage turf */}
-      <mesh position={[0, -0.32, 0]} receiveShadow>
-        <cylinderGeometry args={[9.2, 8.7, 0.44, 48]} />
+      {/* Full Miniature City Island: warm terracotta soil rim + lush sage turf */}
+      <mesh position={[0, -0.32, 0.5]} receiveShadow>
+        <cylinderGeometry args={[13.2, 12.6, 0.44, 56]} />
         <meshStandardMaterial
           color="#a67c52"
           bumpMap={textures.clayBump}
@@ -428,8 +430,8 @@ export function NeighborhoodMap({
           roughness={0.95}
         />
       </mesh>
-      <mesh position={[0, -0.05, 0]} receiveShadow>
-        <cylinderGeometry args={[9.15, 9.22, 0.12, 48]} />
+      <mesh position={[0, -0.05, 0.5]} receiveShadow>
+        <cylinderGeometry args={[13.15, 13.22, 0.12, 56]} />
         <meshStandardMaterial
           color="#b9c698"
           bumpMap={textures.clayBump}
@@ -480,12 +482,22 @@ export function NeighborhoodMap({
       </RoundedBox>
       {/* City-wide real rainfall particles */}
       <CityRainParticles active={weather === 'rainy'} />
-      {/* Warm festoon string lights draped from café awning to vintage streetlamp */}
+      {/* Warm festoon string lights draped from café awning to north streetlamp + across the street */}
       <PatioStringLights
         start={[-1.22, 1.82, 0.65]}
         end={[-2.28, 2.0, 0.93]}
         isNight={timeOfDay === 'night' || weather === 'rainy'}
       />
+      <PatioStringLights
+        start={[-2.28, 2.0, 0.93]}
+        end={[-2.65, 1.98, 3.05]}
+        isNight={timeOfDay === 'night' || weather === 'rainy'}
+      />
+
+      {/* Full Across-the-Street South Promenade (Pocket Park, Bus Stop, Parked Car, Corner Shops) */}
+      <group onClick={handleGroundWalkClick}>
+        <AcrossStreetPromenade isNight={timeOfDay === 'night'} />
+      </group>
       {/* Zebra crosswalk stripes leading to the café */}
       {[-0.45, -0.15, 0.15, 0.45].map((cx, idx) => (
         <mesh key={idx} position={[cx, 0.038, 1.72]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -539,9 +551,23 @@ export function NeighborhoodMap({
         }}
       />
 
-      {/* Detailed Background Town Architecture (Artisan Bakery & Bookshop Clocktower) */}
+      {/* Full Northern Skyline Architecture (Townhouses + Artisan Bakery + Bookshop Clocktower) */}
+      <BackgroundTownhouse
+        position={[-6.0, 0.04, -4.35]}
+        wallColor="#e9b8b0"
+        roofColor="#7c4732"
+        height={2.5}
+        isNight={timeOfDay === 'night'}
+      />
       <BackgroundBakery position={[-2.85, 0.04, -4.35]} isNight={timeOfDay === 'night'} />
       <BackgroundClocktower position={[2.85, 0.04, -4.4]} isNight={timeOfDay === 'night'} />
+      <BackgroundTownhouse
+        position={[5.95, 0.04, -4.35]}
+        wallColor="#c9dbc3"
+        roofColor="#5c4033"
+        height={2.65}
+        isNight={timeOfDay === 'night'}
+      />
 
       {/* Café da Esquina — tactile artisan diorama hero */}
       <group position={[0, 0.06, -0.55]}>
