@@ -219,6 +219,27 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
     speechKey: 'world_pet_dog',
     discoveryKey: 'world_pet_dog',
   },
+  job_barber: {
+    id: 'job_barber',
+    category: 'profession',
+    icon: '💈',
+    question: 'What is this job?',
+    canonicalAnswer: 'Barber',
+    acceptedAnswers: ['barber', 'a barber', 'hairdresser', 'stylist'],
+    speechKey: 'job_barber',
+    discoveryKey: 'world_job_barber',
+  },
+  city_scissors: {
+    id: 'city_scissors',
+    category: 'city',
+    icon: '✂️',
+    question: 'What tool cuts hair?',
+    canonicalAnswer: 'Scissors',
+    acceptedAnswers: ['scissors', 'scissor', 'comb'],
+    speechKey: 'world_barber_scissors',
+    discoveryKey: 'world_barber_scissors',
+    collectible: { itemId: 'scissors', icon: '✂️', label: 'Scissors' },
+  },
 };
 
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {

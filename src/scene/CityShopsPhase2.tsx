@@ -595,3 +595,274 @@ export function InteractivePetShop({
     </group>
   );
 }
+
+/**
+ * Unique Barber NPC: black barber apron, crisp white shirt, neat mustache, friendly wave.
+ */
+function BarberNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.2 + Math.sin(t * 10) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#18181b" roughness={0.5} />
+      </mesh>
+      <mesh position={[0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#18181b" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.85} />
+      </mesh>
+      {/* Black leather barber apron */}
+      <RoundedBox args={[0.19, 0.24, 0.085]} radius={0.02} smoothness={2} position={[0, 0.26, 0.092]} castShadow>
+        <meshStandardMaterial color="#18181b" roughness={0.75} />
+      </RoundedBox>
+      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#dba57d" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#dba57d" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.132, 16, 16]} />
+          <meshStandardMaterial color="#dba57d" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        {/* Classic mustache */}
+        <mesh position={[0, -0.035, 0.128]}>
+          <boxGeometry args={[0.075, 0.02, 0.02]} />
+          <meshStandardMaterial color="#27272a" roughness={0.8} />
+        </mesh>
+        <mesh position={[0, 0.065, -0.01]} castShadow>
+          <sphereGeometry args={[0.138, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
+          <meshStandardMaterial color="#27272a" roughness={0.82} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 8: Barbearia Interativa (Classic Neighborhood Barber Shop)
+ * Mounted on the Far North-East sidewalk facing +z.
+ * 4 interactive everyday props + clickable Barber profession:
+ * 1) Spinning Red-White-Blue Barber Pole ("Barber shop! Time for a haircut!")
+ * 2) Swivel Leather Barber Chair ("Sit in the chair! Cut your hair!")
+ * 3) Silver Scissors & Comb Tray -> opens Curiosity Card ("What tool cuts hair?", collects ✂️)
+ * 4) Barber NPC -> opens Curiosity Card ("What is this job?" -> Barber)
+ */
+export function InteractiveBarberShop({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+  onInspectCuriosity,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+
+  const poleRef = useRef<THREE.Group>(null);
+  const chairRef = useRef<THREE.Group>(null);
+  const poleBoostRef = useRef(0);
+  const chairSpinRef = useRef(0);
+  const npcWaveRef = useRef(0);
+
+  const glow = isNight ? 1.5 : 0.65;
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+    if (poleBoostRef.current > 0) {
+      poleBoostRef.current = Math.max(0, poleBoostRef.current - dt * 1.2);
+    }
+    if (poleRef.current) {
+      poleRef.current.rotation.y += dt * (1.8 + poleBoostRef.current * 6.5);
+    }
+    if (chairSpinRef.current > 0.04) {
+      chairSpinRef.current = Math.max(0, chairSpinRef.current - dt * 1.5);
+      if (chairRef.current) {
+        chairRef.current.rotation.y += chairSpinRef.current * dt * 6;
+      }
+    }
+  });
+
+  return (
+    <group name="Shop_Interactive_BarberShop" position={position} rotation={[0, rotationY, 0]}>
+      {/* Classic Cream & Burgundy Barber Storefront */}
+      <RoundedBox args={[2.45, 2.02, 1.8]} radius={0.04} smoothness={2} position={[0, 1.01, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#f5ebd8" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.85} />
+      </RoundedBox>
+      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
+        <meshStandardMaterial color="#7f1d1d" roughness={0.78} />
+      </RoundedBox>
+      {/* Warm Lit Barber Window (+z) */}
+      <group position={[0, 0.98, 0.92]}>
+        <RoundedBox args={[1.72, 0.9, 0.07]} radius={0.02} smoothness={2}>
+          <meshStandardMaterial color="#451a03" roughness={0.75} />
+        </RoundedBox>
+        <mesh position={[0, 0, 0.04]}>
+          <planeGeometry args={[1.56, 0.76]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 1: Spinning Classic Red-White-Blue Barber Pole */}
+      <group
+        position={[-1.08, 0.78, 1.08]}
+        onClick={(e) => {
+          e.stopPropagation();
+          poleBoostRef.current = 1.6;
+          onTriggerAudio('world_barber_pole', [position[0] - 1.08, 0.08, position[2] + 1.08]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Chrome caps */}
+        <mesh position={[0, 0.36, 0]}>
+          <sphereGeometry args={[0.1, 12, 12]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.85} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, -0.36, 0]}>
+          <sphereGeometry args={[0.1, 12, 12]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.85} roughness={0.2} />
+        </mesh>
+        {/* Rotating tricolor pole */}
+        <group ref={poleRef}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.085, 0.085, 0.64, 16]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.25} />
+          </mesh>
+          <mesh position={[0.075, 0, 0]} rotation={[0, 0, 0.2]}>
+            <boxGeometry args={[0.03, 0.6, 0.06]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.35} />
+          </mesh>
+          <mesh position={[-0.075, 0, 0]} rotation={[0, 0, -0.2]}>
+            <boxGeometry args={[0.03, 0.6, 0.06]} />
+            <meshStandardMaterial color="#2563eb" roughness={0.35} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 2: Swivel Burgundy Leather Barber Chair */}
+      <group
+        position={[-0.28, 0, 1.28]}
+        onClick={(e) => {
+          e.stopPropagation();
+          chairSpinRef.current = 2.4;
+          onTriggerAudio('world_barber_chair', [position[0] - 0.28, 0.08, position[2] + 1.28]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Chrome hydraulic pedestal */}
+        <mesh position={[0, 0.04, 0]}>
+          <cylinderGeometry args={[0.22, 0.24, 0.06, 16]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.85} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.18, 0]}>
+          <cylinderGeometry args={[0.05, 0.05, 0.24, 12]} />
+          <meshStandardMaterial color="#94a3b8" metalness={0.85} roughness={0.2} />
+        </mesh>
+        {/* Spinning seat & backrest */}
+        <group ref={chairRef} position={[0, 0.32, 0]}>
+          <RoundedBox args={[0.38, 0.1, 0.36]} radius={0.03} smoothness={2} castShadow>
+            <meshStandardMaterial color="#991b1b" roughness={0.48} />
+          </RoundedBox>
+          <RoundedBox args={[0.36, 0.38, 0.09]} radius={0.03} smoothness={2} position={[0, 0.22, -0.15]} castShadow>
+            <meshStandardMaterial color="#991b1b" roughness={0.48} />
+          </RoundedBox>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 3: Scissors & Comb Side Table (opens Curiosity Card!) */}
+      <group
+        position={[0.42, 0, 1.24]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_scissors');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.38, 0.56, 0.32]} radius={0.025} smoothness={2} position={[0, 0.28, 0]} castShadow>
+          <meshStandardMaterial color="#5a3827" roughness={0.8} />
+        </RoundedBox>
+        {/* Silver scissors blades */}
+        <mesh position={[0, 0.59, 0]} rotation={[0, 0.35, 0]}>
+          <boxGeometry args={[0.22, 0.02, 0.03]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.88} roughness={0.18} />
+        </mesh>
+        <mesh position={[0, 0.59, 0]} rotation={[0, -0.35, 0]}>
+          <boxGeometry args={[0.22, 0.02, 0.03]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.88} roughness={0.18} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 4: Barber NPC (click to learn Barber profession!) */}
+      <group
+        position={[0.96, 0, 1.2]}
+        onClick={(e) => {
+          e.stopPropagation();
+          npcWaveRef.current = 2.0;
+          onInspectCuriosity?.('job_barber');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <BarberNpc waveTimerRef={npcWaveRef} />
+      </group>
+    </group>
+  );
+}

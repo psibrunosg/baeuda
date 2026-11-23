@@ -15,6 +15,7 @@ export const INVENTORY_CATALOG: Record<string, InventoryItem> = {
   bandaid: { id: 'bandaid', icon: '🩹', label: 'Band-aid', speechKey: 'world_pharmacy_bandaid' },
   medicine: { id: 'medicine', icon: '💊', label: 'Medicine', speechKey: 'world_pharmacy_medicine' },
   petfood: { id: 'petfood', icon: '🦴', label: 'Pet food', speechKey: 'world_pet_food' },
+  scissors: { id: 'scissors', icon: '✂️', label: 'Scissors', speechKey: 'world_barber_scissors' },
   apple: { id: 'apple', icon: '🍎', label: 'Apple', speechKey: 'market_apple' },
   banana: { id: 'banana', icon: '🍌', label: 'Banana', speechKey: 'fruit_banana' },
   orange: { id: 'orange', icon: '🍊', label: 'Orange', speechKey: 'fruit_orange' },

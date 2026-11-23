@@ -252,7 +252,11 @@ export type SpeechKey =
   | 'job_vet'
   | 'world_pet_dog'
   | 'world_pet_food'
-  | 'world_pet_toy';
+  | 'world_pet_toy'
+  | 'job_barber'
+  | 'world_barber_pole'
+  | 'world_barber_chair'
+  | 'world_barber_scissors';
 
 export interface CounterDemoBeat {
   prop: PropName;
