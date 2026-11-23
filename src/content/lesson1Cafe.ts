@@ -123,6 +123,16 @@ export const CONCEPT_VISUALS: Record<ConceptId, ConceptVisualMeta> = {
   hot: { id: 'hot', color: '#f97316', position3D: [-1.25, 1.35, -0.75], iconSymbol: '🔥' },
   cold: { id: 'cold', color: '#38bdf8', position3D: [1.35, 1.35, -0.75], iconSymbol: '❄️' },
   pour: { id: 'pour', color: '#eab308', position3D: [0.1, -0.35, 0.45], iconSymbol: '💧' },
+  // Lesson 2: Local Market cluster (left wing)
+  apple: { id: 'apple', color: '#ef4444', position3D: [-2.15, 0.1, 0.35], iconSymbol: '🍎' },
+  bread: { id: 'bread', color: '#d97706', position3D: [-2.35, -0.7, 0.65], iconSymbol: '🥖' },
+  big: { id: 'big', color: '#fb7185', position3D: [-2.55, 0.95, -0.2], iconSymbol: '🟠' },
+  small: { id: 'small', color: '#fde047', position3D: [-1.9, -0.85, 0.15], iconSymbol: '🔸' },
+  // Lesson 3: Central Plaza cluster (right wing)
+  bird: { id: 'bird', color: '#60a5fa', position3D: [2.1, 0.2, 0.3], iconSymbol: '🐦' },
+  music: { id: 'music', color: '#a855f7', position3D: [2.35, -0.65, 0.55], iconSymbol: '🎵' },
+  fast: { id: 'fast', color: '#f43f5e', position3D: [2.5, 0.95, -0.25], iconSymbol: '⚡' },
+  slow: { id: 'slow', color: '#34d399', position3D: [1.85, -0.85, 0.15], iconSymbol: '🍃' },
 };
 
 export const LESSON1_CAFE_SCRIPT: Lesson1Script = {

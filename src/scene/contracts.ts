@@ -14,7 +14,9 @@ export const CAMERA_ANCHORS: Record<CameraAnchorId, CameraPose> = {
   cam_contraste: { position: [0, 1.62, 2.26], target: [-0.08, 1.18, -0.15] },
   cam_despejo: { position: [0.14, 1.66, 1.82], target: [0.04, 1.1, 0.08] },
   cam_caixa: { position: [0.35, 1.62, 2.05], target: [0.06, 1.14, 0.08] },
-  cam_constelacao: { position: [0, 7.15, 5.45], target: [0, 6.85, 0] },
+  cam_constelacao: { position: [0, 7.1, 6.95], target: [0, 6.75, 0] },
+  cam_mercado: { position: [0, 1.72, 2.45], target: [0, 1.16, -0.2] },
+  cam_praca: { position: [0, 1.78, 2.75], target: [0, 1.05, -0.15] },
 };
 
 const VALID_PROPS = new Set<string>([

@@ -359,6 +359,102 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 0.32, viseme: 'viseme_aa' },
     { at: 0.82, viseme: null },
   ]),
+  market_hi_maya: line('market_hi_maya', 'Hi! Welcome to the market!', 1700, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.45, viseme: 'viseme_oo' },
+    { at: 1.05, viseme: 'viseme_aa' },
+    { at: 1.55, viseme: null },
+  ]),
+  market_apple: line('market_apple', 'Apple.', 900, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.38, viseme: 'viseme_mbp' },
+    { at: 0.78, viseme: null },
+  ]),
+  market_bread: line('market_bread', 'Bread.', 900, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.32, viseme: 'viseme_ee' },
+    { at: 0.78, viseme: null },
+  ]),
+  market_big: line('market_big', 'Big!', 850, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.25, viseme: 'viseme_ee' },
+    { at: 0.72, viseme: null },
+  ]),
+  market_small: line('market_small', 'Small.', 950, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.35, viseme: 'viseme_oo' },
+    { at: 0.82, viseme: null },
+  ]),
+  market_ask_big_apple: line('market_ask_big_apple', 'Big apple, please.', 1400, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.42, viseme: 'viseme_aa' },
+    { at: 0.92, viseme: 'viseme_ee' },
+    { at: 1.28, viseme: null },
+  ]),
+  market_ask_small_apple: line('market_ask_small_apple', 'Small apple, please.', 1450, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.96, viseme: 'viseme_ee' },
+    { at: 1.32, viseme: null },
+  ]),
+  market_basket_prompt: line('market_basket_prompt', 'Put in the basket!', 1450, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_ee' },
+    { at: 0.88, viseme: 'viseme_aa' },
+    { at: 1.32, viseme: null },
+  ]),
+  market_basket_done: line('market_basket_done', 'Nice! Fresh apple and bread!', 1800, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.55, viseme: 'viseme_fv' },
+    { at: 0.98, viseme: 'viseme_aa' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.68, viseme: null },
+  ]),
+  plaza_hi_sam: line('plaza_hi_sam', 'Hey! Listen to the plaza!', 1650, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.45, viseme: 'viseme_ee' },
+    { at: 1.05, viseme: 'viseme_aa' },
+    { at: 1.52, viseme: null },
+  ]),
+  plaza_music: line('plaza_music', 'Music.', 950, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.3, viseme: 'viseme_oo' },
+    { at: 0.82, viseme: null },
+  ]),
+  plaza_bird: line('plaza_bird', 'Bird!', 900, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.32, viseme: 'viseme_aa' },
+    { at: 0.78, viseme: null },
+  ]),
+  plaza_fast: line('plaza_fast', 'Fast!', 850, [
+    { at: 0.0, viseme: 'viseme_fv' },
+    { at: 0.3, viseme: 'viseme_aa' },
+    { at: 0.72, viseme: null },
+  ]),
+  plaza_slow: line('plaza_slow', 'Slow...', 1150, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.55, viseme: 'viseme_oo' },
+    { at: 1.02, viseme: null },
+  ]),
+  plaza_ask_fast: line('plaza_ask_fast', 'Play fast!', 1150, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.48, viseme: 'viseme_fv' },
+    { at: 0.72, viseme: 'viseme_aa' },
+    { at: 1.05, viseme: null },
+  ]),
+  plaza_ask_slow: line('plaza_ask_slow', 'Now, play slow...', 1400, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.55, viseme: 'viseme_mbp' },
+    { at: 0.92, viseme: 'viseme_oo' },
+    { at: 1.28, viseme: null },
+  ]),
+  plaza_celebrate: line('plaza_celebrate', 'Bravo! Beautiful music!', 1750, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.35, viseme: 'viseme_oo' },
+    { at: 0.85, viseme: 'viseme_mbp' },
+    { at: 1.25, viseme: 'viseme_oo' },
+    { at: 1.62, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
@@ -368,4 +464,12 @@ export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
   hot: 'word_hot',
   cold: 'word_cold',
   pour: 'pour_coffee_prompt',
+  apple: 'market_apple',
+  bread: 'market_bread',
+  big: 'market_big',
+  small: 'market_small',
+  music: 'plaza_music',
+  bird: 'plaza_bird',
+  fast: 'plaza_fast',
+  slow: 'plaza_slow',
 };

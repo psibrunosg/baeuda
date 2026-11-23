@@ -8,7 +8,12 @@ import {
   type LessonEvent,
   type LessonPhase,
 } from './domain/lessonEngine';
-import { createInitialProfile, promoteConceptToVoice } from './domain/learnerMemory';
+import {
+  applyLesson2Outcome,
+  applyLesson3Outcome,
+  createInitialProfile,
+  promoteConceptToVoice,
+} from './domain/learnerMemory';
 import type { GuidanceContext } from './domain/immersion';
 import type { ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
@@ -16,6 +21,8 @@ import { loadProfile, resetProfile, saveProfile } from './services/learnerStorag
 import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapture';
 import type { AssetMode } from './scene/contracts';
 import { ExperienceCanvas, type ActiveView } from './scene/ExperienceCanvas';
+import type { MarketStage } from './scene/MarketScene';
+import type { PlazaStage } from './scene/PlazaScene';
 import { DebugAudioBar } from './ui/DebugAudioBar';
 import { GuidancePill } from './ui/GuidancePill';
 import { LessonHud } from './ui/LessonHud';
@@ -29,6 +36,8 @@ export default function App() {
   const [profile, setProfile] = useState<LearnerProfile>(() => loadProfile());
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
+  const [marketStage, setMarketStage] = useState<MarketStage>('explore');
+  const [plazaStage, setPlazaStage] = useState<PlazaStage>('explore');
   const [timeOfDay, setTimeOfDay] = useState<'day' | 'night'>('day');
   const [mapBlockedHint, setMapBlockedHint] = useState(false);
   const [assetMode, setAssetMode] = useState<AssetMode>('greybox');
@@ -326,6 +335,51 @@ export default function App() {
     [audioPlayer, beginVoiceCapture],
   );
 
+  const handleEnterMarket = useCallback(() => {
+    audioPlayer.stop();
+    stopVoice();
+    setSelectedConcept(null);
+    setMarketStage('explore');
+    setActiveView('market');
+    audioPlayer.play('market_hi_maya');
+  }, [audioPlayer, stopVoice]);
+
+  const handleCompleteMarket = useCallback(() => {
+    const next = applyLesson2Outcome(profileRef.current, new Date().toISOString());
+    profileRef.current = next;
+    setProfile(next);
+    setActiveView('constellation');
+  }, []);
+
+  const handleEnterPlaza = useCallback(() => {
+    audioPlayer.stop();
+    stopVoice();
+    setSelectedConcept(null);
+    setPlazaStage('explore');
+    setActiveView('plaza');
+    audioPlayer.play('plaza_hi_sam');
+  }, [audioPlayer, stopVoice]);
+
+  const handleCompletePlaza = useCallback(() => {
+    const next = applyLesson3Outcome(profileRef.current, new Date().toISOString());
+    profileRef.current = next;
+    setProfile(next);
+    setActiveView('constellation');
+  }, []);
+
+  const handleStartNextLesson = useCallback(() => {
+    const locs = profileRef.current.locations;
+    if (locs.cafe !== 'familiar') {
+      handleEnterCafe();
+    } else if (locs.market === 'discovered') {
+      handleEnterMarket();
+    } else if (locs.plaza === 'discovered') {
+      handleEnterPlaza();
+    } else {
+      handleEnterCafe();
+    }
+  }, [handleEnterCafe, handleEnterMarket, handleEnterPlaza]);
+
   const handleExploreObject = useCallback(
     (key: SpeechKey) => {
       audioPlayer.play(key);
@@ -422,19 +476,29 @@ export default function App() {
   const guidanceContext: GuidanceContext =
     activeView === 'constellation'
       ? 'constellation'
-      : activeView === 'map'
-        ? mapBlockedHint
-          ? 'map_locked_border'
-          : 'map_explore'
-        : lesson.phase === 'action_pour'
-          ? 'cafe_pour'
-          : lesson.phase === 'personal_choice'
-            ? 'cafe_choice'
-            : lesson.phase === 'micro_echo'
-              ? 'cafe_echo'
-              : lesson.awaitingInput
-                ? 'cafe_tap_prop'
-                : 'cafe_listen';
+      : activeView === 'market'
+        ? marketStage === 'explore'
+          ? 'market_explore'
+          : marketStage === 'contrast'
+            ? 'market_contrast'
+            : 'market_basket'
+        : activeView === 'plaza'
+          ? plazaStage === 'explore'
+            ? 'plaza_explore'
+            : 'plaza_rhythm'
+          : activeView === 'map'
+            ? mapBlockedHint
+              ? 'map_locked_border'
+              : 'map_explore'
+            : lesson.phase === 'action_pour'
+              ? 'cafe_pour'
+              : lesson.phase === 'personal_choice'
+                ? 'cafe_choice'
+                : lesson.phase === 'micro_echo'
+                  ? 'cafe_echo'
+                  : lesson.awaitingInput
+                    ? 'cafe_tap_prop'
+                    : 'cafe_listen';
 
   return (
     <main className="app-shell">
@@ -458,7 +522,15 @@ export default function App() {
         orbsLaunching={lesson.orbsLaunching}
         constellationNodes={profile.constellation}
         selectedConcept={selectedConcept}
+        marketStage={marketStage}
+        plazaStage={plazaStage}
         onEnterCafe={handleEnterCafe}
+        onEnterMarket={handleEnterMarket}
+        onEnterPlaza={handleEnterPlaza}
+        onMarketStageChange={setMarketStage}
+        onCompleteMarket={handleCompleteMarket}
+        onPlazaStageChange={setPlazaStage}
+        onCompletePlaza={handleCompletePlaza}
         onExploreObject={handleExploreObject}
         onMapBlockedBump={handleMapBlockedBump}
         onPropTap={handlePropTap}
@@ -493,7 +565,7 @@ export default function App() {
         pourProgress={pourProgressUi}
         isListening={isListening}
         voiceLevel={voiceLevel}
-        onStartCafe={handleEnterCafe}
+        onStartCafe={handleStartNextLesson}
         onRequestHelp={() => {
           stopVoice();
           dispatch({ type: 'HELP_REQUESTED' });

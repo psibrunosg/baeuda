@@ -1,4 +1,9 @@
-import { LESSON1_CONCEPTS, upsertConceptNode } from './constellation';
+import {
+  LESSON1_CONCEPTS,
+  LESSON2_CONCEPTS,
+  LESSON3_CONCEPTS,
+  upsertConceptNode,
+} from './constellation';
 import type { AcquisitionStage, ConceptId, DrinkChoice, LearnerProfile, OralComfort } from './types';
 
 export interface Lesson1Outcome {
@@ -66,6 +71,67 @@ export function applyLesson1Outcome(
       cafe: 'familiar',
       market:
         profile.locations.market === 'unexplored' ? 'discovered' : profile.locations.market,
+    },
+    constellation: nextConstellation,
+  };
+}
+
+export function applyLesson2Outcome(
+  profile: LearnerProfile,
+  nowIso: string,
+): LearnerProfile {
+  let nextConstellation = { ...profile.constellation };
+  for (const conceptId of LESSON2_CONCEPTS) {
+    nextConstellation = upsertConceptNode(
+      nextConstellation,
+      conceptId,
+      'root',
+      false,
+      'market',
+      nowIso,
+    );
+  }
+  const completedLessonIds = profile.completedLessonIds.includes('lesson2_market')
+    ? profile.completedLessonIds
+    : [...profile.completedLessonIds, 'lesson2_market'];
+
+  return {
+    ...profile,
+    completedLessonIds,
+    locations: {
+      ...profile.locations,
+      market: 'familiar',
+      plaza: profile.locations.plaza === 'unexplored' ? 'discovered' : profile.locations.plaza,
+    },
+    constellation: nextConstellation,
+  };
+}
+
+export function applyLesson3Outcome(
+  profile: LearnerProfile,
+  nowIso: string,
+): LearnerProfile {
+  let nextConstellation = { ...profile.constellation };
+  for (const conceptId of LESSON3_CONCEPTS) {
+    nextConstellation = upsertConceptNode(
+      nextConstellation,
+      conceptId,
+      'root',
+      false,
+      'plaza',
+      nowIso,
+    );
+  }
+  const completedLessonIds = profile.completedLessonIds.includes('lesson3_plaza')
+    ? profile.completedLessonIds
+    : [...profile.completedLessonIds, 'lesson3_plaza'];
+
+  return {
+    ...profile,
+    completedLessonIds,
+    locations: {
+      ...profile.locations,
+      plaza: 'familiar',
     },
     constellation: nextConstellation,
   };

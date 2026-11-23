@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { getContrastPartner } from '../constellation';
 import {
   getGuidanceCopy,
   resolveImmersionTier,
   type GuidanceContext,
 } from '../immersion';
+import {
+  applyLesson1Outcome,
+  applyLesson2Outcome,
+  applyLesson3Outcome,
+  createInitialProfile,
+} from '../learnerMemory';
 
 const ALL_CONTEXTS: readonly GuidanceContext[] = [
   'map_explore',
@@ -47,5 +54,33 @@ describe('progressive immersion engine', () => {
       expect(immersive.tierIndex).toBe(3);
       expect(immersive.plainText).not.toMatch(PORTUGUESE_SCAFFOLD_WORDS);
     }
+  });
+});
+
+describe('multi-lesson district progression (Cafe -> Market -> Plaza)', () => {
+  it('unlocks Market after Lesson 1, Plaza after Lesson 2, and lights all 14 concepts after Lesson 3', () => {
+    const now = '2026-11-23T12:00:00.000Z';
+    const p0 = createInitialProfile();
+    expect(p0.locations).toEqual({ cafe: 'discovered', market: 'unexplored', plaza: 'unexplored' });
+
+    const p1 = applyLesson1Outcome(p0, {
+      preferredDrink: 'hot_coffee',
+      oralComfort: 'vocal',
+      hintedConcepts: [],
+      vocalConcepts: ['coffee'],
+      nowIso: now,
+    });
+    expect(p1.locations).toEqual({ cafe: 'familiar', market: 'discovered', plaza: 'unexplored' });
+    expect(Object.keys(p1.constellation)).toHaveLength(6);
+
+    const p2 = applyLesson2Outcome(p1, now);
+    expect(p2.locations).toEqual({ cafe: 'familiar', market: 'familiar', plaza: 'discovered' });
+    expect(Object.keys(p2.constellation)).toHaveLength(10);
+
+    const p3 = applyLesson3Outcome(p2, now);
+    expect(p3.locations).toEqual({ cafe: 'familiar', market: 'familiar', plaza: 'familiar' });
+    expect(Object.keys(p3.constellation)).toHaveLength(14);
+    expect(getContrastPartner('big')).toBe('small');
+    expect(getContrastPartner('fast')).toBe('slow');
   });
 });

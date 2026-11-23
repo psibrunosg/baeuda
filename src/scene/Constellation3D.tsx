@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { LESSON1_CONCEPTS, LESSON1_EDGES } from '../domain/constellation';
+import { ALL_CONCEPTS, ALL_CONSTELLATION_EDGES } from '../domain/constellation';
 import type { AcquisitionStage, ConceptId, ConceptNode } from '../domain/types';
 import { CONCEPT_VISUALS } from '../content/lesson1Cafe';
 import { getCafeGeometries } from './cafeGeometries';
@@ -20,7 +20,7 @@ interface ConstellationEdgeSegment {
   secondaryPoints?: [[number, number, number], [number, number, number]];
 }
 
-const LESSON1_EDGE_SEGMENTS: readonly ConstellationEdgeSegment[] = LESSON1_EDGES.map((edge) => {
+const ALL_EDGE_SEGMENTS: readonly ConstellationEdgeSegment[] = ALL_CONSTELLATION_EDGES.map((edge) => {
   const p1 = CONCEPT_VISUALS[edge.from].position3D;
   const p2 = CONCEPT_VISUALS[edge.to].position3D;
   const isContrast = edge.kind === 'contrast';
@@ -198,6 +198,84 @@ function ConceptMiniature({
           </mesh>
         </group>
       );
+    case 'apple':
+      return (
+        <group scale={1.1}>
+          <mesh>
+            <sphereGeometry args={[0.125, 16, 16]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.22} />
+          </mesh>
+          <mesh position={[0.03, 0.13, 0]} rotation={[0, 0, -0.5]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshStandardMaterial color="#22c55e" emissive="#16a34a" emissiveIntensity={0.4} />
+          </mesh>
+        </group>
+      );
+    case 'bread':
+      return (
+        <mesh rotation={[0, 0.3, Math.PI / 2]} scale={1.05}>
+          <capsuleGeometry args={[0.075, 0.14, 8, 12]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.45} />
+        </mesh>
+      );
+    case 'big':
+      return (
+        <mesh>
+          <dodecahedronGeometry args={[0.16, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.25} />
+        </mesh>
+      );
+    case 'small':
+      return (
+        <mesh>
+          <dodecahedronGeometry args={[0.085, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.25} />
+        </mesh>
+      );
+    case 'bird':
+      return (
+        <group scale={1.1}>
+          <mesh>
+            <sphereGeometry args={[0.11, 14, 14]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.25} />
+          </mesh>
+          <mesh position={[0.11, 0.03, 0]} rotation={[0, 0, -Math.PI / 2]}>
+            <coneGeometry args={[0.035, 0.08, 6]} />
+            <meshStandardMaterial color="#facc15" emissive="#eab308" emissiveIntensity={0.5} />
+          </mesh>
+        </group>
+      );
+    case 'music':
+      return (
+        <group scale={1.1}>
+          <mesh position={[-0.04, -0.05, 0]}>
+            <sphereGeometry args={[0.07, 12, 12]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} />
+          </mesh>
+          <mesh position={[0.02, 0.05, 0]}>
+            <boxGeometry args={[0.025, 0.2, 0.025]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} />
+          </mesh>
+          <mesh position={[0.07, 0.13, 0]} rotation={[0, 0, -0.35]}>
+            <boxGeometry args={[0.1, 0.03, 0.025]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} />
+          </mesh>
+        </group>
+      );
+    case 'fast':
+      return (
+        <mesh rotation={[0, 0, -0.3]}>
+          <octahedronGeometry args={[0.145, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity + 0.2} roughness={0.2} />
+        </mesh>
+      );
+    case 'slow':
+      return (
+        <mesh>
+          <torusGeometry args={[0.11, 0.038, 10, 20]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.25} />
+        </mesh>
+      );
   }
 }
 
@@ -320,7 +398,7 @@ function FlyingOrbs({ active }: { active: boolean }) {
     const ease = 1 - Math.pow(1 - p, 3);
 
     groupRef.current.children.forEach((child, idx) => {
-      const concept = LESSON1_CONCEPTS[idx];
+      const concept = ALL_CONCEPTS[idx];
       const target = CONCEPT_VISUALS[concept].position3D;
       const startX = (idx - 2.5) * 0.25;
       child.position.set(
@@ -336,7 +414,7 @@ function FlyingOrbs({ active }: { active: boolean }) {
 
   return (
     <group ref={groupRef}>
-      {LESSON1_CONCEPTS.map((id) => (
+      {ALL_CONCEPTS.map((id) => (
         <mesh key={id}>
           <sphereGeometry args={[0.075, 12, 12]} />
           <meshBasicMaterial color={CONCEPT_VISUALS[id].color} />
@@ -371,7 +449,7 @@ export function Constellation3D({
           <AmbientStarfield />
 
           {/* Semantic & Contrast Edges */}
-          {LESSON1_EDGE_SEGMENTS.map((edge) => {
+          {ALL_EDGE_SEGMENTS.map((edge) => {
             if (!nodes[edge.from] || !nodes[edge.to]) return null;
 
             return (
@@ -403,7 +481,7 @@ export function Constellation3D({
           })}
 
           {/* Lit Concept Stars with 3D sculpted miniatures */}
-          {LESSON1_CONCEPTS.map((id) => {
+          {ALL_CONCEPTS.map((id) => {
             const node = nodes[id];
             if (!node) return null;
             return (

@@ -1,4 +1,18 @@
-export type ConceptId = 'cup' | 'coffee' | 'water' | 'hot' | 'cold' | 'pour';
+export type ConceptId =
+  | 'cup'
+  | 'coffee'
+  | 'water'
+  | 'hot'
+  | 'cold'
+  | 'pour'
+  | 'apple'
+  | 'bread'
+  | 'big'
+  | 'small'
+  | 'music'
+  | 'bird'
+  | 'fast'
+  | 'slow';
 
 export type AcquisitionStage = 'seed' | 'root' | 'voice';
 
@@ -70,7 +84,9 @@ export type CameraAnchorId =
   | 'cam_contraste'
   | 'cam_despejo'
   | 'cam_caixa'
-  | 'cam_constelacao';
+  | 'cam_constelacao'
+  | 'cam_mercado'
+  | 'cam_praca';
 
 export type SpeechKey =
   | 'hi_leo'
@@ -123,7 +139,24 @@ export type SpeechKey =
   | 'world_night_light'
   | 'world_cat_water'
   | 'world_table'
-  | 'world_water_fountain';
+  | 'world_water_fountain'
+  | 'market_hi_maya'
+  | 'market_apple'
+  | 'market_bread'
+  | 'market_big'
+  | 'market_small'
+  | 'market_ask_big_apple'
+  | 'market_ask_small_apple'
+  | 'market_basket_prompt'
+  | 'market_basket_done'
+  | 'plaza_hi_sam'
+  | 'plaza_music'
+  | 'plaza_bird'
+  | 'plaza_fast'
+  | 'plaza_slow'
+  | 'plaza_ask_fast'
+  | 'plaza_ask_slow'
+  | 'plaza_celebrate';
 
 export interface CounterDemoBeat {
   prop: PropName;

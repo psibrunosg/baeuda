@@ -19,6 +19,8 @@ interface NeighborhoodMapProps {
   timeOfDay?: 'day' | 'night';
   visible: boolean;
   onEnterCafe: () => void;
+  onEnterMarket?: () => void;
+  onEnterPlaza?: () => void;
   onExploreObject?: (key: SpeechKey) => void;
   onMapBlockedBump?: () => void;
 }
@@ -163,6 +165,8 @@ export function NeighborhoodMap({
   timeOfDay = 'day',
   visible,
   onEnterCafe,
+  onEnterMarket,
+  onEnterPlaza,
   onExploreObject,
   onMapBlockedBump,
 }: NeighborhoodMapProps) {
@@ -931,8 +935,21 @@ export function NeighborhoodMap({
         <StylizedTree position={[2.45, 0, -2.1]} scale={1.08} />
       </group>
 
-      {/* DISTRICT 2: Local Market (Lesson 2 — locked under fog until Café Lesson 1 completes) */}
-      <group position={[-4.35, 0.06, -0.45]}>
+      {/* DISTRICT 2: Local Market (Lesson 2 — clickable once unlocked after Café Lesson 1) */}
+      <group
+        position={[-4.35, 0.06, -0.45]}
+        onClick={(e) => {
+          if (marketLocked) return;
+          e.stopPropagation();
+          onEnterMarket?.();
+        }}
+        onPointerOver={(e) => {
+          if (marketLocked) return;
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={handleDoorPointerOut}
+      >
         <RoundedBox args={[2.25, 1.32, 1.45]} radius={0.05} smoothness={2} position={[0, 0.66, 0]}>
           <meshStandardMaterial
             color={marketLocked ? '#cbd5e1' : '#f5ebd8'}
@@ -977,6 +994,14 @@ export function NeighborhoodMap({
           <MarketVendorNpc fogged={marketLocked} />
         </group>
 
+        {/* Golden entry ring when unlocked */}
+        {!marketLocked && (
+          <mesh position={[0, 0.06, 1.35]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.38, 0.5, 32]} />
+            <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} />
+          </mesh>
+        )}
+
         {/* Map Lock Fog + Sawhorse Barrier */}
         {marketLocked && (
           <>
@@ -993,8 +1018,21 @@ export function NeighborhoodMap({
         )}
       </group>
 
-      {/* DISTRICT 3: Central Plaza (Lesson 3 — locked under fog until discovered) */}
-      <group position={[4.45, 0.06, -0.55]}>
+      {/* DISTRICT 3: Central Plaza (Lesson 3 — clickable once unlocked after Market Lesson 2) */}
+      <group
+        position={[4.45, 0.06, -0.55]}
+        onClick={(e) => {
+          if (plazaLocked) return;
+          e.stopPropagation();
+          onEnterPlaza?.();
+        }}
+        onPointerOver={(e) => {
+          if (plazaLocked) return;
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={handleDoorPointerOut}
+      >
         <StylizedTree position={[0.45, 0, -0.45]} scale={0.95} fogged={plazaLocked} />
         {/* Tiered Water Fountain */}
         <mesh position={[-0.35, 0.22, 0.35]}>
@@ -1030,6 +1068,14 @@ export function NeighborhoodMap({
         <group position={[0.72, 0.1, 0.65]}>
           <PlazaMusicianNpc fogged={plazaLocked} />
         </group>
+
+        {/* Golden entry ring when unlocked */}
+        {!plazaLocked && (
+          <mesh position={[0, 0.06, 1.35]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.38, 0.5, 32]} />
+            <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} />
+          </mesh>
+        )}
 
         {/* Map Lock Fog + Sawhorse Barrier */}
         {plazaLocked && (

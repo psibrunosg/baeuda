@@ -15,6 +15,26 @@ export const LESSON1_CONCEPTS: readonly ConceptId[] = [
   'pour',
 ] as const;
 
+export const LESSON2_CONCEPTS: readonly ConceptId[] = [
+  'apple',
+  'bread',
+  'big',
+  'small',
+] as const;
+
+export const LESSON3_CONCEPTS: readonly ConceptId[] = [
+  'music',
+  'bird',
+  'fast',
+  'slow',
+] as const;
+
+export const ALL_CONCEPTS: readonly ConceptId[] = [
+  ...LESSON1_CONCEPTS,
+  ...LESSON2_CONCEPTS,
+  ...LESSON3_CONCEPTS,
+] as const;
+
 export const LESSON1_EDGES: readonly ConstellationEdge[] = [
   { from: 'cup', to: 'coffee', kind: 'situational' },
   { from: 'cup', to: 'water', kind: 'situational' },
@@ -23,6 +43,22 @@ export const LESSON1_EDGES: readonly ConstellationEdge[] = [
   { from: 'coffee', to: 'hot', kind: 'situational' },
   { from: 'water', to: 'cold', kind: 'situational' },
   { from: 'hot', to: 'cold', kind: 'contrast' },
+] as const;
+
+export const ALL_CONSTELLATION_EDGES: readonly ConstellationEdge[] = [
+  ...LESSON1_EDGES,
+  // Lesson 2: Local Market
+  { from: 'cup', to: 'apple', kind: 'narrative' },
+  { from: 'apple', to: 'bread', kind: 'situational' },
+  { from: 'apple', to: 'big', kind: 'situational' },
+  { from: 'apple', to: 'small', kind: 'situational' },
+  { from: 'big', to: 'small', kind: 'contrast' },
+  // Lesson 3: Central Plaza
+  { from: 'water', to: 'bird', kind: 'narrative' },
+  { from: 'bird', to: 'music', kind: 'situational' },
+  { from: 'music', to: 'fast', kind: 'situational' },
+  { from: 'music', to: 'slow', kind: 'situational' },
+  { from: 'fast', to: 'slow', kind: 'contrast' },
 ] as const;
 
 export const STAGE_RANK: Record<AcquisitionStage, number> = {
@@ -61,7 +97,7 @@ export function upsertConceptNode(
 }
 
 export function getContrastPartner(conceptId: ConceptId): ConceptId | null {
-  for (const edge of LESSON1_EDGES) {
+  for (const edge of ALL_CONSTELLATION_EDGES) {
     if (edge.kind !== 'contrast') continue;
     if (edge.from === conceptId) return edge.to;
     if (edge.to === conceptId) return edge.from;

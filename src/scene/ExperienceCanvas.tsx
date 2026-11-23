@@ -18,9 +18,11 @@ import { CAMERA_ANCHORS, type AssetMode } from './contracts';
 import { CafeScene } from './CafeScene';
 import { Constellation3D } from './Constellation3D';
 import { LeoBarista } from './LeoBarista';
+import { MarketScene, type MarketStage } from './MarketScene';
 import { NeighborhoodMap } from './NeighborhoodMap';
+import { PlazaScene, type PlazaStage } from './PlazaScene';
 
-export type ActiveView = 'map' | 'lesson' | 'constellation';
+export type ActiveView = 'map' | 'lesson' | 'market' | 'plaza' | 'constellation';
 
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
@@ -42,7 +44,15 @@ export interface ExperienceCanvasProps {
   orbsLaunching: boolean;
   constellationNodes: Partial<Record<ConceptId, ConceptNode>>;
   selectedConcept: ConceptId | null;
+  marketStage?: MarketStage;
+  plazaStage?: PlazaStage;
   onEnterCafe: () => void;
+  onEnterMarket?: () => void;
+  onEnterPlaza?: () => void;
+  onMarketStageChange?: (stage: MarketStage) => void;
+  onCompleteMarket?: () => void;
+  onPlazaStageChange?: (stage: PlazaStage) => void;
+  onCompletePlaza?: () => void;
   onExploreObject?: (key: SpeechKey) => void;
   onMapBlockedBump?: () => void;
   onPropTap: (prop: PropName) => void;
@@ -82,13 +92,13 @@ function CameraRig({
         controlsRef.current.enabled = false;
       }
 
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 5, dt);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 5, dt);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 5, dt);
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 6.5, dt);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 6.5, dt);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 6.5, dt);
 
-      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 6, dt);
-      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 6, dt);
-      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 6, dt);
+      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 7.5, dt);
+      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 7.5, dt);
+      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 7.5, dt);
 
       camera.lookAt(targetRef.current);
 
@@ -125,13 +135,19 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isConstellation = props.activeView === 'constellation';
   const isMap = props.activeView === 'map';
   const isLesson = props.activeView === 'lesson';
+  const isMarket = props.activeView === 'market';
+  const isPlaza = props.activeView === 'plaza';
   const isNightMap = isMap && props.timeOfDay === 'night';
 
   const effectiveAnchor: CameraAnchorId = isConstellation
     ? 'cam_constelacao'
     : isMap
       ? 'cam_mapa'
-      : props.cameraAnchor;
+      : isMarket
+        ? 'cam_mercado'
+        : isPlaza
+          ? 'cam_praca'
+          : props.cameraAnchor;
 
   const bgColor = isConstellation ? '#0a1024' : isNightMap ? '#1b2642' : '#f3e5cf';
 
@@ -232,8 +248,26 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         timeOfDay={props.timeOfDay}
         visible={isMap}
         onEnterCafe={props.onEnterCafe}
+        onEnterMarket={props.onEnterMarket}
+        onEnterPlaza={props.onEnterPlaza}
         onExploreObject={props.onExploreObject}
         onMapBlockedBump={props.onMapBlockedBump}
+      />
+
+      <MarketScene
+        visible={isMarket}
+        stage={props.marketStage ?? 'explore'}
+        onStageChange={props.onMarketStageChange ?? (() => {})}
+        onPlayAudio={props.onExploreObject ?? (() => {})}
+        onComplete={props.onCompleteMarket ?? (() => {})}
+      />
+
+      <PlazaScene
+        visible={isPlaza}
+        stage={props.plazaStage ?? 'explore'}
+        onStageChange={props.onPlazaStageChange ?? (() => {})}
+        onPlayAudio={props.onExploreObject ?? (() => {})}
+        onComplete={props.onCompletePlaza ?? (() => {})}
       />
 
       <CafeScene

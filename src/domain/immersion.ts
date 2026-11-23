@@ -8,6 +8,11 @@ export type GuidanceContext =
   | 'cafe_pour'
   | 'cafe_choice'
   | 'cafe_echo'
+  | 'market_explore'
+  | 'market_contrast'
+  | 'market_basket'
+  | 'plaza_explore'
+  | 'plaza_rhythm'
   | 'constellation';
 
 export interface GuidanceSegment {
@@ -131,6 +136,81 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: ' ou toque em 👋 para seguir' },
     ],
     immersive: [{ text: 'Speak into the mic or wave 👋 to continue' }],
+  },
+  market_explore: {
+    onboarding: [{ text: 'Toque na maçã e no pão na barraca da Maya' }],
+    blended: [
+      { text: 'Toque em ' },
+      { text: 'apple', highlight: true },
+      { text: ' e ' },
+      { text: 'bread', highlight: true },
+      { text: ' no mercado' },
+    ],
+    immersive: [
+      { text: 'Tap ' },
+      { text: 'apple', highlight: true },
+      { text: ' and ' },
+      { text: 'bread', highlight: true },
+    ],
+  },
+  market_contrast: {
+    onboarding: [{ text: 'Compare a maçã grande e a pequena · Toque na que a Maya pedir' }],
+    blended: [
+      { text: 'Compare ' },
+      { text: 'big', highlight: true },
+      { text: ' e ' },
+      { text: 'small', highlight: true },
+      { text: ' · Toque no pedido' },
+    ],
+    immersive: [
+      { text: 'Pick ' },
+      { text: 'big', highlight: true },
+      { text: ' or ' },
+      { text: 'small', highlight: true },
+    ],
+  },
+  market_basket: {
+    onboarding: [{ text: 'Toque na cesta de vime para guardar as compras' }],
+    blended: [
+      { text: 'Guarde tudo na ' },
+      { text: 'basket', highlight: true },
+    ],
+    immersive: [
+      { text: 'Tap the ' },
+      { text: 'basket', highlight: true },
+      { text: ' to pack' },
+    ],
+  },
+  plaza_explore: {
+    onboarding: [{ text: 'Toque no violão do Sam e no passarinho azul na fonte' }],
+    blended: [
+      { text: 'Toque em ' },
+      { text: 'music', highlight: true },
+      { text: ' e ' },
+      { text: 'bird', highlight: true },
+      { text: ' na praça' },
+    ],
+    immersive: [
+      { text: 'Tap ' },
+      { text: 'music', highlight: true },
+      { text: ' and ' },
+      { text: 'bird', highlight: true },
+    ],
+  },
+  plaza_rhythm: {
+    onboarding: [{ text: 'Experimente tocar rápido e devagar com o Sam' }],
+    blended: [
+      { text: 'Toque no ritmo ' },
+      { text: 'fast', highlight: true },
+      { text: ' e ' },
+      { text: 'slow', highlight: true },
+    ],
+    immersive: [
+      { text: 'Play ' },
+      { text: 'fast', highlight: true },
+      { text: ' and ' },
+      { text: 'slow', highlight: true },
+    ],
   },
   constellation: {
     onboarding: [{ text: 'Toque em qualquer estrela para ouvir novamente' }],
