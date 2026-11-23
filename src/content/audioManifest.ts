@@ -350,6 +350,34 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.1, viseme: 'viseme_aa' },
     { at: 1.35, viseme: null },
   ]),
+  world_mailbox_open: line('world_mailbox_open', 'Open! A letter!', 1350, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.35, viseme: 'viseme_mbp' },
+    { at: 0.8, viseme: 'viseme_ee' },
+    { at: 1.22, viseme: null },
+  ]),
+  world_mailbox_close: line('world_mailbox_close', 'Close.', 900, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.78, viseme: null },
+  ]),
+  world_apple_return: line('world_apple_return', 'Apple! In the box! Thanks!', 1750, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.42, viseme: 'viseme_mbp' },
+    { at: 0.88, viseme: 'viseme_oo' },
+    { at: 1.32, viseme: 'viseme_aa' },
+    { at: 1.62, viseme: null },
+  ]),
+  world_umbrella_open: line('world_umbrella_open', 'Rain! Open umbrella!', 1600, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.55, viseme: 'viseme_oo' },
+    { at: 0.95, viseme: 'viseme_mbp' },
+    { at: 1.48, viseme: null },
+  ]),
+  world_umbrella_close: line('world_umbrella_close', 'Close umbrella.', 1200, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.52, viseme: 'viseme_mbp' },
+    { at: 1.08, viseme: null },
+  ]),
   world_table: line('world_table', 'Table.', 900, [
     { at: 0.0, viseme: 'viseme_ee' },
     { at: 0.76, viseme: null },

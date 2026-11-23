@@ -12,6 +12,7 @@ import {
   MiniLeoGreeter,
   PlazaMusicianNpc,
 } from './StylizedCharacters';
+import { StreetMicroEvents } from './StreetMicroEvents';
 
 interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
@@ -483,6 +484,18 @@ export function NeighborhoodMap({
       <group ref={avatarGroupRef} position={[-0.35, 0.06, 1.98]}>
         <LearnerAvatar isWalkingRef={isWalkingRef} blockedBumpRef={blockedBumpRef} />
       </group>
+
+      {/* Emergent zero-dialogue street micro-events (Mailbox, Rolled Apple, Rain Umbrella) */}
+      <StreetMicroEvents
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
 
       {/* Background Storybook Town Silhouettes (Bakery & Bookshop Clocktower framing the horizon) */}
       <group position={[-2.9, 0.05, -4.35]}>
