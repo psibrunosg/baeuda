@@ -1,10 +1,12 @@
-import type { ActiveView } from '../scene/ExperienceCanvas';
+import type { ActiveView, CameraMode } from '../scene/ExperienceCanvas';
 
 interface TopNavProps {
   activeView: ActiveView;
+  cameraMode?: CameraMode;
   starCount: number;
   immersionSeconds: number;
   onSelectView: (view: 'map' | 'badges') => void;
+  onCycleCameraMode?: () => void;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -16,16 +18,32 @@ function formatClock(totalSeconds: number): string {
 
 export function TopNav({
   activeView,
+  cameraMode = 'third_person',
   starCount,
   immersionSeconds,
   onSelectView,
+  onCycleCameraMode,
 }: TopNavProps) {
+  const cameraIcon =
+    cameraMode === 'first_person' ? '👁' : cameraMode === 'overview' ? '🛰' : '🚶';
+
   return (
     <nav className="top-nav" aria-label="Navigation">
       <div className="clock-pill" aria-label="Immersion time">
         <span aria-hidden="true">⏱</span>
         <span>{formatClock(immersionSeconds)}</span>
       </div>
+
+      {activeView === 'map' && onCycleCameraMode && (
+        <button
+          type="button"
+          className="icon-btn time-toggle-btn"
+          aria-label="Camera view"
+          onClick={onCycleCameraMode}
+        >
+          {cameraIcon}
+        </button>
+      )}
 
       <div className="pill-toggle">
         <button

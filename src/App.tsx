@@ -23,7 +23,7 @@ import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
 import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapture';
 import type { AssetMode } from './scene/contracts';
-import { ExperienceCanvas, type ActiveView } from './scene/ExperienceCanvas';
+import { ExperienceCanvas, type ActiveView, type CameraMode } from './scene/ExperienceCanvas';
 import type { MarketStage } from './scene/MarketScene';
 import type { PlazaStage } from './scene/PlazaScene';
 import { BadgesHub } from './ui/BadgesHub';
@@ -39,6 +39,7 @@ export default function App() {
   const [profile, setProfile] = useState<LearnerProfile>(() => loadProfile());
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
+  const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
   const [activeCafeCycle, setActiveCafeCycle] =
     useState<Exclude<CafeCycleId, 'cafe_c1_drinks'>>('cafe_c2_food');
   const [marketStage, setMarketStage] = useState<MarketStage>('explore');
@@ -533,6 +534,7 @@ export default function App() {
     <main className="app-shell">
       <ExperienceCanvas
         activeView={activeView}
+        cameraMode={cameraMode}
         assetMode={assetMode}
         cameraAnchor={lesson.cameraAnchor}
         cafeStatus={profile.locations.cafe}
@@ -573,9 +575,19 @@ export default function App() {
 
       <TopNav
         activeView={activeView}
+        cameraMode={cameraMode}
         starCount={badgeCount}
         immersionSeconds={profile.immersionSeconds}
         onSelectView={handleSelectView}
+        onCycleCameraMode={() =>
+          setCameraMode((prev) =>
+            prev === 'third_person'
+              ? 'first_person'
+              : prev === 'first_person'
+                ? 'overview'
+                : 'third_person',
+          )
+        }
       />
 
       {activeView !== 'badges' && (

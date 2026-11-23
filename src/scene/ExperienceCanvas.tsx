@@ -20,13 +20,15 @@ import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
 import { LeoBarista } from './LeoBarista';
 import { MarketScene, type MarketStage } from './MarketScene';
-import { NeighborhoodMap } from './NeighborhoodMap';
+import { NeighborhoodMap, type AvatarPose } from './NeighborhoodMap';
 import { PlazaScene, type PlazaStage } from './PlazaScene';
 
 export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'badges';
+export type CameraMode = 'third_person' | 'first_person' | 'overview';
 
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
+  cameraMode?: CameraMode;
   assetMode: AssetMode;
   cameraAnchor: CameraAnchorId;
   cafeStatus: LocationStatus;
@@ -68,9 +70,15 @@ export interface ExperienceCanvasProps {
 function CameraRig({
   anchorId,
   orbitEnabled,
+  isMapView,
+  cameraMode,
+  avatarPoseRef,
 }: {
   anchorId: CameraAnchorId;
   orbitEnabled: boolean;
+  isMapView: boolean;
+  cameraMode: CameraMode;
+  avatarPoseRef: MutableRefObject<AvatarPose>;
 }) {
   const { camera } = useThree();
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
@@ -87,11 +95,44 @@ function CameraRig({
     if (controlsRef.current) {
       controlsRef.current.enabled = false;
     }
-  }, [anchorId, orbitEnabled]);
+  }, [anchorId, orbitEnabled, cameraMode]);
 
   useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+
+    if (isMapView && cameraMode === 'third_person') {
+      if (controlsRef.current) controlsRef.current.enabled = false;
+      const p = avatarPoseRef.current;
+      desiredPosRef.current.set(p.x, 2.25, p.z + 3.45);
+      desiredTargetRef.current.set(p.x, 0.85, p.z - 0.85);
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 6.5, dt);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 6.5, dt);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 6.5, dt);
+      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 7.5, dt);
+      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 7.5, dt);
+      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 7.5, dt);
+      camera.lookAt(targetRef.current);
+      return;
+    }
+
+    if (isMapView && cameraMode === 'first_person') {
+      if (controlsRef.current) controlsRef.current.enabled = false;
+      const p = avatarPoseRef.current;
+      const lookX = p.x + Math.sin(p.yaw) * 2.5;
+      const lookZ = p.z + Math.cos(p.yaw) * 2.5;
+      desiredPosRef.current.set(p.x, 0.84, p.z);
+      desiredTargetRef.current.set(lookX, 0.78, lookZ);
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 10, dt);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 10, dt);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 10, dt);
+      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 12, dt);
+      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 12, dt);
+      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 12, dt);
+      camera.lookAt(targetRef.current);
+      return;
+    }
+
     if (!orbitEnabled || isTransitioningRef.current) {
-      const dt = Math.min(delta, 0.05);
       if (controlsRef.current) {
         controlsRef.current.enabled = false;
       }
@@ -136,6 +177,8 @@ function CameraRig({
 }
 
 export function ExperienceCanvas(props: ExperienceCanvasProps) {
+  const avatarPoseRef = useRef<AvatarPose>({ x: -0.35, y: 0.06, z: 1.98, yaw: Math.PI });
+  const cameraMode: CameraMode = props.cameraMode ?? 'third_person';
   const isBadges = props.activeView === 'badges';
   const isMap = props.activeView === 'map' || isBadges;
   const isLesson = props.activeView === 'lesson';
@@ -252,7 +295,13 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         color="#ffd08a"
       />
 
-      <CameraRig anchorId={effectiveAnchor} orbitEnabled={props.activeView === 'map'} />
+      <CameraRig
+        anchorId={effectiveAnchor}
+        orbitEnabled={props.activeView === 'map' && cameraMode === 'overview'}
+        isMapView={isMap}
+        cameraMode={cameraMode}
+        avatarPoseRef={avatarPoseRef}
+      />
 
       <NeighborhoodMap
         cafeStatus={props.cafeStatus}
@@ -260,6 +309,8 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         timeOfDay={props.timeOfDay}
         weather={props.weather}
         visible={isMap}
+        hideAvatar={props.activeView === 'map' && cameraMode === 'first_person'}
+        avatarPoseRef={avatarPoseRef}
         onEnterCafe={props.onEnterCafe}
         onEnterMarket={props.onEnterMarket}
         onEnterPlaza={props.onEnterPlaza}

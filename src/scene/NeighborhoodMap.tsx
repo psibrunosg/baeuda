@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -29,12 +29,21 @@ import {
   PatioStringLights,
 } from './TownBuildings';
 
+export interface AvatarPose {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+}
+
 interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
   timeOfDay?: 'day' | 'night';
   weather?: 'sunny' | 'rainy';
   visible: boolean;
+  hideAvatar?: boolean;
+  avatarPoseRef?: MutableRefObject<AvatarPose>;
   onEnterCafe: () => void;
   onEnterMarket?: () => void;
   onEnterPlaza?: () => void;
@@ -182,6 +191,8 @@ export function NeighborhoodMap({
   timeOfDay = 'day',
   weather = 'sunny',
   visible,
+  hideAvatar = false,
+  avatarPoseRef,
   onEnterCafe,
   onEnterMarket,
   onEnterPlaza,
@@ -304,8 +315,8 @@ export function NeighborhoodMap({
     const avatar = avatarGroupRef.current;
     if (!avatar) return;
 
-    const minX = marketLocked ? MARKET_BORDER_X : -6.1;
-    const maxX = plazaLocked ? PLAZA_BORDER_X : 6.1;
+    const minX = marketLocked ? MARKET_BORDER_X : -7.9;
+    const maxX = plazaLocked ? PLAZA_BORDER_X : 7.9;
 
     const keys = keysRef.current;
     let dx = 0;
@@ -314,6 +325,23 @@ export function NeighborhoodMap({
     if (keys.KeyD || keys.ArrowRight) dx += 1;
     if (keys.KeyW || keys.ArrowUp) dz -= 1;
     if (keys.KeyS || keys.ArrowDown) dz += 1;
+
+    if (hideAvatar) {
+      // First-person intuitive steering: A/D turn view, W/S walk forward/back along yaw
+      const turnSpeed = 2.1;
+      if (keys.KeyA || keys.ArrowLeft) avatar.rotation.y += turnSpeed * dt;
+      if (keys.KeyD || keys.ArrowRight) avatar.rotation.y -= turnSpeed * dt;
+      let fwd = 0;
+      if (keys.KeyW || keys.ArrowUp) fwd += 1;
+      if (keys.KeyS || keys.ArrowDown) fwd -= 1;
+      if (fwd !== 0) {
+        dx = Math.sin(avatar.rotation.y) * fwd;
+        dz = Math.cos(avatar.rotation.y) * fwd;
+      } else {
+        dx = 0;
+        dz = 0;
+      }
+    }
 
     if (dx !== 0 || dz !== 0) {
       const len = Math.hypot(dx, dz);
@@ -331,7 +359,9 @@ export function NeighborhoodMap({
 
       avatar.position.x = THREE.MathUtils.clamp(nextX, minX, maxX);
       avatar.position.z = THREE.MathUtils.clamp(nextZ, WALK_Z_MIN, WALK_Z_MAX);
-      avatar.rotation.y = Math.atan2(dx, dz);
+      if (!hideAvatar) {
+        avatar.rotation.y = Math.atan2(dx, dz);
+      }
       isWalkingRef.current = true;
     } else if (walkTargetRef.current) {
       const tx = THREE.MathUtils.clamp(walkTargetRef.current.x, minX, maxX);
@@ -380,6 +410,13 @@ export function NeighborhoodMap({
       } else {
         walkRingRef.current.visible = false;
       }
+    }
+
+    if (avatarPoseRef) {
+      avatarPoseRef.current.x = avatar.position.x;
+      avatarPoseRef.current.y = avatar.position.y;
+      avatarPoseRef.current.z = avatar.position.z;
+      avatarPoseRef.current.yaw = avatar.rotation.y;
     }
   });
 
@@ -607,8 +644,13 @@ export function NeighborhoodMap({
         <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} />
       </mesh>
 
-      {/* Walkable Learner Avatar (starts outside Café on the sidewalk) */}
-      <group ref={avatarGroupRef} position={[-0.35, 0.06, 1.98]}>
+      {/* Walkable Learner Avatar (starts outside Café on the sidewalk facing the café) */}
+      <group
+        ref={avatarGroupRef}
+        position={[-0.35, 0.06, 1.98]}
+        rotation={[0, Math.PI, 0]}
+        visible={!hideAvatar}
+      >
         <LearnerAvatar isWalkingRef={isWalkingRef} blockedBumpRef={blockedBumpRef} />
       </group>
 
