@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -479,7 +479,17 @@ export function NeighborhoodMap({
     }
   });
 
-  if (!visible) return null;
+  const handleShopAudio = useCallback(
+    (key: SpeechKey, ringPos: [number, number, number]) => {
+      onExploreObject?.(key);
+      if (exploreRingRef.current) {
+        exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+        exploreRingRef.current.visible = true;
+        exploreTimerRef.current = 0.9;
+      }
+    },
+    [onExploreObject],
+  );
 
   const handleDoorClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
@@ -511,7 +521,7 @@ export function NeighborhoodMap({
   };
 
   return (
-    <group name="Neighborhood_Diorama">
+    <group name="Neighborhood_Diorama" visible={visible}>
       {/* Grounded studio AO across the full miniature city plateau */}
       <ContactShadows
         frames={1}
@@ -611,154 +621,77 @@ export function NeighborhoodMap({
         rotationY={0.16}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractiveTireShop
         position={[4.65, 0.06, 4.42]}
         rotationY={-0.16}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractiveClothingStore
         position={[-7.35, 0.06, 4.35]}
         rotationY={0.22}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractiveTechShop
         position={[7.25, 0.06, -0.55]}
         rotationY={-0.18}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractiveConstructionSite
         position={[7.45, 0.06, 4.35]}
         rotationY={-0.22}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractivePharmacy
         position={[-7.25, 0.06, -0.55]}
         rotationY={0.18}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractivePetShop
         position={[-9.95, 0.06, -0.45]}
         rotationY={0.26}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractiveBarberShop
         position={[9.95, 0.06, -0.45]}
         rotationY={-0.26}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractiveBookshop
         position={[-10.0, 0.06, 4.15]}
         rotationY={0.28}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractivePizzeria
         position={[10.0, 0.06, 4.15]}
         rotationY={-0.28}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       <InteractivePostBank
         position={[0.15, 0.06, 5.72]}
         rotationY={0}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
       {/* Zebra crosswalk stripes leading to the café */}
       {[-0.45, -0.15, 0.15, 0.45].map((cx, idx) => (
@@ -808,14 +741,7 @@ export function NeighborhoodMap({
       {/* Emergent zero-dialogue street micro-events (Mailbox, Rolled Apple, Patio Parasol) */}
       <StreetMicroEvents
         weather={weather}
-        onTriggerAudio={(key, ringPos) => {
-          onExploreObject?.(key);
-          if (exploreRingRef.current) {
-            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
-            exploreRingRef.current.visible = true;
-            exploreTimerRef.current = 0.9;
-          }
-        }}
+        onTriggerAudio={handleShopAudio}
       />
 
       {/* Full Northern Skyline Architecture (Townhouses + Artisan Bakery + Bookshop Clocktower) */}

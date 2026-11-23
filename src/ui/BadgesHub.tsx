@@ -6,10 +6,12 @@ import {
   evaluateNeighborhoodBadges,
   type EvaluationDeckId,
 } from '../domain/badgesAndGames';
+import { buildSrsReviewPairs } from '../domain/srsEngine';
 import type { LearnerProfile, SpeechKey } from '../domain/types';
 import { playRewardFanfare, playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
 
 type HubTab = 'badges' | 'connect' | 'memory';
+type ActiveDeckChoice = EvaluationDeckId | 'srs_smart';
 
 interface BadgesHubProps {
   profile: LearnerProfile;
@@ -27,7 +29,7 @@ export function BadgesHub({
   onClose,
 }: BadgesHubProps) {
   const [tab, setTab] = useState<HubTab>('badges');
-  const [deckId, setDeckId] = useState<EvaluationDeckId>('professions');
+  const [deckId, setDeckId] = useState<ActiveDeckChoice>('professions');
   const [seed, setSeed] = useState(11);
 
   // Connect-the-Dots state
@@ -40,10 +42,24 @@ export function BadgesHub({
   const [matchedMemoryPairIds, setMatchedMemoryPairIds] = useState<string[]>([]);
 
   const badges = useMemo(() => evaluateNeighborhoodBadges(profile), [profile]);
-  const connectCols = useMemo(() => createConnectColumns(deckId, seed), [deckId, seed]);
-  const memoryCards = useMemo(() => createMemoryCards(deckId, seed), [deckId, seed]);
+  const srsPairs = useMemo(() => buildSrsReviewPairs(profile, 6), [profile]);
+  const connectCols = useMemo(() => {
+    if (deckId === 'srs_smart') {
+      return { left: srsPairs, right: [...srsPairs].reverse() };
+    }
+    return createConnectColumns(deckId, seed);
+  }, [deckId, seed, srsPairs]);
+  const memoryCards = useMemo(() => {
+    if (deckId === 'srs_smart') {
+      return srsPairs.flatMap((pair) => [
+        { cardId: `${pair.id}_icon`, pairId: pair.id, kind: 'icon' as const, display: pair.icon, speechKey: pair.speechKey },
+        { cardId: `${pair.id}_word`, pairId: pair.id, kind: 'word' as const, display: pair.label, speechKey: pair.speechKey },
+      ]);
+    }
+    return createMemoryCards(deckId, seed);
+  }, [deckId, seed, srsPairs]);
 
-  const resetGames = (nextDeckId: EvaluationDeckId, nextSeed = seed + 3) => {
+  const resetGames = (nextDeckId: ActiveDeckChoice, nextSeed = seed + 3) => {
     setDeckId(nextDeckId);
     setSeed(nextSeed);
     setSelectedLeft(null);
@@ -157,6 +173,14 @@ export function BadgesHub({
 
         {tab !== 'badges' && (
           <div className="deck-selector">
+            <button
+              type="button"
+              className={deckId === 'srs_smart' ? 'deck-pill active' : 'deck-pill'}
+              onClick={() => resetGames('srs_smart')}
+            >
+              <span>🧠</span>
+              <span>Smart Review</span>
+            </button>
             {EVALUATION_DECKS.map((d) => (
               <button
                 key={d.id}

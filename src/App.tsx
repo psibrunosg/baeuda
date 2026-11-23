@@ -37,6 +37,7 @@ import { GuidancePill } from './ui/GuidancePill';
 import { InventoryQuestBar } from './ui/InventoryQuestBar';
 import { LessonHud } from './ui/LessonHud';
 import { TopNav } from './ui/TopNav';
+import { TravelDialogueModal } from './ui/TravelDialogueModal';
 
 const POUR_DURATION_SEC = 1.4;
 const HESITATION_MS = 5000;
@@ -47,6 +48,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>('map');
   const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
   const [minimapOpen, setMinimapOpen] = useState(false);
+  const [travelDialogueOpen, setTravelDialogueOpen] = useState(false);
   const [teleportRequest, setTeleportRequest] = useState<{
     x: number;
     z: number;
@@ -803,14 +805,41 @@ export default function App() {
       )}
 
       {activeView !== 'map' && activeView !== 'badges' && (
-        <button
-          type="button"
-          className="back-street-btn"
-          aria-label="Back to street"
-          onClick={() => handleSelectView('map')}
-        >
-          ← Street
-        </button>
+        <div className="interior-top-actions">
+          <button
+            type="button"
+            className="back-street-btn"
+            aria-label="Back to street"
+            onClick={() => {
+              setTravelDialogueOpen(false);
+              handleSelectView('map');
+            }}
+          >
+            ← Street
+          </button>
+          {(activeView === 'lesson' || activeView === 'cafe_cycle') && (
+            <button
+              type="button"
+              className="travel-practice-btn"
+              onClick={() => {
+                audioPlayer.stop();
+                setTravelDialogueOpen(true);
+              }}
+            >
+              💬 Travel Order
+            </button>
+          )}
+        </div>
+      )}
+
+      {travelDialogueOpen && (
+        <TravelDialogueModal
+          onComplete={() => {
+            setProfile((prev) => recordStreetDiscovery(prev, 'world_cafe_travel_dialogue'));
+            showRewardToast('🎉 Travel dialogue mastered!');
+          }}
+          onClose={() => setTravelDialogueOpen(false)}
+        />
       )}
 
       {!isDevMode && audioStatus.phrase && !activeCuriosityId && (
