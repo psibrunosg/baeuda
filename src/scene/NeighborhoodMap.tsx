@@ -540,9 +540,12 @@ export function NeighborhoodMap({
         isNight={timeOfDay === 'night' || weather === 'rainy'}
       />
 
-      {/* Full Across-the-Street South Promenade (Pocket Park, Bus Stop, Parked Car, Corner Shops) */}
+      {/* Full Across-the-Street South Promenade (Pocket Park, Bus Stop, Parked Car) */}
       <group onClick={handleGroundWalkClick}>
-        <AcrossStreetPromenade isNight={timeOfDay === 'night'} />
+        <AcrossStreetPromenade
+          isNight={timeOfDay === 'night'}
+          onExploreStreet={(key) => onExploreObject?.(key)}
+        />
       </group>
 
       {/* Everyday Interactive City Shops (built & verified one by one) */}

@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
+import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 
 const RAIN_COUNT = 140;
@@ -368,7 +369,13 @@ export function RetroParkedCar({
  * vintage streetlamp, bollards, and flanking corner townhouses that frame the street
  * without blocking the central Café view.
  */
-export function AcrossStreetPromenade({ isNight }: { isNight: boolean }) {
+export function AcrossStreetPromenade({
+  isNight,
+  onExploreStreet,
+}: {
+  isNight: boolean;
+  onExploreStreet?: (key: SpeechKey) => void;
+}) {
   const textures = useMemo(() => getCafeTextures(), []);
   const glow = isNight ? 1.6 : 0.6;
 
@@ -416,8 +423,21 @@ export function AcrossStreetPromenade({ isNight }: { isNight: boolean }) {
             </mesh>
           </group>
         ))}
-        {/* Wooden park bench facing the street */}
-        <group position={[0, 0, -0.18]}>
+        {/* Wooden park bench facing the street (clickable: "Sit down! Rest on the bench!") */}
+        <group
+          position={[0, 0, -0.18]}
+          onClick={(e) => {
+            e.stopPropagation();
+            onExploreStreet?.('world_bench_sit');
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = 'auto';
+          }}
+        >
           <RoundedBox args={[1.05, 0.08, 0.34]} radius={0.02} smoothness={2} position={[0, 0.28, 0]} castShadow>
             <meshStandardMaterial color="#8b5a3c" roughness={0.82} />
           </RoundedBox>
@@ -433,8 +453,21 @@ export function AcrossStreetPromenade({ isNight }: { isNight: boolean }) {
         </group>
       </group>
 
-      {/* Charming City Bus Stop Shelter + Icon Sign (center-right across the street) */}
-      <group position={[1.45, 0.06, 3.62]}>
+      {/* Charming City Bus Stop Shelter + Icon Sign (clickable: "Bus stop! Wait for the bus!") */}
+      <group
+        position={[1.45, 0.06, 3.62]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onExploreStreet?.('world_bus_stop');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      >
         {/* Shelter frame & glass back */}
         {[-0.65, 0.65].map((px, idx) => (
           <mesh key={idx} position={[px, 0.62, 0.22]} castShadow>
@@ -480,8 +513,22 @@ export function AcrossStreetPromenade({ isNight }: { isNight: boolean }) {
         </mesh>
       </group>
 
-      {/* Parked Retro City Car along the south curb */}
-      <RetroParkedCar position={[-2.95, 0.06, 2.25]} rotationY={0.04} color="#60a5fa" isNight={isNight} />
+      {/* Parked Retro City Car along the south curb (clickable: "Blue car! Drive on the street!") */}
+      <group
+        onClick={(e) => {
+          e.stopPropagation();
+          onExploreStreet?.('world_parked_car');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      >
+        <RetroParkedCar position={[-2.95, 0.06, 2.25]} rotationY={0.04} color="#60a5fa" isNight={isNight} />
+      </group>
     </group>
   );
 }

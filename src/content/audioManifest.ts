@@ -796,6 +796,55 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.55, viseme: 'viseme_oo' },
     { at: 1.95, viseme: null },
   ]),
+  world_bench_sit: line('world_bench_sit', 'Sit down! Rest on the bench!', 1850, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.75, viseme: null },
+  ]),
+  world_bus_stop: line('world_bus_stop', 'Bus stop! Wait for the bus!', 1850, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_oo' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.75, viseme: null },
+  ]),
+  world_parked_car: line('world_parked_car', 'Blue car! Drive on the street!', 1900, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_aa' },
+    { at: 1.45, viseme: 'viseme_ee' },
+    { at: 1.8, viseme: null },
+  ]),
+  quest_leo_bread_ask: line('quest_leo_bread_ask', 'Can you bring me fresh bread from the bakery?', 2150, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.55, viseme: 'viseme_ee' },
+    { at: 1.1, viseme: 'viseme_fv' },
+    { at: 1.65, viseme: 'viseme_mbp' },
+    { at: 2.05, viseme: null },
+  ]),
+  quest_leo_bread_done: line('quest_leo_bread_done', 'Thank you! Fresh bread for the café!', 1950, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.5, viseme: 'viseme_oo' },
+    { at: 1.0, viseme: 'viseme_fv' },
+    { at: 1.5, viseme: 'viseme_ee' },
+    { at: 1.85, viseme: null },
+  ]),
+  quest_mechanic_banana_ask: line('quest_mechanic_banana_ask', 'I am hungry! Bring me a yellow banana!', 2100, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.55, viseme: 'viseme_ee' },
+    { at: 1.1, viseme: 'viseme_oo' },
+    { at: 1.6, viseme: 'viseme_aa' },
+    { at: 2.0, viseme: null },
+  ]),
+  quest_mechanic_banana_done: line('quest_mechanic_banana_done', 'Yum! Sweet banana! Thank you!', 1850, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.45, viseme: 'viseme_ee' },
+    { at: 0.95, viseme: 'viseme_aa' },
+    { at: 1.45, viseme: 'viseme_oo' },
+    { at: 1.75, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

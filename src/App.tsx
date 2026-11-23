@@ -11,6 +11,7 @@ import {
 import { countEarnedBadges, evaluateNeighborhoodBadges } from './domain/badgesAndGames';
 import { CURIOSITY_CATALOG } from './domain/curiosityCatalog';
 import { evaluateCefrProgress } from './domain/cefrEngine';
+import { getActiveQuest } from './domain/inventoryAndQuests';
 import {
   applyCafeCycleOutcome,
   applyLesson2Outcome,
@@ -31,6 +32,7 @@ import { BadgesHub } from './ui/BadgesHub';
 import { CuriosityModal } from './ui/CuriosityModal';
 import { DebugAudioBar } from './ui/DebugAudioBar';
 import { GuidancePill } from './ui/GuidancePill';
+import { InventoryQuestBar } from './ui/InventoryQuestBar';
 import { LessonHud } from './ui/LessonHud';
 import { TopNav } from './ui/TopNav';
 
@@ -43,6 +45,8 @@ export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>('map');
   const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
   const [activeCuriosityId, setActiveCuriosityId] = useState<string | null>(null);
+  const [inventoryIds, setInventoryIds] = useState<string[]>([]);
+  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>([]);
   const [activeCafeCycle, setActiveCafeCycle] =
     useState<Exclude<CafeCycleId, 'cafe_c1_drinks'>>('cafe_c2_food');
   const [marketStage, setMarketStage] = useState<MarketStage>('explore');
@@ -416,6 +420,9 @@ export default function App() {
       if (key.startsWith('world_')) {
         setProfile((prev) => recordStreetDiscovery(prev, key));
       }
+      if (key === 'world_bakery_bread') {
+        setInventoryIds((prev) => (prev.includes('bread') ? prev : [...prev, 'bread']));
+      }
     },
     [audioPlayer],
   );
@@ -636,8 +643,30 @@ export default function App() {
           }}
           onSolved={(item) => {
             setProfile((prev) => recordStreetDiscovery(prev, item.discoveryKey));
+            if (item.collectible) {
+              const cid = item.collectible.itemId;
+              setInventoryIds((prev) => (prev.includes(cid) ? prev : [...prev, cid]));
+            }
           }}
           onClose={() => setActiveCuriosityId(null)}
+        />
+      )}
+
+      {activeView === 'map' && !activeCuriosityId && (
+        <InventoryQuestBar
+          inventoryIds={inventoryIds}
+          activeQuest={getActiveQuest(completedQuestIds)}
+          onPlayAudio={(key) => {
+            stopVoice();
+            audioPlayer.play(key);
+          }}
+          onDeliverQuest={(quest) => {
+            stopVoice();
+            audioPlayer.play(quest.doneSpeechKey);
+            setInventoryIds((prev) => prev.filter((id) => id !== quest.targetItemId));
+            setCompletedQuestIds((prev) => (prev.includes(quest.id) ? prev : [...prev, quest.id]));
+            setProfile((prev) => recordStreetDiscovery(prev, `world_${quest.id}`));
+          }}
         />
       )}
 

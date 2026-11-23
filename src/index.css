@@ -793,3 +793,99 @@ body,
   background: #ea580c;
   color: #ffffff;
 }
+
+
+/* Active NPC Quest Pill & Pocket Inventory Bar */
+.quest-pill {
+  position: absolute;
+  left: 16px;
+  bottom: 18px;
+  z-index: 19;
+  max-width: min(280px, 44vw);
+  border-radius: 16px;
+  padding: 6px 10px;
+  background: rgba(255, 250, 242, 0.92);
+  color: var(--ink-dark);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.16);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quest-pill.ready {
+  border: 2px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.quest-main {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.quest-npc {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.quest-text {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.quest-deliver-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.inventory-bar {
+  position: absolute;
+  right: 16px;
+  bottom: 18px;
+  z-index: 19;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 250, 242, 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.16);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inventory-bag-icon {
+  font-size: 17px;
+}
+
+.inventory-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 0 4px;
+}
+
+.inventory-slot {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}

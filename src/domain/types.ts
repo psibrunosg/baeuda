@@ -232,7 +232,14 @@ export type SpeechKey =
   | 'fruit_orange'
   | 'fruit_strawberry'
   | 'fruit_grapes'
-  | 'fruit_watermelon';
+  | 'fruit_watermelon'
+  | 'world_bench_sit'
+  | 'world_bus_stop'
+  | 'world_parked_car'
+  | 'quest_leo_bread_ask'
+  | 'quest_leo_bread_done'
+  | 'quest_mechanic_banana_ask'
+  | 'quest_mechanic_banana_done';
 
 export interface CounterDemoBeat {
   prop: PropName;
