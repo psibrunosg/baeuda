@@ -1,5 +1,29 @@
 export type ImmersionTier = 'onboarding' | 'blended' | 'immersive';
 
+export interface WorldAtmosphere {
+  timeOfDay: 'day' | 'night';
+  weather: 'sunny' | 'rainy';
+}
+
+/**
+ * Automatically derives the neighborhood's time of day and weather from learner progression
+ * (zero manual weather buttons — the city evolves organically as the learner advances):
+ * - Start (0 lessons): sunny morning welcoming the learner to the Café
+ * - After Lesson 1 (Market unlocked): cozy rainy afternoon (puddles + patio umbrella make real-world sense)
+ * - After Lesson 2 (Plaza unlocked): warm illuminated evening (string lights + streetlamps for Plaza music)
+ * - After Lesson 3 (all districts familiar): bright sunny day celebrating the full unlocked neighborhood
+ */
+export function resolveWorldAtmosphere(completedLessonIds: readonly string[]): WorldAtmosphere {
+  const count = completedLessonIds.length;
+  if (count === 1) {
+    return { timeOfDay: 'day', weather: 'rainy' };
+  }
+  if (count === 2) {
+    return { timeOfDay: 'night', weather: 'sunny' };
+  }
+  return { timeOfDay: 'day', weather: 'sunny' };
+}
+
 export type GuidanceContext =
   | 'map_explore'
   | 'map_locked_border'

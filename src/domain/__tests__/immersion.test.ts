@@ -3,6 +3,7 @@ import { getContrastPartner } from '../constellation';
 import {
   getGuidanceCopy,
   resolveImmersionTier,
+  resolveWorldAtmosphere,
   type GuidanceContext,
 } from '../immersion';
 import {
@@ -82,5 +83,11 @@ describe('multi-lesson district progression (Cafe -> Market -> Plaza)', () => {
     expect(Object.keys(p3.constellation)).toHaveLength(14);
     expect(getContrastPartner('big')).toBe('small');
     expect(getContrastPartner('fast')).toBe('slow');
+
+    // Automatic atmosphere progression driven by completed lessons (no manual weather button)
+    expect(resolveWorldAtmosphere(p0.completedLessonIds)).toEqual({ timeOfDay: 'day', weather: 'sunny' });
+    expect(resolveWorldAtmosphere(p1.completedLessonIds)).toEqual({ timeOfDay: 'day', weather: 'rainy' });
+    expect(resolveWorldAtmosphere(p2.completedLessonIds)).toEqual({ timeOfDay: 'night', weather: 'sunny' });
+    expect(resolveWorldAtmosphere(p3.completedLessonIds)).toEqual({ timeOfDay: 'day', weather: 'sunny' });
   });
 });
