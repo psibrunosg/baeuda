@@ -2,9 +2,11 @@ import { useState } from 'react';
 import {
   getDialogueScenario,
   TRAVEL_DIALOGUE_SCENARIOS,
+  type DialogueOption,
   type DialogueScenarioId,
 } from '../domain/travelDialogues';
-import { playRewardFanfare, playSuccessChime } from '../services/soundEngine';
+import type { SpeechKey } from '../domain/types';
+import { playRewardFanfare, playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
 
 function speakEnglish(text: string) {
   if (
@@ -27,6 +29,7 @@ function speakEnglish(text: string) {
 interface TravelDialogueModalProps {
   initialScenarioId?: DialogueScenarioId;
   completedDiscoveries?: readonly string[];
+  onPlayAudio?: (key: SpeechKey) => void;
   onComplete: (scenarioId: DialogueScenarioId) => void;
   onClose: () => void;
 }
@@ -40,6 +43,7 @@ export function TravelDialogueModal({
   const [scenarioId, setScenarioId] = useState<DialogueScenarioId>(initialScenarioId);
   const [turnIndex, setTurnIndex] = useState(0);
   const [lastReply, setLastReply] = useState<string | null>(null);
+  const [lastReplyKind, setLastReplyKind] = useState<'ok' | 'hint'>('ok');
   const [done, setDone] = useState(false);
 
   const scenario = getDialogueScenario(scenarioId);
@@ -49,14 +53,21 @@ export function TravelDialogueModal({
     setScenarioId(nextId);
     setTurnIndex(0);
     setLastReply(null);
+    setLastReplyKind('ok');
     setDone(false);
     const nextScenario = getDialogueScenario(nextId);
     speakEnglish(nextScenario.turns[0].npcLine);
   };
 
-  const handleChoose = (opt: { label: string; reply: string }) => {
+  const handleChoose = (opt: DialogueOption) => {
     setLastReply(opt.reply);
     speakEnglish(opt.reply);
+    if (opt.isCorrect === false) {
+      setLastReplyKind('hint');
+      playSoftErrorTone();
+      return;
+    }
+    setLastReplyKind('ok');
     if (turnIndex + 1 >= scenario.turns.length) {
       playRewardFanfare();
       setDone(true);
@@ -103,7 +114,7 @@ export function TravelDialogueModal({
         </div>
 
         {lastReply && (
-          <div className="curiosity-feedback ok" role="status" aria-live="polite">
+          <div className={`curiosity-feedback ${lastReplyKind}`} role="status" aria-live="polite">
             {scenario.icon} {scenario.npcName}: “{lastReply}”
           </div>
         )}

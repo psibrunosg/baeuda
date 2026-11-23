@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { AvatarStyle, LocationId, LocationStatus, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
+import { MapVisibleRefContext, useMapVisibleRef } from './mapVisibility';
 import {
   CafeCatNpc,
   LearnerAvatar,
@@ -47,6 +48,7 @@ export interface AvatarPose {
 interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
+  streetDiscoveries?: readonly string[];
   timeOfDay?: 'day' | 'night';
   weather?: 'sunny' | 'rainy';
   visible: boolean;
@@ -101,8 +103,9 @@ function StylizedCloud({
   phase?: number;
 }) {
   const cloudRef = useRef<THREE.Group>(null);
+  const mapVisibleRef = useMapVisibleRef();
   useFrame((state) => {
-    if (!cloudRef.current) return;
+    if (!mapVisibleRef.current || !cloudRef.current) return;
     const t = state.clock.elapsedTime;
     cloudRef.current.position.x = Math.sin(t * speed + phase) * 0.28;
     cloudRef.current.position.y = Math.cos(t * speed * 1.4 + phase) * 0.06;
@@ -217,9 +220,10 @@ function DistrictBarrier({
   );
 }
 
-export function NeighborhoodMap({
+export const NeighborhoodMap = memo(function NeighborhoodMap({
   cafeStatus,
   locations,
+  streetDiscoveries,
   timeOfDay = 'day',
   weather = 'sunny',
   visible,
@@ -243,11 +247,19 @@ export function NeighborhoodMap({
   const exploreRingRef = useRef<THREE.Mesh>(null);
   const exploreTimerRef = useRef(0);
   const catDropRef = useRef<THREE.Mesh>(null);
+  const mapVisibleRef = useRef(visible);
+  mapVisibleRef.current = visible;
 
-  // Parallel Talk interactive world states (cause -> effect + spoken English)
-  const [streetlampOn, setStreetlampOn] = useState(true);
-  const [flowersBloomed, setFlowersBloomed] = useState(false);
-  const [catBowlFilled, setCatBowlFilled] = useState(false);
+  // Parallel Talk interactive world states hydrated from profile.streetDiscoveries
+  const [streetlampOn, setStreetlampOn] = useState(
+    () => !(streetDiscoveries?.includes('world_light_off') ?? false),
+  );
+  const [flowersBloomed, setFlowersBloomed] = useState(
+    () => streetDiscoveries?.includes('world_water_flowers') ?? false,
+  );
+  const [catBowlFilled, setCatBowlFilled] = useState(
+    () => streetDiscoveries?.includes('world_cat_water') ?? false,
+  );
 
   // Walkable learner avatar state (all refs, zero per-frame React re-renders)
   const avatarGroupRef = useRef<THREE.Group>(null);
@@ -453,10 +465,24 @@ export function NeighborhoodMap({
         isWalkingRef.current = false;
       } else {
         const step = Math.min(dist, WALK_SPEED * dt);
-        avatar.position.x += (toX / dist) * step;
-        avatar.position.z += (toZ / dist) * step;
-        avatar.rotation.y = Math.atan2(toX, toZ);
-        isWalkingRef.current = true;
+        const candX = avatar.position.x + (toX / dist) * step;
+        const candZ = avatar.position.z + (toZ / dist) * step;
+        const [safeX, safeZ] = resolveObstacleCollision(
+          candX,
+          candZ,
+          avatar.position.x,
+          avatar.position.z,
+        );
+        const moved = Math.hypot(safeX - avatar.position.x, safeZ - avatar.position.z);
+        if (moved < step * 0.15) {
+          walkTargetRef.current = null;
+          isWalkingRef.current = false;
+        } else {
+          avatar.position.x = safeX;
+          avatar.position.z = safeZ;
+          avatar.rotation.y = Math.atan2(toX, toZ);
+          isWalkingRef.current = true;
+        }
       }
     } else {
       isWalkingRef.current = false;
@@ -527,7 +553,8 @@ export function NeighborhoodMap({
   };
 
   return (
-    <group name="Neighborhood_Diorama" visible={visible}>
+    <MapVisibleRefContext.Provider value={mapVisibleRef}>
+      <group name="Neighborhood_Diorama" visible={visible}>
       {/* Grounded studio AO across the full miniature city plateau */}
       <ContactShadows
         frames={1}
@@ -1278,10 +1305,15 @@ export function NeighborhoodMap({
             position={crate.pos}
             onClick={(e) => {
               e.stopPropagation();
+              if (marketLocked) {
+                onMapBlockedBump?.();
+                return;
+              }
               onInspectCuriosity?.(crate.id);
             }}
             onPointerOver={(e) => {
               e.stopPropagation();
+              if (marketLocked) return;
               document.body.style.cursor = 'pointer';
             }}
             onPointerOut={handleDoorPointerOut}
@@ -1446,6 +1478,7 @@ export function NeighborhoodMap({
       <StylizedCloud position={[-3.2, 3.25, -3.1]} scale={0.95} speed={0.22} phase={0.4} />
       <StylizedCloud position={[3.1, 3.4, -2.9]} scale={0.85} speed={0.18} phase={2.1} />
       <StylizedCloud position={[0.1, 3.55, -3.9]} scale={1.0} speed={0.15} phase={4.2} />
-    </group>
+      </group>
+    </MapVisibleRefContext.Provider>
   );
-}
+});

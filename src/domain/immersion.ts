@@ -59,13 +59,13 @@ export interface GuidanceCopy {
 
 /**
  * Resolves the learner's progressive immersion stage from their Constellation star count:
- * - 0..2 stars: onboarding (Portuguese navigation/action commands, 100% English world audio)
- * - 3..5 stars: blended (code-switched commands introducing English action/object keywords)
- * - 6+ stars:   immersive (concise English-only commands)
+ * - 0..5 stars:  onboarding (Portuguese navigation/action commands, 100% English world audio)
+ * - 6..14 stars: blended (code-switched commands introducing English action/object keywords)
+ * - 15+ stars:   immersive (concise English-only commands)
  */
 export function resolveImmersionTier(starCount: number): ImmersionTier {
-  if (starCount <= 2) return 'onboarding';
-  if (starCount <= 5) return 'blended';
+  if (starCount <= 5) return 'onboarding';
+  if (starCount <= 14) return 'blended';
   return 'immersive';
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { type ThreeEvent } from '@react-three/fiber';
+import { useMapFrame as useFrame } from './mapVisibility';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';

@@ -108,20 +108,50 @@ export function CafeDynamicSession({
   const [stepDone, setStepDone] = useState<string[]>([]);
   const [glassFull, setGlassFull] = useState(false);
   const [shiftOrderIndex, setShiftOrderIndex] = useState(0);
+  const [shiftHintVisible, setShiftHintVisible] = useState(false);
   const [a1PlacedNextTo, setA1PlacedNextTo] = useState(false);
   const [a1CoinsPaid, setA1CoinsPaid] = useState(false);
 
   const ringRef = useRef<THREE.Mesh>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const busyRef = useRef(false);
   const geos = useMemo(() => getCafeGeometries(), []);
   const textures = useMemo(() => getCafeTextures(), []);
 
+  const clearTimers = () => {
+    for (const id of timersRef.current) clearTimeout(id);
+    timersRef.current = [];
+  };
+
+  const schedule = (fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    timersRef.current.push(id);
+  };
+
   useEffect(() => {
+    clearTimers();
+    busyRef.current = false;
     setStepDone([]);
     setGlassFull(false);
     setShiftOrderIndex(0);
+    setShiftHintVisible(false);
     setA1PlacedNextTo(false);
     setA1CoinsPaid(false);
+    return () => clearTimers();
   }, [cycleId, visible]);
+
+  useEffect(() => {
+    if (!visible || cycleId !== 'cafe_pre_a1_shift') {
+      setShiftHintVisible(false);
+      return;
+    }
+    setShiftHintVisible(false);
+    const id = setTimeout(() => setShiftHintVisible(true), 5000);
+    return () => clearTimeout(id);
+  }, [visible, cycleId, shiftOrderIndex]);
 
   useFrame((state) => {
     if (!visible) return;
@@ -144,24 +174,31 @@ export function CafeDynamicSession({
     doneAudio: SpeechKey,
     concepts: readonly ConceptId[],
   ) => {
+    if (busyRef.current) return;
     onPlayAudio(audio);
     const next = stepDone.includes(id) ? stepDone : [...stepDone, id];
     setStepDone(next);
     if (required.every((r) => next.includes(r))) {
-      setTimeout(() => {
+      busyRef.current = true;
+      schedule(() => {
         onPlayAudio(doneAudio);
-        setTimeout(() => onCompleteCycle(cycleId, concepts), 1700);
+        schedule(() => {
+          busyRef.current = false;
+          onCompleteCycle(cycleId, concepts);
+        }, 1700);
       }, 950);
     }
   };
 
   const handleShiftTap = (choice: 'coffee_cake' | 'two_waters' | 'sweet_milk') => {
+    if (busyRef.current) return;
     const expected: ('coffee_cake' | 'two_waters' | 'sweet_milk')[] = [
       'coffee_cake',
       'two_waters',
       'sweet_milk',
     ];
     if (choice !== expected[shiftOrderIndex]) {
+      setShiftHintVisible(true);
       onPlayAudio(
         choice === 'coffee_cake'
           ? 'cafe_c2_cake'
@@ -179,8 +216,12 @@ export function CafeDynamicSession({
       setShiftOrderIndex(2);
       onPlayAudio('cafe_shift_order_3');
     } else {
+      busyRef.current = true;
       onPlayAudio('cafe_shift_graduate');
-      setTimeout(() => onCompleteCycle('cafe_pre_a1_shift', []), 1800);
+      schedule(() => {
+        busyRef.current = false;
+        onCompleteCycle('cafe_pre_a1_shift', []);
+      }, 1800);
     }
   };
 
@@ -353,7 +394,7 @@ export function CafeDynamicSession({
               </mesh>
             </group>
             <group position={[0.14, 0, 0.04]} scale={0.8}>
-              <CakeSlice highlighted={shiftOrderIndex === 0} />
+              <CakeSlice highlighted={shiftHintVisible && shiftOrderIndex === 0} />
             </group>
           </group>
 
@@ -390,20 +431,22 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
-            <MilkPitcher highlighted={shiftOrderIndex === 2} />
+            <MilkPitcher highlighted={shiftHintVisible && shiftOrderIndex === 2} />
             <group position={[0.14, 0, 0.04]} scale={0.75}>
-              <SugarJar highlighted={shiftOrderIndex === 2} />
+              <SugarJar highlighted={shiftHintVisible && shiftOrderIndex === 2} />
             </group>
           </group>
 
-          <mesh
-            ref={ringRef}
-            position={[shiftOrderIndex === 0 ? -0.56 : shiftOrderIndex === 1 ? 0 : 0.56, 0.98, 0.14]}
-            rotation={[-Math.PI / 2, 0, 0]}
-          >
-            <ringGeometry args={[0.2, 0.27, 32]} />
-            <meshBasicMaterial color="#fbbf24" transparent opacity={0.88} />
-          </mesh>
+          {shiftHintVisible && (
+            <mesh
+              ref={ringRef}
+              position={[shiftOrderIndex === 0 ? -0.56 : shiftOrderIndex === 1 ? 0 : 0.56, 0.98, 0.14]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <ringGeometry args={[0.2, 0.27, 32]} />
+              <meshBasicMaterial color="#fbbf24" transparent opacity={0.88} />
+            </mesh>
+          )}
         </group>
       )}
 
@@ -428,7 +471,7 @@ export function CafeDynamicSession({
               if (!a1PlacedNextTo) {
                 setA1PlacedNextTo(true);
                 onPlayAudio('cafe_a1_next_to');
-                setTimeout(() => onPlayAudio('cafe_a1_coins'), 1900);
+                schedule(() => onPlayAudio('cafe_a1_coins'), 1900);
               }
             }}
             onPointerOver={() => setPointer(true)}
@@ -442,10 +485,14 @@ export function CafeDynamicSession({
             position={[0.56, 0.973, 0.18]}
             onClick={(e) => {
               e.stopPropagation();
-              if (!a1PlacedNextTo || a1CoinsPaid) return;
+              if (!a1PlacedNextTo || a1CoinsPaid || busyRef.current) return;
+              busyRef.current = true;
               setA1CoinsPaid(true);
               onPlayAudio('cafe_a1_like_done');
-              setTimeout(() => onCompleteCycle('cafe_a1_spiral', CAFE_A1_SPIRAL_CONCEPTS), 1800);
+              schedule(() => {
+                busyRef.current = false;
+                onCompleteCycle('cafe_a1_spiral', CAFE_A1_SPIRAL_CONCEPTS);
+              }, 1800);
             }}
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}

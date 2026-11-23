@@ -289,7 +289,7 @@ export interface MemoryCard {
   speechKey: SpeechKey;
 }
 
-function deterministicShuffle<T>(items: readonly T[], seed: number): T[] {
+export function deterministicShuffle<T>(items: readonly T[], seed: number): T[] {
   const arr = [...items];
   let s = seed + 1;
   for (let i = arr.length - 1; i > 0; i--) {

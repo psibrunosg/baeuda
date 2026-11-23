@@ -86,19 +86,49 @@ export function MarketScene({
   const [touchedBread, setTouchedBread] = useState(false);
   const [contrastTarget, setContrastTarget] = useState<'big' | 'small'>('big');
   const [packed, setPacked] = useState(false);
+  const [contrastHintVisible, setContrastHintVisible] = useState(false);
 
   const ringRef = useRef<THREE.Mesh>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const busyRef = useRef(false);
   const textures = useMemo(() => getCafeTextures(), []);
+
+  const clearTimers = () => {
+    for (const id of timersRef.current) clearTimeout(id);
+    timersRef.current = [];
+  };
+
+  const schedule = (fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    timersRef.current.push(id);
+  };
 
   useEffect(() => {
     if (!visible) {
       document.body.style.cursor = 'auto';
+      clearTimers();
+      busyRef.current = false;
       setTouchedApple(false);
       setTouchedBread(false);
       setContrastTarget('big');
+      setContrastHintVisible(false);
       setPacked(false);
     }
+    return () => clearTimers();
   }, [visible]);
+
+  useEffect(() => {
+    if (!visible || stage !== 'contrast') {
+      setContrastHintVisible(false);
+      return;
+    }
+    setContrastHintVisible(false);
+    const id = setTimeout(() => setContrastHintVisible(true), 5000);
+    return () => clearTimeout(id);
+  }, [visible, stage, contrastTarget]);
 
   useFrame((state) => {
     if (!visible) return;
@@ -115,13 +145,16 @@ export function MarketScene({
   };
 
   const handleTapExplore = (item: 'apple' | 'bread') => {
+    if (busyRef.current) return;
     onPlayAudio(item === 'apple' ? 'market_apple' : 'market_bread');
     const nextApple = touchedApple || item === 'apple';
     const nextBread = touchedBread || item === 'bread';
     setTouchedApple(nextApple);
     setTouchedBread(nextBread);
     if (nextApple && nextBread) {
-      setTimeout(() => {
+      busyRef.current = true;
+      schedule(() => {
+        busyRef.current = false;
         onStageChange('contrast');
         onPlayAudio('market_ask_big_apple');
       }, 950);
@@ -129,25 +162,36 @@ export function MarketScene({
   };
 
   const handleTapSize = (size: 'big' | 'small') => {
+    if (busyRef.current) return;
     onPlayAudio(size === 'big' ? 'market_big' : 'market_small');
     if (size === contrastTarget) {
       if (contrastTarget === 'big') {
+        busyRef.current = true;
         setContrastTarget('small');
-        setTimeout(() => onPlayAudio('market_ask_small_apple'), 900);
+        schedule(() => {
+          busyRef.current = false;
+          onPlayAudio('market_ask_small_apple');
+        }, 900);
       } else {
-        setTimeout(() => {
+        busyRef.current = true;
+        schedule(() => {
+          busyRef.current = false;
           onStageChange('basket');
           onPlayAudio('market_basket_prompt');
         }, 900);
       }
+    } else {
+      setContrastHintVisible(true);
     }
   };
 
   const handlePackBasket = () => {
-    if (packed) return;
+    if (packed || busyRef.current) return;
+    busyRef.current = true;
     setPacked(true);
     onPlayAudio('market_basket_done');
-    setTimeout(() => {
+    schedule(() => {
+      busyRef.current = false;
       onComplete();
     }, 1700);
   };
@@ -284,7 +328,7 @@ export function MarketScene({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
-            <SculptedApple scale={1.55} highlighted={contrastTarget === 'big'} />
+            <SculptedApple scale={1.55} highlighted={contrastHintVisible && contrastTarget === 'big'} />
           </group>
 
           <group
@@ -296,17 +340,19 @@ export function MarketScene({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
-            <SculptedApple scale={0.68} highlighted={contrastTarget === 'small'} />
+            <SculptedApple scale={0.68} highlighted={contrastHintVisible && contrastTarget === 'small'} />
           </group>
 
-          <mesh
-            ref={ringRef}
-            position={[contrastTarget === 'big' ? -0.48 : 0.48, 0.985, 0.14]}
-            rotation={[-Math.PI / 2, 0, 0]}
-          >
-            <ringGeometry args={[0.17, 0.23, 32]} />
-            <meshBasicMaterial color="#f97316" transparent opacity={0.88} />
-          </mesh>
+          {contrastHintVisible && (
+            <mesh
+              ref={ringRef}
+              position={[contrastTarget === 'big' ? -0.48 : 0.48, 0.985, 0.14]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <ringGeometry args={[0.17, 0.23, 32]} />
+              <meshBasicMaterial color="#f97316" transparent opacity={0.88} />
+            </mesh>
+          )}
         </group>
       )}
 

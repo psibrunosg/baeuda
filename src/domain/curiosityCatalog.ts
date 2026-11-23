@@ -345,7 +345,7 @@ export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boo
   const normalized = rawInput
     .trim()
     .toLowerCase()
-    .replace(/[^a-z\s]/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, '')
     .replace(/\s+/g, ' ');
   if (!normalized) return false;
   const stripped = normalized.replace(/^(a|an|the)\s+/, '');

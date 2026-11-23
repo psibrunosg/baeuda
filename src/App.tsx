@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CONCEPT_AUDIO_KEY } from './content/audioManifest';
 import { LESSON1_CAFE_SCRIPT } from './content/lesson1Cafe';
 import {
   createLesson1State,
@@ -20,9 +19,12 @@ import { CURIOSITY_CATALOG } from './domain/curiosityCatalog';
 import { evaluateCefrProgress } from './domain/cefrEngine';
 import { getActiveQuest } from './domain/inventoryAndQuests';
 import {
+  addInventoryItem,
   applyCafeCycleOutcome,
   applyLesson2Outcome,
   applyLesson3Outcome,
+  applySrsReviewOutcome,
+  completeQuestInProfile,
   createInitialProfile,
   recordStreetDiscovery,
 } from './domain/learnerMemory';
@@ -65,12 +67,9 @@ export default function App() {
     seq: number;
   } | null>(null);
   const [activeCuriosityId, setActiveCuriosityId] = useState<string | null>(null);
-  const [inventoryIds, setInventoryIds] = useState<string[]>(() => profile.inventoryIds ?? []);
-  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>(
-    () => profile.completedQuestIds ?? [],
-  );
   const [rewardToast, setRewardToast] = useState<string | null>(null);
   const rewardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [subtitleVisible, setSubtitleVisible] = useState(false);
 
   const showRewardToast = useCallback((msg: string) => {
     setRewardToast(msg);
@@ -88,7 +87,6 @@ export default function App() {
   const [plazaStage, setPlazaStage] = useState<PlazaStage>('explore');
   const [mapBlockedHint, setMapBlockedHint] = useState(false);
   const [assetMode, setAssetMode] = useState<AssetMode>('greybox');
-  const [selectedConcept, setSelectedConcept] = useState<ConceptId | null>(null);
   const [pourProgressUi, setPourProgressUi] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [voiceLevel, setVoiceLevel] = useState(0);
@@ -102,6 +100,17 @@ export default function App() {
 
   const profileRef = useRef(profile);
   profileRef.current = profile;
+
+  const updateProfile = useCallback((updater: (prev: LearnerProfile) => LearnerProfile) => {
+    setProfile((prev) => {
+      const next = updater(prev);
+      profileRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const inventoryIds = profile.inventoryIds ?? [];
+  const completedQuestIds = profile.completedQuestIds ?? [];
 
   const lessonRef = useRef(lesson);
   lessonRef.current = lesson;
@@ -141,8 +150,45 @@ export default function App() {
         clearTimeout(mapBlockedTimerRef.current);
         mapBlockedTimerRef.current = null;
       }
+      if (rewardTimerRef.current) {
+        clearTimeout(rewardTimerRef.current);
+        rewardTimerRef.current = null;
+      }
     };
   }, [audioPlayer]);
+
+  // Auto-fade subtitle pill 2.5s after audio stops playing
+  useEffect(() => {
+    if (!audioStatus.phrase) {
+      setSubtitleVisible(false);
+      return;
+    }
+    setSubtitleVisible(true);
+    if (audioStatus.isPlaying) return;
+    const id = setTimeout(() => {
+      if (!unmountedRef.current) setSubtitleVisible(false);
+    }, 2500);
+    return () => clearTimeout(id);
+  }, [audioStatus.phrase, audioStatus.isPlaying]);
+
+  // Flush latest profile on page hide / tab close so throttled immersion seconds are never lost
+  useEffect(() => {
+    const flush = () => {
+      if (persistedProfileRef.current !== profileRef.current) {
+        persistedProfileRef.current = profileRef.current;
+        saveProfile(profileRef.current);
+      }
+    };
+    const onVisChange = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onVisChange);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -154,33 +200,30 @@ export default function App() {
       persistedProfileRef.current = profile;
       return;
     }
-    const merged: LearnerProfile = {
-      ...profile,
-      inventoryIds,
-      completedQuestIds,
-    };
     const prev = persistedProfileRef.current;
     const onlyClockChanged =
-      prev.immersionSeconds !== merged.immersionSeconds &&
-      prev.completedLessonIds === merged.completedLessonIds &&
-      prev.completedCafeCycles === merged.completedCafeCycles &&
-      prev.streetDiscoveries === merged.streetDiscoveries &&
-      prev.locations === merged.locations &&
-      prev.constellation === merged.constellation &&
-      prev.inventoryIds === merged.inventoryIds &&
-      prev.completedQuestIds === merged.completedQuestIds &&
-      prev.coins === merged.coins &&
-      prev.avatarStyle === merged.avatarStyle &&
-      prev.unlockedStyleIds === merged.unlockedStyleIds &&
-      prev.dailyStreak === merged.dailyStreak;
+      prev.immersionSeconds !== profile.immersionSeconds &&
+      prev.preferredDrink === profile.preferredDrink &&
+      prev.oralComfort === profile.oralComfort &&
+      prev.completedLessonIds === profile.completedLessonIds &&
+      prev.completedCafeCycles === profile.completedCafeCycles &&
+      prev.streetDiscoveries === profile.streetDiscoveries &&
+      prev.locations === profile.locations &&
+      prev.constellation === profile.constellation &&
+      prev.inventoryIds === profile.inventoryIds &&
+      prev.completedQuestIds === profile.completedQuestIds &&
+      prev.coins === profile.coins &&
+      prev.avatarStyle === profile.avatarStyle &&
+      prev.unlockedStyleIds === profile.unlockedStyleIds &&
+      prev.dailyStreak === profile.dailyStreak;
 
     // Throttle pure 1s clock ticks to every 15s; persist all real progress immediately
-    if (onlyClockChanged && merged.immersionSeconds % 15 !== 0) {
+    if (onlyClockChanged && profile.immersionSeconds % 15 !== 0) {
       return;
     }
-    persistedProfileRef.current = merged;
-    saveProfile(merged);
-  }, [profile, inventoryIds, completedQuestIds]);
+    persistedProfileRef.current = profile;
+    saveProfile(profile);
+  }, [profile]);
 
   const stopVoice = useCallback(() => {
     voiceTokenRef.current += 1;
@@ -236,13 +279,15 @@ export default function App() {
             },
           });
         } else if (effect.type === 'commit_profile') {
-          profileRef.current = effect.profile;
-          setProfile(effect.profile);
+          const rewarded = updateDailyStreak(awardCoins(effect.profile, 20));
+          profileRef.current = rewarded;
+          setProfile(rewarded);
+          showRewardToast('⭐ Lesson complete! +20 🪙 earned!');
           setActiveView('badges');
         }
       }
     },
-    [audioPlayer],
+    [audioPlayer, showRewardToast],
   );
 
   const dispatch = useCallback(
@@ -297,10 +342,6 @@ export default function App() {
         clearTimeout(hesitationTimerRef.current);
         hesitationTimerRef.current = null;
       }
-      if (mapBlockedTimerRef.current) {
-        clearTimeout(mapBlockedTimerRef.current);
-        mapBlockedTimerRef.current = null;
-      }
     };
   }, [activeView, lesson.awaitingInput, lesson.phase, lesson.roundIndex, audioStatus.isPlaying, dispatch]);
 
@@ -346,7 +387,6 @@ export default function App() {
     audioPlayer.stop();
     stopVoice();
     resetPourState();
-    setSelectedConcept(null);
 
     const cefr = evaluateCefrProgress(profileRef.current);
     if (cefr.nextCafeCycle !== 'cafe_c1_drinks') {
@@ -378,17 +418,18 @@ export default function App() {
 
   const handleCompleteCafeCycle = useCallback(
     (cycleId: CafeCycleId, concepts: readonly ConceptId[]) => {
-      const next = applyCafeCycleOutcome(
-        profileRef.current,
-        cycleId,
-        concepts,
-        new Date().toISOString(),
+      updateProfile((prev) =>
+        updateDailyStreak(
+          awardCoins(
+            applyCafeCycleOutcome(prev, cycleId, concepts, new Date().toISOString()),
+            20,
+          ),
+        ),
       );
-      profileRef.current = next;
-      setProfile(next);
+      showRewardToast('☕ Café cycle complete! +20 🪙 earned!');
       setActiveView('badges');
     },
-    [],
+    [showRewardToast, updateProfile],
   );
 
   const handlePropTap = useCallback(
@@ -449,34 +490,34 @@ export default function App() {
   const handleEnterMarket = useCallback(() => {
     audioPlayer.stop();
     stopVoice();
-    setSelectedConcept(null);
     setMarketStage('explore');
     setActiveView('market');
     audioPlayer.play('market_hi_maya');
   }, [audioPlayer, stopVoice]);
 
   const handleCompleteMarket = useCallback(() => {
-    const next = applyLesson2Outcome(profileRef.current, new Date().toISOString());
-    profileRef.current = next;
-    setProfile(next);
+    updateProfile((prev) =>
+      updateDailyStreak(awardCoins(applyLesson2Outcome(prev, new Date().toISOString()), 20)),
+    );
+    showRewardToast('🍎 Market lesson complete! +20 🪙 earned!');
     setActiveView('badges');
-  }, []);
+  }, [showRewardToast, updateProfile]);
 
   const handleEnterPlaza = useCallback(() => {
     audioPlayer.stop();
     stopVoice();
-    setSelectedConcept(null);
     setPlazaStage('explore');
     setActiveView('plaza');
     audioPlayer.play('plaza_hi_sam');
   }, [audioPlayer, stopVoice]);
 
   const handleCompletePlaza = useCallback(() => {
-    const next = applyLesson3Outcome(profileRef.current, new Date().toISOString());
-    profileRef.current = next;
-    setProfile(next);
+    updateProfile((prev) =>
+      updateDailyStreak(awardCoins(applyLesson3Outcome(prev, new Date().toISOString()), 20)),
+    );
+    showRewardToast('⛲ Plaza lesson complete! +20 🪙 earned!');
     setActiveView('badges');
-  }, []);
+  }, [showRewardToast, updateProfile]);
 
   const handleStartNextLesson = useCallback(() => {
     const locs = profileRef.current.locations;
@@ -495,33 +536,36 @@ export default function App() {
   const handleExploreObject = useCallback(
     (key: SpeechKey) => {
       audioPlayer.play(key);
-      if (key.startsWith('world_')) {
-        setProfile((prev) => recordStreetDiscovery(prev, key));
-      }
-      if (key === 'world_bakery_bread') {
-        setInventoryIds((prev) => {
-          if (prev.includes('bread')) return prev;
-          playSuccessChime();
-          showRewardToast('🎒 +1 🥖 Fresh bread in backpack!');
-          return [...prev, 'bread'];
-        });
-      } else if (key === 'world_pharmacy_medicine') {
-        setInventoryIds((prev) => {
-          if (prev.includes('medicine')) return prev;
-          playSuccessChime();
-          showRewardToast('🎒 +1 💊 Medicine in backpack!');
-          return [...prev, 'medicine'];
-        });
-      } else if (key === 'world_pet_food') {
-        setInventoryIds((prev) => {
-          if (prev.includes('petfood')) return prev;
-          playSuccessChime();
-          showRewardToast('🎒 +1 🦴 Pet food in backpack!');
-          return [...prev, 'petfood'];
+      const itemMap: Partial<Record<SpeechKey, { id: string; toast: string }>> = {
+        world_bakery_bread: { id: 'bread', toast: '🎒 +1 🥖 Fresh bread in backpack!' },
+        world_pharmacy_medicine: { id: 'medicine', toast: '🎒 +1 💊 Medicine in backpack!' },
+        world_pet_food: { id: 'petfood', toast: '🎒 +1 🦴 Pet food in backpack!' },
+      };
+      const pickup = itemMap[key];
+      if (key.startsWith('world_') || pickup) {
+        updateProfile((prev) => {
+          let next = key.startsWith('world_') ? recordStreetDiscovery(prev, key) : prev;
+          if (pickup && !(next.inventoryIds ?? []).includes(pickup.id)) {
+            playSuccessChime();
+            showRewardToast(pickup.toast);
+            next = addInventoryItem(next, pickup.id);
+          }
+          return next;
         });
       }
     },
-    [audioPlayer, showRewardToast],
+    [audioPlayer, showRewardToast, updateProfile],
+  );
+
+  const handleInspectCuriosity = useCallback(
+    (id: string) => {
+      const item = CURIOSITY_CATALOG[id];
+      if (!item) return;
+      stopVoice();
+      setActiveCuriosityId(id);
+      audioPlayer.play(item.speechKey);
+    },
+    [audioPlayer, stopVoice],
   );
 
   const handleEnterPizzeria = useCallback(() => {
@@ -534,12 +578,15 @@ export default function App() {
   }, [audioPlayer, resetPourState, stopVoice]);
 
   const handleCompletePizzeria = useCallback(() => {
-    setProfile((prev) =>
-      updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pizzeria_kitchen'), 20)),
+    updateProfile((prev) =>
+      addInventoryItem(
+        updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pizzeria_kitchen'), 20)),
+        'pizza',
+      ),
     );
-    showRewardToast('🍕 Hot pizza made! +20 🪙 earned!');
+    showRewardToast('🍕 Hot pizza made & added to backpack! +20 🪙 earned!');
     setActiveView('map');
-  }, [showRewardToast]);
+  }, [showRewardToast, updateProfile]);
 
   const handleEnterPharmacy = useCallback(() => {
     audioPlayer.stop();
@@ -551,12 +598,12 @@ export default function App() {
   }, [audioPlayer, resetPourState, stopVoice]);
 
   const handleCompletePharmacy = useCallback(() => {
-    setProfile((prev) =>
+    updateProfile((prev) =>
       updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pharmacy_counter'), 20)),
     );
     showRewardToast('💊 Patient cared for! +20 🪙 earned!');
     setActiveView('map');
-  }, [showRewardToast]);
+  }, [showRewardToast, updateProfile]);
 
   const handleMapBlockedBump = useCallback(() => {
     setMapBlockedHint(true);
@@ -570,21 +617,11 @@ export default function App() {
     }, 3200);
   }, []);
 
-  const handleSelectConcept = useCallback(
-    (id: ConceptId) => {
-      stopVoice();
-      setSelectedConcept(id);
-      audioPlayer.play(CONCEPT_AUDIO_KEY[id]);
-    },
-    [audioPlayer, stopVoice],
-  );
-
   const handleSelectView = useCallback(
     (view: 'map' | 'badges') => {
       audioPlayer.stop();
       stopVoice();
       resetPourState();
-      setSelectedConcept(null);
       if (view === 'map' && activeView === 'map') {
         setMinimapOpen((prev) => !prev);
         return;
@@ -600,7 +637,6 @@ export default function App() {
       audioPlayer.stop();
       stopVoice();
       resetPourState();
-      setSelectedConcept(null);
       setActiveView(phase === 'map_arrival' ? 'map' : 'lesson');
       dispatch({ type: 'JUMP_TO_PHASE', phase });
     },
@@ -619,10 +655,7 @@ export default function App() {
     skipNextPersistRef.current = true;
     setProfile(freshProfile);
     setLesson(freshLesson);
-    setSelectedConcept(null);
     setActiveCuriosityId(null);
-    setInventoryIds([]);
-    setCompletedQuestIds([]);
     setActiveView('map');
   }, [audioPlayer, resetPourState, stopVoice]);
 
@@ -706,9 +739,7 @@ export default function App() {
         pourProgressRef={pourProgressRef}
         isPouringRef={isPouringRef}
         mysteryBoxVisible={lesson.mysteryBoxVisible}
-        orbsLaunching={lesson.orbsLaunching}
-        constellationNodes={profile.constellation}
-        selectedConcept={selectedConcept}
+        streetDiscoveries={profile.streetDiscoveries ?? []}
         activeCafeCycle={activeCafeCycle}
         marketStage={marketStage}
         plazaStage={plazaStage}
@@ -725,18 +756,11 @@ export default function App() {
         onPlazaStageChange={setPlazaStage}
         onCompletePlaza={handleCompletePlaza}
         onExploreObject={handleExploreObject}
-        onInspectCuriosity={(id) => {
-          const item = CURIOSITY_CATALOG[id];
-          if (!item) return;
-          stopVoice();
-          setActiveCuriosityId(id);
-          audioPlayer.play(item.speechKey);
-        }}
+        onInspectCuriosity={handleInspectCuriosity}
         onMapBlockedBump={handleMapBlockedBump}
         onPropTap={handlePropTap}
         onPourStart={handlePourStart}
         onPourEnd={handlePourEnd}
-        onSelectConcept={handleSelectConcept}
       />
 
       <TopNav
@@ -762,14 +786,18 @@ export default function App() {
         }
       />
 
-      {activeView !== 'badges' && !activeCuriosityId && (
-        <GuidancePill
-          context={guidanceContext}
-          starCount={starCount}
-          cefrBadge={cefrBadge}
-          darkSurface={activeView === 'map' && timeOfDay === 'night'}
-        />
-      )}
+      {activeView !== 'badges' &&
+        !activeCuriosityId &&
+        !wardrobeOpen &&
+        !minimapOpen &&
+        !travelDialogueOpen && (
+          <GuidancePill
+            context={guidanceContext}
+            starCount={starCount}
+            cefrBadge={cefrBadge}
+            darkSurface={activeView === 'map' && timeOfDay === 'night'}
+          />
+        )}
 
       <LessonHud
         activeView={activeView}
@@ -797,47 +825,59 @@ export default function App() {
             audioPlayer.play(key);
           }}
           onSolved={(item) => {
-            setProfile((prev) =>
-              updateDailyStreak(awardCoins(recordStreetDiscovery(prev, item.discoveryKey), 5)),
-            );
-            if (item.collectible) {
-              const cid = item.collectible.itemId;
-              const label = `${item.collectible.icon} ${item.collectible.label}`;
-              setInventoryIds((prev) => {
-                if (prev.includes(cid)) return prev;
-                showRewardToast(`🎒 +1 ${label} & +5 🪙!`);
-                return [...prev, cid];
-              });
-            } else {
-              showRewardToast('🪙 +5 coins earned!');
-            }
+            updateProfile((prev) => {
+              let next = updateDailyStreak(
+                awardCoins(recordStreetDiscovery(prev, item.discoveryKey), 5),
+              );
+              if (item.collectible) {
+                const cid = item.collectible.itemId;
+                const label = `${item.collectible.icon} ${item.collectible.label}`;
+                if (!(next.inventoryIds ?? []).includes(cid)) {
+                  showRewardToast(`🎒 +1 ${label} & +5 🪙!`);
+                  next = addInventoryItem(next, cid);
+                } else {
+                  showRewardToast('🪙 +5 coins earned!');
+                }
+              } else {
+                showRewardToast('🪙 +5 coins earned!');
+              }
+              return next;
+            });
           }}
           onClose={() => setActiveCuriosityId(null)}
         />
       )}
 
-      {activeView === 'map' && !activeCuriosityId && (
-        <InventoryQuestBar
-          inventoryIds={inventoryIds}
-          activeQuest={getActiveQuest(completedQuestIds)}
-          onPlayAudio={(key) => {
-            stopVoice();
-            audioPlayer.play(key);
-          }}
-          onDeliverQuest={(quest) => {
-            stopVoice();
-            playRewardFanfare();
-            audioPlayer.play(quest.doneSpeechKey);
-            setInventoryIds((prev) => prev.filter((id) => id !== quest.targetItemId));
-            setCompletedQuestIds((prev) => (prev.includes(quest.id) ? prev : [...prev, quest.id]));
-            setProfile((prev) =>
-              updateDailyStreak(awardCoins(recordStreetDiscovery(prev, `world_${quest.id}`), 15)),
-            );
-            showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}! +15 🪙`);
-          }}
-          onInspectEmptyBag={() => showRewardToast('🎒 Tap shops & fruits to collect items!')}
-        />
-      )}
+      {activeView === 'map' &&
+        !activeCuriosityId &&
+        !wardrobeOpen &&
+        !minimapOpen &&
+        !travelDialogueOpen && (
+          <InventoryQuestBar
+            inventoryIds={inventoryIds}
+            activeQuest={getActiveQuest(completedQuestIds)}
+            onPlayAudio={(key) => {
+              stopVoice();
+              audioPlayer.play(key);
+            }}
+            onDeliverQuest={(quest) => {
+              stopVoice();
+              playRewardFanfare();
+              audioPlayer.play(quest.doneSpeechKey);
+              updateProfile((prev) =>
+                completeQuestInProfile(
+                  updateDailyStreak(
+                    awardCoins(recordStreetDiscovery(prev, `world_${quest.id}`), 15),
+                  ),
+                  quest.id,
+                  quest.targetItemId,
+                ),
+              );
+              showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}! +15 🪙`);
+            }}
+            onInspectEmptyBag={() => showRewardToast('🎒 Tap shops & fruits to collect items!')}
+          />
+        )}
 
       {rewardToast && (
         <div className="reward-toast" role="status" aria-live="polite">
@@ -870,10 +910,15 @@ export default function App() {
             stopVoice();
             audioPlayer.play(key);
           }}
-          onCompleteGame={(gameKey) => {
-            setProfile((prev) =>
-              updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10)),
-            );
+          onCompleteGame={(gameKey, reviewedConceptIds) => {
+            const nowIso = new Date().toISOString();
+            updateProfile((prev) => {
+              let next = updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10));
+              if (reviewedConceptIds && reviewedConceptIds.length > 0) {
+                next = applySrsReviewOutcome(next, reviewedConceptIds, nowIso);
+              }
+              return next;
+            });
             showRewardToast('🏆 Mini-game complete! +10 🪙');
           }}
           onOpenDialogues={() => {
@@ -901,26 +946,18 @@ export default function App() {
           >
             ← Street
           </button>
-          {(activeView === 'lesson' || activeView === 'cafe_cycle') && (
-            <button
-              type="button"
-              className="travel-practice-btn"
-              onClick={() => {
-                audioPlayer.stop();
-                setTravelDialogueOpen(true);
-              }}
-            >
-              💬 Travel Order
-            </button>
-          )}
         </div>
       )}
 
       {travelDialogueOpen && (
         <TravelDialogueModal
           completedDiscoveries={profile.streetDiscoveries ?? []}
+          onPlayAudio={(key) => {
+            stopVoice();
+            audioPlayer.play(key);
+          }}
           onComplete={(scenarioId) => {
-            setProfile((prev) =>
+            updateProfile((prev) =>
               updateDailyStreak(
                 awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
               ),
@@ -955,7 +992,7 @@ export default function App() {
         />
       )}
 
-      {!isDevMode && audioStatus.phrase && !activeCuriosityId && (
+      {!isDevMode && subtitleVisible && audioStatus.phrase && !activeCuriosityId && (
         <div className="speech-subtitle-pill" role="status" aria-live="polite">
           <span>{audioStatus.isPlaying ? '🔊' : '✓'}</span>
           <span>“{audioStatus.phrase}”</span>

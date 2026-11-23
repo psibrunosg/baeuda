@@ -50,14 +50,14 @@ export function AvatarCustomizerModal({
   };
 
   return (
-    <div className="curiosity-backdrop" role="dialog" aria-modal="true" aria-label="Avatar Wardrobe">
-      <div className="curiosity-card avatar-wardrobe-card">
-        <div className="curiosity-header">
-          <div className="curiosity-title-group">
-            <span className="curiosity-emoji" aria-hidden="true">🧥</span>
+    <section className="badges-hub-backdrop" role="dialog" aria-modal="true" aria-label="Avatar Wardrobe">
+      <div className="badges-hub-panel avatar-wardrobe-card" style={{ maxWidth: 520 }}>
+        <header className="badges-hub-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 24 }} aria-hidden="true">🧥</span>
             <div>
-              <h2 className="curiosity-title">Avatar Wardrobe</h2>
-              <p className="avatar-wardrobe-sub">Boutique &amp; Barber Style Shop</p>
+              <h2 style={{ margin: 0, fontSize: 16 }}>Avatar Wardrobe</h2>
+              <p className="avatar-wardrobe-sub" style={{ margin: 0 }}>Boutique &amp; Barber Style Shop</p>
             </div>
           </div>
           <div className="avatar-wallet-badges">
@@ -65,14 +65,14 @@ export function AvatarCustomizerModal({
             <span className="avatar-stat-chip coins" title="Coins">🪙 {coins}</span>
             <button
               type="button"
-              className="curiosity-close"
+              className="badges-close-btn"
               aria-label="Close wardrobe"
               onClick={onClose}
             >
               ✕
             </button>
           </div>
-        </div>
+        </header>
 
         {feedback && (
           <div className="avatar-shop-feedback" role="status">
@@ -118,6 +118,6 @@ export function AvatarCustomizerModal({
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
