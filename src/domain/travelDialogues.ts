@@ -3,6 +3,7 @@ export type DialogueScenarioId = 'cafe' | 'pharmacy' | 'pizzeria' | 'barber' | '
 export interface DialogueOption {
   label: string;
   reply: string;
+  isCorrect?: boolean;
 }
 
 export interface DialogueTurn {
@@ -32,25 +33,39 @@ export const TRAVEL_DIALOGUE_SCENARIOS: readonly DialogueScenario[] = [
         id: 'drink',
         npcLine: 'Hi! Welcome to the café. What would you like to drink?',
         options: [
-          { label: 'One hot coffee, please.', reply: 'Great! One hot coffee.' },
-          { label: 'Cold water, please.', reply: 'Sure! One cold water.' },
-          { label: 'Coffee with milk, please.', reply: 'Nice choice! Coffee with milk.' },
+          { label: 'One hot coffee, please.', reply: 'Great! One hot coffee.', isCorrect: true },
+          { label: 'Cold water, please.', reply: 'Sure! One cold water.', isCorrect: true },
+          {
+            label: 'Where is the train station?',
+            reply: 'Haha, this is a café! What would you like to drink? Coffee or water?',
+            isCorrect: false,
+          },
         ],
       },
       {
         id: 'here_or_to_go',
         npcLine: 'For here or to go?',
         options: [
-          { label: 'For here, please.', reply: 'Great, have a seat!' },
-          { label: 'To go, please.', reply: 'No problem, I will pack it to go.' },
+          { label: 'For here, please.', reply: 'Great, have a seat!', isCorrect: true },
+          { label: 'To go, please.', reply: 'No problem, I will pack it to go.', isCorrect: true },
+          {
+            label: 'My name is Leo.',
+            reply: 'Nice to meet you! Would you like your drink for here or to go?',
+            isCorrect: false,
+          },
         ],
       },
       {
         id: 'anything_else',
         npcLine: 'Anything else? Fresh cake or bread?',
         options: [
-          { label: 'Yes, one slice of cake, please!', reply: 'Delicious! Coming right up.' },
-          { label: 'No, thank you. How much is it?', reply: 'Two coins, please. Thank you!' },
+          { label: 'Yes, one slice of cake, please!', reply: 'Delicious! Coming right up.', isCorrect: true },
+          { label: 'No, thank you. How much is it?', reply: 'Two coins, please. Thank you!', isCorrect: true },
+          {
+            label: 'It is raining outside.',
+            reply: 'True! Would you like cake, bread, or just the check?',
+            isCorrect: false,
+          },
         ],
       },
     ],

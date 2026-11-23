@@ -22,18 +22,34 @@ function getAudioContext(): AudioContext | null {
 function playTone(freq: number, duration: number, type: OscillatorType, gainPeak: number, delay = 0) {
   const ctx = getAudioContext();
   if (!ctx) return;
-  const now = ctx.currentTime + delay;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, now);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(gainPeak, now + 0.015);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + duration + 0.02);
+  try {
+    const now = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(gainPeak, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch {
+        // Ignore disconnect errors if context already closed.
+      }
+    };
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  } catch {
+    // Ignore WebAudio scheduling errors on suspended/blocked contexts.
+  }
+}
+
+export function playPopSfx() {
+  playTone(440, 0.07, 'sine', 0.1, 0);
 }
 
 export function playSuccessChime() {

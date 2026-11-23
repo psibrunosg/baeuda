@@ -30,18 +30,18 @@ const PORTUGUESE_SCAFFOLD_WORDS =
 describe('progressive immersion engine', () => {
   it('maps star counts monotonically across onboarding -> blended -> immersive tiers', () => {
     expect(resolveImmersionTier(0)).toBe('onboarding');
-    expect(resolveImmersionTier(2)).toBe('onboarding');
-    expect(resolveImmersionTier(3)).toBe('blended');
-    expect(resolveImmersionTier(5)).toBe('blended');
-    expect(resolveImmersionTier(6)).toBe('immersive');
-    expect(resolveImmersionTier(12)).toBe('immersive');
+    expect(resolveImmersionTier(5)).toBe('onboarding');
+    expect(resolveImmersionTier(6)).toBe('blended');
+    expect(resolveImmersionTier(14)).toBe('blended');
+    expect(resolveImmersionTier(15)).toBe('immersive');
+    expect(resolveImmersionTier(20)).toBe('immersive');
   });
 
   it('starts in Portuguese scaffolding, blends English keywords mid-way, and removes Portuguese at immersive tier', () => {
     for (const ctx of ALL_CONTEXTS) {
       const onboarding = getGuidanceCopy(ctx, 0);
-      const blended = getGuidanceCopy(ctx, 4);
-      const immersive = getGuidanceCopy(ctx, 6);
+      const blended = getGuidanceCopy(ctx, 6);
+      const immersive = getGuidanceCopy(ctx, 15);
 
       expect(onboarding.tier).toBe('onboarding');
       expect(onboarding.tierIndex).toBe(1);

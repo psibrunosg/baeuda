@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { playRewardFanfare, playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
+import { getCafeTextures } from './cafeTextures';
 
 export interface PizzeriaSceneProps {
   visible: boolean;
@@ -15,22 +16,54 @@ function setPointer(active: boolean) {
   document.body.style.cursor = active ? 'pointer' : 'auto';
 }
 
-export function PizzeriaScene({ visible, onPlayAudio, onComplete }: PizzeriaSceneProps) {
+export const PizzeriaScene = memo(function PizzeriaScene({
+  visible,
+  onPlayAudio,
+  onComplete,
+}: PizzeriaSceneProps) {
   // 0: empty peel, 1: dough, 2: sauce, 3: cheese, 4: pepperoni+basil (done!)
   const [step, setStep] = useState(0);
+  const [hintVisible, setHintVisible] = useState(false);
   const pizzaGroupRef = useRef<THREE.Group>(null);
   const ovenGlowRef = useRef<THREE.MeshStandardMaterial>(null);
   const completedRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textures = useMemo(() => getCafeTextures(), []);
 
   useEffect(() => {
     if (visible) {
       setStep(0);
+      setHintVisible(false);
       completedRef.current = false;
       onPlayAudio('pizza_kitchen_intro');
+    } else {
+      document.body.style.cursor = 'auto';
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     }
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [visible, onPlayAudio]);
 
+  // 5s hesitation delay before highlighting the target bowl (no t=0s spoiler)
+  useEffect(() => {
+    if (!visible || step >= 4) {
+      setHintVisible(false);
+      return;
+    }
+    setHintVisible(false);
+    const id = setTimeout(() => setHintVisible(true), 5000);
+    return () => clearTimeout(id);
+  }, [visible, step]);
+
   useFrame((state, delta) => {
+    if (!visible) return;
     const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
     if (pizzaGroupRef.current && step >= 1) {
@@ -46,10 +79,14 @@ export function PizzeriaScene({ visible, onPlayAudio, onComplete }: PizzeriaScen
     }
   });
 
+  if (!visible) return null;
+
   const handleIngredientClick = (requiredStep: number, audioKey: SpeechKey) => (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    if (completedRef.current) return;
     if (step !== requiredStep) {
       playSoftErrorTone();
+      setHintVisible(true);
       const hints: SpeechKey[] = [
         'pizza_kitchen_intro',
         'pizza_step_dough',
@@ -67,25 +104,49 @@ export function PizzeriaScene({ visible, onPlayAudio, onComplete }: PizzeriaScen
       playRewardFanfare();
       if (!completedRef.current) {
         completedRef.current = true;
-        setTimeout(() => onComplete(), 1600);
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          onComplete();
+        }, 1600);
       }
     } else {
       playSuccessChime();
     }
   };
 
-  const ringColor = (targetStep: number) => (step === targetStep ? '#fbbf24' : '#cbd5e1');
+  const ringColor = (targetStep: number) => (hintVisible && step === targetStep ? '#fbbf24' : '#cbd5e1');
 
   return (
-    <group name="Pizzeria_Interior_Scene" visible={visible}>
+    <group name="Pizzeria_Interior_Scene">
+      <ContactShadows
+        frames={1}
+        position={[0, 0.895, 0.16]}
+        opacity={0.38}
+        scale={3.6}
+        blur={2.1}
+        far={0.8}
+        color="#3b1d0f"
+      />
       {/* Warm Tuscan Brick Floor & Back Wall */}
       <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[10, 8]} />
-        <meshStandardMaterial color="#d6b89c" roughness={0.9} />
+        <meshStandardMaterial
+          color="#e2c9af"
+          map={textures.cobblestoneColor}
+          bumpMap={textures.cobblestoneBump}
+          bumpScale={0.012}
+          roughness={0.9}
+        />
       </mesh>
       <mesh position={[0, 2.2, -1.75]} receiveShadow>
         <boxGeometry args={[9.5, 4.6, 0.2]} />
-        <meshStandardMaterial color="#f5e6d3" roughness={0.88} />
+        <meshStandardMaterial
+          color="#f5e6d3"
+          map={textures.plasterColor}
+          bumpMap={textures.plasterBump}
+          bumpScale={0.01}
+          roughness={0.88}
+        />
       </mesh>
 
       {/* Brick Pizza Oven Dome in Background */}
@@ -324,4 +385,4 @@ export function PizzeriaScene({ visible, onPlayAudio, onComplete }: PizzeriaScen
       </group>
     </group>
   );
-}
+});

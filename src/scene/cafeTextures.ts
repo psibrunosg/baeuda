@@ -35,6 +35,7 @@ function toTexture(
   tex.colorSpace = options.color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
   if (options.repeatX !== undefined || options.repeatY !== undefined) {
     tex.repeat.set(options.repeatX ?? 1, options.repeatY ?? 1);
   }

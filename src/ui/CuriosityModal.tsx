@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   checkCuriosityAnswer,
   getCuriosityChoices,
@@ -26,18 +26,26 @@ export function CuriosityModal({
   const [wrongCount, setWrongCount] = useState(0);
   const [showChoices, setShowChoices] = useState(false);
   const [listening, setListening] = useState(false);
+  const recRef = useRef<{ abort?: () => void } | null>(null);
 
   const choices = useMemo(() => getCuriosityChoices(item), [item]);
 
   useEffect(() => {
+    recRef.current?.abort?.();
+    recRef.current = null;
     setInput('');
     setStatus('idle');
     setWrongCount(0);
     setShowChoices(false);
     setListening(false);
+    return () => {
+      recRef.current?.abort?.();
+      recRef.current = null;
+    };
   }, [item.id]);
 
   const evaluate = (value: string) => {
+    if (status === 'correct') return;
     if (checkCuriosityAnswer(item, value)) {
       setStatus('correct');
       playSuccessChime();
@@ -54,10 +62,12 @@ export function CuriosityModal({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (status === 'correct') return;
     evaluate(input);
   };
 
   const handleSpeak = () => {
+    if (listening || status === 'correct') return;
     const SpeechRec =
       (window as unknown as { SpeechRecognition?: new () => any; webkitSpeechRecognition?: new () => any })
         .SpeechRecognition ??
@@ -71,7 +81,9 @@ export function CuriosityModal({
     }
 
     try {
+      recRef.current?.abort?.();
       const rec = new SpeechRec();
+      recRef.current = rec;
       rec.lang = 'en-US';
       rec.interimResults = false;
       rec.maxAlternatives = 2;
@@ -80,17 +92,21 @@ export function CuriosityModal({
         const transcript = event?.results?.[0]?.[0]?.transcript ?? '';
         setInput(transcript);
         setListening(false);
+        recRef.current = null;
         evaluate(transcript);
       };
       rec.onerror = () => {
         setListening(false);
+        recRef.current = null;
       };
       rec.onend = () => {
         setListening(false);
+        recRef.current = null;
       };
       rec.start();
     } catch {
       setListening(false);
+      recRef.current = null;
       onPlayAudio(item.speechKey);
     }
   };

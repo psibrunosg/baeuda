@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createConnectColumns,
   createMemoryCards,
+  deterministicShuffle,
   EVALUATION_DECKS,
   evaluateNeighborhoodBadges,
   type EvaluationDeckId,
 } from '../domain/badgesAndGames';
 import { buildSrsReviewPairs } from '../domain/srsEngine';
-import type { LearnerProfile, SpeechKey } from '../domain/types';
+import type { ConceptId, LearnerProfile, SpeechKey } from '../domain/types';
 import { playRewardFanfare, playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
 
 type HubTab = 'badges' | 'connect' | 'memory';
@@ -17,7 +18,7 @@ interface BadgesHubProps {
   profile: LearnerProfile;
   cefrBadge: string;
   onPlayAudio: (key: SpeechKey) => void;
-  onCompleteGame: (gameKey: string) => void;
+  onCompleteGame: (gameKey: string, reviewedConceptIds?: ConceptId[]) => void;
   onOpenDialogues?: () => void;
   onClose: () => void;
 }
@@ -42,26 +43,47 @@ export function BadgesHub({
   // Memory Match state
   const [flippedCardIds, setFlippedCardIds] = useState<string[]>([]);
   const [matchedMemoryPairIds, setMatchedMemoryPairIds] = useState<string[]>([]);
+  const wrongTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const memoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimers = () => {
+    if (wrongTimerRef.current) {
+      clearTimeout(wrongTimerRef.current);
+      wrongTimerRef.current = null;
+    }
+    if (memoryTimerRef.current) {
+      clearTimeout(memoryTimerRef.current);
+      memoryTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearTimers(), []);
 
   const badges = useMemo(() => evaluateNeighborhoodBadges(profile), [profile]);
   const srsPairs = useMemo(() => buildSrsReviewPairs(profile, 6), [profile]);
+  const srsConceptIds = useMemo(
+    () => srsPairs.map((pair) => pair.id.replace(/^srs_/, '') as ConceptId),
+    [srsPairs],
+  );
   const connectCols = useMemo(() => {
     if (deckId === 'srs_smart') {
-      return { left: srsPairs, right: [...srsPairs].reverse() };
+      return { left: srsPairs, right: deterministicShuffle(srsPairs, seed) };
     }
     return createConnectColumns(deckId, seed);
   }, [deckId, seed, srsPairs]);
   const memoryCards = useMemo(() => {
     if (deckId === 'srs_smart') {
-      return srsPairs.flatMap((pair) => [
+      const raw = srsPairs.flatMap((pair) => [
         { cardId: `${pair.id}_icon`, pairId: pair.id, kind: 'icon' as const, display: pair.icon, speechKey: pair.speechKey },
         { cardId: `${pair.id}_word`, pairId: pair.id, kind: 'word' as const, display: pair.label, speechKey: pair.speechKey },
       ]);
+      return deterministicShuffle(raw, seed);
     }
     return createMemoryCards(deckId, seed);
   }, [deckId, seed, srsPairs]);
 
   const resetGames = (nextDeckId: ActiveDeckChoice, nextSeed = seed + 3) => {
+    clearTimers();
     setDeckId(nextDeckId);
     setSeed(nextSeed);
     setSelectedLeft(null);
@@ -86,14 +108,21 @@ export function BadgesHub({
       setSelectedLeft(null);
       if (nextMatched.length === connectCols.left.length) {
         playRewardFanfare();
-        onCompleteGame(`world_game_connect_${deckId}`);
+        onCompleteGame(
+          `world_game_connect_${deckId}`,
+          deckId === 'srs_smart' ? srsConceptIds : undefined,
+        );
       } else {
         playSuccessChime();
       }
     } else {
       playSoftErrorTone();
       setWrongPairFlash(pairId);
-      setTimeout(() => setWrongPairFlash(null), 650);
+      if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+      wrongTimerRef.current = setTimeout(() => {
+        wrongTimerRef.current = null;
+        setWrongPairFlash(null);
+      }, 650);
     }
   };
 
@@ -113,13 +142,20 @@ export function BadgesHub({
         setFlippedCardIds([]);
         if (nextMatched.length === 6) {
           playRewardFanfare();
-          onCompleteGame(`world_game_memory_${deckId}`);
+          onCompleteGame(
+            `world_game_memory_${deckId}`,
+            deckId === 'srs_smart' ? srsConceptIds : undefined,
+          );
         } else {
           playSuccessChime();
         }
       } else {
         playSoftErrorTone();
-        setTimeout(() => setFlippedCardIds([]), 1400);
+        if (memoryTimerRef.current) clearTimeout(memoryTimerRef.current);
+        memoryTimerRef.current = setTimeout(() => {
+          memoryTimerRef.current = null;
+          setFlippedCardIds([]);
+        }, 1400);
       }
     }
   };

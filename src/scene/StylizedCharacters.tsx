@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMapFrame as useFrame } from './mapVisibility';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { AvatarStyle } from '../domain/types';

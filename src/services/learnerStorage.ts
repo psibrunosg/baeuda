@@ -15,21 +15,51 @@ function resolveStorage(storage?: Storage): Storage | null {
   }
 }
 
-function isValidProfile(value: unknown): value is LearnerProfile {
-  if (!value || typeof value !== 'object') return false;
+function sanitizeStringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  return value.filter((v): v is string => typeof v === 'string');
+}
+
+function normalizeProfile(value: unknown): LearnerProfile | null {
+  if (!value || typeof value !== 'object') return null;
   const candidate = value as Partial<LearnerProfile>;
-  return (
-    candidate.schemaVersion === 1 &&
-    typeof candidate.immersionSeconds === 'number' &&
-    Number.isFinite(candidate.immersionSeconds) &&
-    Array.isArray(candidate.completedLessonIds) &&
-    candidate.locations !== undefined &&
-    candidate.locations !== null &&
-    typeof candidate.locations === 'object' &&
-    candidate.constellation !== undefined &&
-    candidate.constellation !== null &&
-    typeof candidate.constellation === 'object'
-  );
+  if (
+    candidate.schemaVersion !== 1 ||
+    typeof candidate.immersionSeconds !== 'number' ||
+    !Number.isFinite(candidate.immersionSeconds) ||
+    !Array.isArray(candidate.completedLessonIds) ||
+    !candidate.locations ||
+    typeof candidate.locations !== 'object' ||
+    !candidate.constellation ||
+    typeof candidate.constellation !== 'object'
+  ) {
+    return null;
+  }
+
+  const base = createInitialProfile();
+  return {
+    ...base,
+    ...candidate,
+    completedLessonIds: sanitizeStringArray(candidate.completedLessonIds, base.completedLessonIds),
+    completedCafeCycles: Array.isArray(candidate.completedCafeCycles)
+      ? (candidate.completedCafeCycles.filter((v): v is NonNullable<LearnerProfile['completedCafeCycles']>[number] => typeof v === 'string'))
+      : base.completedCafeCycles,
+    streetDiscoveries: sanitizeStringArray(candidate.streetDiscoveries, []),
+    inventoryIds: sanitizeStringArray(candidate.inventoryIds, []),
+    completedQuestIds: sanitizeStringArray(candidate.completedQuestIds, []),
+    unlockedStyleIds: candidate.unlockedStyleIds
+      ? sanitizeStringArray(candidate.unlockedStyleIds, [])
+      : undefined,
+    coins:
+      typeof candidate.coins === 'number' && Number.isFinite(candidate.coins)
+        ? candidate.coins
+        : undefined,
+    locations: {
+      ...base.locations,
+      ...candidate.locations,
+    },
+    constellation: candidate.constellation,
+  };
 }
 
 export function loadProfile(storage?: Storage): LearnerProfile {
@@ -39,8 +69,7 @@ export function loadProfile(storage?: Storage): LearnerProfile {
     const raw = store.getItem(STORAGE_KEY);
     if (!raw) return createInitialProfile();
     const parsed: unknown = JSON.parse(raw);
-    if (!isValidProfile(parsed)) return createInitialProfile();
-    return parsed;
+    return normalizeProfile(parsed) ?? createInitialProfile();
   } catch {
     return createInitialProfile();
   }

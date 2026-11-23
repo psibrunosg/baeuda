@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,7 +8,6 @@ import type {
   CafeCycleId,
   CameraAnchorId,
   ConceptId,
-  ConceptNode,
   LeoAnimation,
   LocationId,
   LocationStatus,
@@ -50,9 +49,7 @@ export interface ExperienceCanvasProps {
   pourProgressRef: MutableRefObject<number>;
   isPouringRef: MutableRefObject<boolean>;
   mysteryBoxVisible: boolean;
-  orbsLaunching: boolean;
-  constellationNodes: Partial<Record<ConceptId, ConceptNode>>;
-  selectedConcept: ConceptId | null;
+  streetDiscoveries?: readonly string[];
   activeCafeCycle?: Exclude<CafeCycleId, 'cafe_c1_drinks'>;
   marketStage?: MarketStage;
   plazaStage?: PlazaStage;
@@ -74,7 +71,6 @@ export interface ExperienceCanvasProps {
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
-  onSelectConcept: (id: ConceptId) => void;
 }
 
 function CameraRig({
@@ -113,10 +109,19 @@ function CameraRig({
     if (isMapView && cameraMode === 'third_person') {
       if (controlsRef.current) controlsRef.current.enabled = false;
       const p = avatarPoseRef.current;
-      // Keep camera z strictly in front of south-side buildings (z <= 3.15) to prevent wall clipping
-      const safeCamZ = Math.min(p.z + 2.45, 3.15);
-      desiredPosRef.current.set(p.x, 2.75, safeCamZ);
-      desiredTargetRef.current.set(p.x, 0.82, p.z - 0.95);
+      // Bilateral street framing: when facing South or inspecting South-sidewalk shops,
+      // swing camera to the North side looking South so all 7 South shops stay clearly visible.
+      const facingSouth = Math.cos(p.yaw) > 0.35 && p.z > 1.85;
+      if (facingSouth) {
+        const safeCamZ = Math.max(p.z - 2.35, -0.45);
+        desiredPosRef.current.set(p.x, 2.65, safeCamZ);
+        desiredTargetRef.current.set(p.x, 0.9, p.z + 1.25);
+      } else {
+        // Keep camera z strictly in front of south-side buildings (z <= 3.15) to prevent wall clipping
+        const safeCamZ = Math.min(p.z + 2.45, 3.15);
+        desiredPosRef.current.set(p.x, 2.75, safeCamZ);
+        desiredTargetRef.current.set(p.x, 0.82, p.z - 0.95);
+      }
       camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 6.5, dt);
       camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 6.5, dt);
       camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 6.5, dt);
@@ -190,7 +195,61 @@ function CameraRig({
   );
 }
 
-export function ExperienceCanvas(props: ExperienceCanvasProps) {
+function DynamicKeyLight({
+  isMap,
+  isNight,
+  isRainy,
+}: {
+  isMap: boolean;
+  isNight: boolean;
+  isRainy: boolean;
+}) {
+  const lightRef = useRef<THREE.DirectionalLight>(null);
+
+  useEffect(() => {
+    const light = lightRef.current;
+    if (!light) return;
+    const cam = light.shadow.camera;
+    if (isMap) {
+      cam.left = -13;
+      cam.right = 13;
+      cam.top = 10;
+      cam.bottom = -10;
+      cam.far = 28;
+    } else {
+      // Tight frustum for counter scenes: ~5x sharper shadows without extra GPU cost
+      cam.left = -2.6;
+      cam.right = 2.6;
+      cam.top = 2.6;
+      cam.bottom = -1.5;
+      cam.far = 12;
+    }
+    cam.updateProjectionMatrix();
+  }, [isMap]);
+
+  return (
+    <directionalLight
+      ref={lightRef}
+      position={[4.2, 6.4, 4.6]}
+      intensity={isNight ? 0.52 : isRainy ? 0.88 : 1.55}
+      color={isNight ? '#bfd7ff' : isRainy ? '#dbeafe' : '#ffe9c7'}
+      castShadow
+      shadow-mapSize-width={2048}
+      shadow-mapSize-height={2048}
+      shadow-camera-left={-13}
+      shadow-camera-right={13}
+      shadow-camera-top={10}
+      shadow-camera-bottom={-10}
+      shadow-camera-near={0.5}
+      shadow-camera-far={28}
+      shadow-normalBias={0.025}
+      shadow-bias={-0.0002}
+      shadow-radius={3}
+    />
+  );
+}
+
+export const ExperienceCanvas = memo(function ExperienceCanvas(props: ExperienceCanvasProps) {
   const avatarPoseRef = useRef<AvatarPose>({ x: -0.35, y: 0.06, z: 1.98, yaw: Math.PI });
   const cameraMode: CameraMode = props.cameraMode ?? 'third_person';
   const isBadges = props.activeView === 'badges';
@@ -201,8 +260,9 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isPlaza = props.activeView === 'plaza';
   const isPizzeria = props.activeView === 'pizzeria';
   const isPharmacy = props.activeView === 'pharmacy';
-  const isNightMap = isMap && props.timeOfDay === 'night';
-  const isRainyMap = isMap && props.weather === 'rainy';
+  const isOutdoor = isMap || isMarket || isPlaza;
+  const isNightOutdoor = isOutdoor && props.timeOfDay === 'night';
+  const isRainyOutdoor = isOutdoor && props.weather === 'rainy';
 
   const effectiveAnchor: CameraAnchorId = isMap
     ? 'cam_mapa'
@@ -214,11 +274,11 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
           ? 'cam_praca'
           : props.cameraAnchor;
 
-  const bgColor = isNightMap
-    ? isRainyMap
+  const bgColor = isNightOutdoor
+    ? isRainyOutdoor
       ? '#141d33'
       : '#1b2642'
-    : isRainyMap
+    : isRainyOutdoor
       ? '#9eb4c8'
       : '#f3e5cf';
 
@@ -270,30 +330,14 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       {/* Warm sky-to-wood bounce lighting */}
       <hemisphereLight
         args={[
-          isNightMap ? '#93c5fd' : '#fff6e6',
-          isNightMap ? '#1e1b4b' : '#8b5e3c',
-          isNightMap ? 0.45 : 0.85,
+          isNightOutdoor ? '#93c5fd' : '#fff6e6',
+          isNightOutdoor ? '#1e1b4b' : '#8b5e3c',
+          isNightOutdoor ? 0.45 : 0.85,
         ]}
       />
 
-      {/* Key sunlight / moonlight / overcast rain light */}
-      <directionalLight
-        position={[4.2, 6.4, 4.6]}
-        intensity={isNightMap ? 0.52 : isRainyMap ? 0.88 : 1.55}
-        color={isNightMap ? '#bfd7ff' : isRainyMap ? '#dbeafe' : '#ffe9c7'}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-13}
-        shadow-camera-right={13}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-        shadow-camera-near={0.5}
-        shadow-camera-far={28}
-        shadow-normalBias={0.025}
-        shadow-bias={-0.0002}
-        shadow-radius={3}
-      />
+      {/* Key sunlight / moonlight / overcast rain light with dynamic shadow frustum */}
+      <DynamicKeyLight isMap={isMap} isNight={isNightOutdoor} isRainy={isRainyOutdoor} />
 
       {/* Subtle cool rim light separating characters & glazed ceramics from the warm wall */}
       <directionalLight
@@ -302,10 +346,16 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         color="#dbeafe"
       />
 
-      {/* Warm overhead café pendant fill light (kept mounted to prevent shader recompilation hitch) */}
+      {/* Warm overhead pendant fill light (kept mounted to prevent shader recompilation hitch) */}
       <pointLight
         position={[0, 2.02, 0.14]}
-        intensity={isLesson || isCafeCycle ? 2.8 : 0}
+        intensity={
+          isLesson || isCafeCycle || isPizzeria || isPharmacy
+            ? 2.8
+            : (isMarket || isPlaza) && isNightOutdoor
+              ? 2.2
+              : 0
+        }
         distance={6.5}
         decay={2}
         color="#ffd08a"
@@ -322,6 +372,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       <NeighborhoodMap
         cafeStatus={props.cafeStatus}
         locations={props.locations}
+        streetDiscoveries={props.streetDiscoveries}
         timeOfDay={props.timeOfDay}
         weather={props.weather}
         visible={isMap}
@@ -398,4 +449,4 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       />
     </Canvas>
   );
-}
+});

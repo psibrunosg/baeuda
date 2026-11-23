@@ -33,6 +33,8 @@ export function createInitialProfile(): LearnerProfile {
     completedLessonIds: [],
     completedCafeCycles: [],
     streetDiscoveries: [],
+    inventoryIds: [],
+    completedQuestIds: [],
     locations: {
       cafe: 'discovered',
       market: 'unexplored',
@@ -251,5 +253,56 @@ export function promoteConceptToVoice(
       existing?.originLocation ?? 'cafe',
       nowIso,
     ),
+  };
+}
+
+export function applySrsReviewOutcome(
+  profile: LearnerProfile,
+  reviewedConceptIds: readonly ConceptId[],
+  nowIso: string,
+): LearnerProfile {
+  if (reviewedConceptIds.length === 0) return profile;
+  let nextConstellation = { ...profile.constellation };
+  for (const conceptId of reviewedConceptIds) {
+    const existing = nextConstellation[conceptId];
+    const nextStage: AcquisitionStage = existing?.stage === 'voice' ? 'voice' : 'root';
+    nextConstellation = upsertConceptNode(
+      nextConstellation,
+      conceptId,
+      nextStage,
+      false,
+      existing?.originLocation ?? 'cafe',
+      nowIso,
+    );
+  }
+  return {
+    ...profile,
+    constellation: nextConstellation,
+  };
+}
+
+export function addInventoryItem(profile: LearnerProfile, itemId: string): LearnerProfile {
+  const current = profile.inventoryIds ?? [];
+  if (current.includes(itemId)) return profile;
+  return {
+    ...profile,
+    inventoryIds: [...current, itemId],
+  };
+}
+
+export function completeQuestInProfile(
+  profile: LearnerProfile,
+  questId: string,
+  targetItemId: string,
+): LearnerProfile {
+  const nextInventory = (profile.inventoryIds ?? []).filter((id) => id !== targetItemId);
+  const prevCompleted = profile.completedQuestIds ?? [];
+  const nextCompleted = prevCompleted.includes(questId)
+    ? prevCompleted
+    : [...prevCompleted, questId];
+  return {
+    ...profile,
+    inventoryIds: nextInventory,
+    completedQuestIds: nextCompleted,
   };
 }

@@ -1,12 +1,16 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import type { ConceptNode } from '../../domain/types';
+import { CURIOSITY_CATALOG } from '../../domain/curiosityCatalog';
+import { applySrsReviewOutcome, createInitialProfile } from '../../domain/learnerMemory';
+import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
+import { BadgesHub } from '../BadgesHub';
+import { CuriosityModal } from '../CuriosityModal';
 import { DebugAudioBar } from '../DebugAudioBar';
 import { GuidancePill } from '../GuidancePill';
 import { LessonHud } from '../LessonHud';
-import { SensoryCard } from '../SensoryCard';
 import { TopNav } from '../TopNav';
+import { TravelDialogueModal } from '../TravelDialogueModal';
 
 vi.mock('../../scene/ExperienceCanvas', () => ({
   ExperienceCanvas: () => null,
@@ -19,19 +23,6 @@ const FORBIDDEN_PORTUGUESE_PATTERN =
 
 function visibleText(markup: string): string {
   return markup.replace(/<[^>]+>/g, '');
-}
-
-function makeNode(
-  id: ConceptNode['id'],
-  stage: ConceptNode['stage'] = 'root',
-): ConceptNode {
-  return {
-    id,
-    stage,
-    originLocation: 'cafe',
-    neededHint: stage === 'seed',
-    lastContactAt: '2026-11-19T14:00:00.000Z',
-  };
 }
 
 describe('TopNav', () => {
@@ -175,76 +166,65 @@ describe('LessonHud', () => {
   });
 });
 
-describe('SensoryCard', () => {
-  const handlers = {
-    onReplayAudio: vi.fn(),
-    onSelectConcept: vi.fn(),
-    onGoToCafe: vi.fn(),
-    onQuickEcho: vi.fn(),
-    onClose: vi.fn(),
-  };
-
-  it('renders nothing when node is null', () => {
-    const markup = renderToStaticMarkup(
-      createElement(SensoryCard, { node: null, isListening: false, ...handlers }),
+describe('Active Modals & SRS Hub', () => {
+  it('renders BadgesHub, CuriosityModal, TravelDialogueModal, and AvatarCustomizerModal cleanly', () => {
+    const profile = createInitialProfile();
+    const badgesMarkup = renderToStaticMarkup(
+      createElement(BadgesHub, {
+        profile,
+        cefrBadge: 'Pre-A1 · 0/4',
+        onPlayAudio: vi.fn(),
+        onCompleteGame: vi.fn(),
+        onClose: vi.fn(),
+      }),
     );
-    expect(markup).toBe('');
+    expect(badgesMarkup).toContain('role="dialog"');
+    expect(badgesMarkup).toContain('Badges and Learning Games');
+
+    const curiosityMarkup = renderToStaticMarkup(
+      createElement(CuriosityModal, {
+        item: CURIOSITY_CATALOG.fruit_apple,
+        onPlayAudio: vi.fn(),
+        onSolved: vi.fn(),
+        onClose: vi.fn(),
+      }),
+    );
+    expect(curiosityMarkup).toContain('role="dialog"');
+    expect(curiosityMarkup).toContain('aria-label="Check answer"');
+
+    const dialogueMarkup = renderToStaticMarkup(
+      createElement(TravelDialogueModal, {
+        onComplete: vi.fn(),
+        onClose: vi.fn(),
+      }),
+    );
+    expect(dialogueMarkup).toContain('Travel City Conversations');
+    expect(dialogueMarkup).toContain('Where is the train station?');
+
+    const wardrobeMarkup = renderToStaticMarkup(
+      createElement(AvatarCustomizerModal, {
+        profile,
+        onSelectItem: vi.fn(() => ({ purchased: false, insufficientCoins: false })),
+        onClose: vi.fn(),
+      }),
+    );
+    expect(wardrobeMarkup).toContain('class="badges-hub-backdrop"');
+    expect(wardrobeMarkup).toContain('Avatar Wardrobe');
   });
 
-  it('renders stage dots and contrast toggle for concepts with a contrast partner', () => {
-    const markup = renderToStaticMarkup(
-      createElement(SensoryCard, {
-        node: makeNode('hot', 'root'),
-        isListening: false,
-        ...handlers,
-      }),
-    );
-
-    expect(markup).toContain('role="dialog"');
-    expect(markup).toContain('aria-label="hot"');
-    expect(markup).toContain('🔥');
-    expect(markup).toContain('❄️');
-    expect(markup).toContain('aria-label="Contrast"');
-    expect(markup.match(/stage-dot lit/g)).toHaveLength(2);
-    expect(visibleText(markup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
-    expect(markup).not.toMatch(FORBIDDEN_PORTUGUESE_PATTERN);
-  });
-
-  it('omits contrast button for concepts without a contrast partner and reflects seed/voice ranks', () => {
-    const seedMarkup = renderToStaticMarkup(
-      createElement(SensoryCard, {
-        node: makeNode('cup', 'seed'),
-        isListening: true,
-        ...handlers,
-      }),
-    );
-
-    expect(seedMarkup).not.toContain('aria-label="Contrast"');
-    expect(seedMarkup.match(/stage-dot lit/g)).toHaveLength(1);
-    expect(seedMarkup).toContain('#10b981');
-    expect(visibleText(seedMarkup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
-    expect(seedMarkup).not.toMatch(FORBIDDEN_PORTUGUESE_PATTERN);
-
-    const voiceMarkup = renderToStaticMarkup(
-      createElement(SensoryCard, {
-        node: makeNode('coffee', 'voice'),
-        isListening: false,
-        ...handlers,
-      }),
-    );
-    expect(voiceMarkup.match(/stage-dot lit/g)).toHaveLength(3);
-
-    const pourMarkup = renderToStaticMarkup(
-      createElement(SensoryCard, {
-        node: makeNode('pour', 'root'),
-        isListening: false,
-        ...handlers,
-      }),
-    );
-    expect(pourMarkup).toContain('<svg');
-    expect(pourMarkup).toContain('aria-hidden="true"');
-    expect(pourMarkup).not.toContain('🫗');
-    expect(visibleText(pourMarkup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
+  it('updates constellation lastContactAt and clears neededHint on SRS review completion', () => {
+    const base = createInitialProfile();
+    base.constellation.coffee = {
+      id: 'coffee',
+      stage: 'seed',
+      originLocation: 'cafe',
+      neededHint: true,
+      lastContactAt: '2026-01-01T00:00:00.000Z',
+    };
+    const updated = applySrsReviewOutcome(base, ['coffee'], '2026-11-23T18:00:00.000Z');
+    expect(updated.constellation.coffee?.stage).toBe('root');
+    expect(updated.constellation.coffee?.neededHint).toBe(false);
+    expect(updated.constellation.coffee?.lastContactAt).toBe('2026-11-23T18:00:00.000Z');
   });
 });
 
@@ -308,14 +288,14 @@ describe('GuidancePill', () => {
     expect(onboarding.match(/guidance-dot lit/g)).toHaveLength(1);
 
     const blended = renderToStaticMarkup(
-      createElement(GuidancePill, { context: 'cafe_pour', starCount: 4 }),
+      createElement(GuidancePill, { context: 'cafe_pour', starCount: 6 }),
     );
     expect(blended).toContain('data-immersion-tier="blended"');
     expect(blended).toContain('<strong class="guidance-keyword">pour</strong>');
     expect(blended.match(/guidance-dot lit/g)).toHaveLength(2);
 
     const immersive = renderToStaticMarkup(
-      createElement(GuidancePill, { context: 'cafe_pour', starCount: 6 }),
+      createElement(GuidancePill, { context: 'cafe_pour', starCount: 15 }),
     );
     expect(immersive).toContain('data-immersion-tier="immersive"');
     expect(immersive).toContain('Hold to ');

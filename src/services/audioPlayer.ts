@@ -110,6 +110,24 @@ export function createAudioPlayer(options: CreateAudioPlayerOptions = {}): Audio
     fallbackRate = rate;
     fallbackActive = true;
 
+    const completeFallback = () => {
+      if (token !== playToken || !fallbackActive) return;
+      fallbackActive = false;
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+      emitStatus({
+        mode: 'fallback',
+        key,
+        src: entry.src,
+        phrase: entry.phrase,
+        isPlaying: false,
+      });
+      finish();
+    };
+
+    let hasSpeechSynthesis = false;
     if (
       typeof window !== 'undefined' &&
       'speechSynthesis' in window &&
@@ -119,7 +137,10 @@ export function createAudioPlayer(options: CreateAudioPlayerOptions = {}): Audio
         const utter = new SpeechSynthesisUtterance(entry.phrase);
         utter.lang = 'en-US';
         utter.rate = Math.max(0.6, Math.min(1.4, rate));
+        utter.onend = completeFallback;
+        utter.onerror = completeFallback;
         window.speechSynthesis.speak(utter);
+        hasSpeechSynthesis = true;
       } catch {
         // Fallback timer still drives visemes and completion
       }
@@ -133,20 +154,10 @@ export function createAudioPlayer(options: CreateAudioPlayerOptions = {}): Audio
       isPlaying: true,
     });
 
-    const durationMs = Math.max(350, Math.round(entry.fallbackDurationMs / rate));
-    fallbackTimer = setTimeout(() => {
-      if (token !== playToken) return;
-      fallbackActive = false;
-      fallbackTimer = null;
-      emitStatus({
-        mode: 'fallback',
-        key,
-        src: entry.src,
-        phrase: entry.phrase,
-        isPlaying: false,
-      });
-      finish();
-    }, durationMs);
+    const baseDurationMs = Math.max(350, Math.round(entry.fallbackDurationMs / rate));
+    // When speechSynthesis is active, utter.onend drives completion and the timer acts as a safety net
+    const safetyDurationMs = hasSpeechSynthesis ? Math.max(baseDurationMs + 1200, 2200) : baseDurationMs;
+    fallbackTimer = setTimeout(completeFallback, safetyDurationMs);
   };
 
   const playSingle = (

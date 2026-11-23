@@ -68,15 +68,34 @@ export function PlazaScene({
   const slowOrbRef = useRef<THREE.Mesh>(null);
   const textures = useMemo(() => getCafeTextures(), []);
 
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const busyRef = useRef(false);
+
+  const clearTimers = () => {
+    for (const id of timersRef.current) clearTimeout(id);
+    timersRef.current = [];
+  };
+
+  const schedule = (fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    timersRef.current.push(id);
+  };
+
   useEffect(() => {
     if (!visible) {
       document.body.style.cursor = 'auto';
+      clearTimers();
+      busyRef.current = false;
       setTouchedMusic(false);
       setTouchedBird(false);
       setPlayedFast(false);
       setPlayedSlow(false);
       setTempo('normal');
     }
+    return () => clearTimers();
   }, [visible]);
 
   useFrame((state) => {
@@ -103,13 +122,16 @@ export function PlazaScene({
   };
 
   const handleExplore = (target: 'music' | 'bird') => {
+    if (busyRef.current) return;
     onPlayAudio(target === 'music' ? 'plaza_music' : 'plaza_bird');
     const nextMusic = touchedMusic || target === 'music';
     const nextBird = touchedBird || target === 'bird';
     setTouchedMusic(nextMusic);
     setTouchedBird(nextBird);
     if (nextMusic && nextBird) {
-      setTimeout(() => {
+      busyRef.current = true;
+      schedule(() => {
+        busyRef.current = false;
         onStageChange('rhythm');
         onPlayAudio('plaza_ask_fast');
       }, 950);
@@ -117,6 +139,7 @@ export function PlazaScene({
   };
 
   const handleTempo = (kind: 'fast' | 'slow') => {
+    if (busyRef.current) return;
     setTempo(kind);
     onPlayAudio(kind === 'fast' ? 'plaza_fast' : 'plaza_slow');
     const nextFast = playedFast || kind === 'fast';
@@ -125,11 +148,15 @@ export function PlazaScene({
     setPlayedSlow(nextSlow);
 
     if (kind === 'fast' && !playedSlow) {
-      setTimeout(() => onPlayAudio('plaza_ask_slow'), 950);
+      schedule(() => onPlayAudio('plaza_ask_slow'), 950);
     } else if (nextFast && nextSlow) {
-      setTimeout(() => {
+      busyRef.current = true;
+      schedule(() => {
         onPlayAudio('plaza_celebrate');
-        setTimeout(() => onComplete(), 1600);
+        schedule(() => {
+          busyRef.current = false;
+          onComplete();
+        }, 1600);
       }, 900);
     }
   };
