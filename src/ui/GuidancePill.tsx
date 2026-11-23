@@ -3,6 +3,7 @@ import { getGuidanceCopy, type GuidanceContext } from '../domain/immersion';
 interface GuidancePillProps {
   context: GuidanceContext;
   starCount: number;
+  cefrBadge?: string;
   darkSurface?: boolean;
 }
 
@@ -14,6 +15,7 @@ interface GuidancePillProps {
 export function GuidancePill({
   context,
   starCount,
+  cefrBadge,
   darkSurface = false,
 }: GuidancePillProps) {
   const copy = getGuidanceCopy(context, starCount);
@@ -25,6 +27,7 @@ export function GuidancePill({
       role="status"
       aria-live="polite"
     >
+      {cefrBadge && <span className="cefr-pill-tag">{cefrBadge}</span>}
       <span className="guidance-dots" aria-hidden="true">
         {[1, 2, 3].map((level) => (
           <span

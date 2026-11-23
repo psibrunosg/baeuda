@@ -8,14 +8,17 @@ import {
   type LessonEvent,
   type LessonPhase,
 } from './domain/lessonEngine';
+import { evaluateCefrProgress } from './domain/cefrEngine';
 import {
+  applyCafeCycleOutcome,
   applyLesson2Outcome,
   applyLesson3Outcome,
   createInitialProfile,
   promoteConceptToVoice,
+  recordStreetDiscovery,
 } from './domain/learnerMemory';
 import { resolveWorldAtmosphere, type GuidanceContext } from './domain/immersion';
-import type { ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
+import type { CafeCycleId, ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
 import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapture';
@@ -36,6 +39,8 @@ export default function App() {
   const [profile, setProfile] = useState<LearnerProfile>(() => loadProfile());
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
+  const [activeCafeCycle, setActiveCafeCycle] =
+    useState<Exclude<CafeCycleId, 'cafe_c1_drinks'>>('cafe_c2_food');
   const [marketStage, setMarketStage] = useState<MarketStage>('explore');
   const [plazaStage, setPlazaStage] = useState<PlazaStage>('explore');
   const [mapBlockedHint, setMapBlockedHint] = useState(false);
@@ -256,6 +261,22 @@ export default function App() {
     stopVoice();
     resetPourState();
     setSelectedConcept(null);
+
+    const cefr = evaluateCefrProgress(profileRef.current);
+    if (cefr.nextCafeCycle !== 'cafe_c1_drinks') {
+      const cycle = cefr.nextCafeCycle;
+      setActiveCafeCycle(cycle);
+      setActiveView('cafe_cycle');
+      const introMap: Record<Exclude<CafeCycleId, 'cafe_c1_drinks'>, SpeechKey> = {
+        cafe_c2_food: 'cafe_c2_intro',
+        cafe_c3_quantity: 'cafe_c3_intro',
+        cafe_pre_a1_shift: 'cafe_shift_order_1',
+        cafe_a1_spiral: 'cafe_a1_intro',
+      };
+      audioPlayer.play(introMap[cycle]);
+      return;
+    }
+
     setActiveView('lesson');
     if (
       lessonRef.current.completed ||
@@ -268,6 +289,21 @@ export default function App() {
     }
     dispatch({ type: 'ENTER_CAFE' });
   }, [audioPlayer, dispatch, resetPourState, stopVoice]);
+
+  const handleCompleteCafeCycle = useCallback(
+    (cycleId: CafeCycleId, concepts: readonly ConceptId[]) => {
+      const next = applyCafeCycleOutcome(
+        profileRef.current,
+        cycleId,
+        concepts,
+        new Date().toISOString(),
+      );
+      profileRef.current = next;
+      setProfile(next);
+      setActiveView('constellation');
+    },
+    [],
+  );
 
   const handlePropTap = useCallback(
     (prop: PropName) => {
@@ -368,7 +404,8 @@ export default function App() {
 
   const handleStartNextLesson = useCallback(() => {
     const locs = profileRef.current.locations;
-    if (locs.cafe !== 'familiar') {
+    const cefr = evaluateCefrProgress(profileRef.current);
+    if (!cefr.preA1Ready) {
       handleEnterCafe();
     } else if (locs.market === 'discovered') {
       handleEnterMarket();
@@ -382,6 +419,9 @@ export default function App() {
   const handleExploreObject = useCallback(
     (key: SpeechKey) => {
       audioPlayer.play(key);
+      if (key.startsWith('world_')) {
+        setProfile((prev) => recordStreetDiscovery(prev, key));
+      }
     },
     [audioPlayer],
   );
@@ -463,34 +503,41 @@ export default function App() {
 
   const starCount = Object.keys(profile.constellation).length;
   const selectedNode = selectedConcept ? (profile.constellation[selectedConcept] ?? null) : null;
+  const cefrProgress = evaluateCefrProgress(profile);
   const { timeOfDay, weather } = resolveWorldAtmosphere(profile.completedLessonIds);
+  const cefrBadge =
+    cefrProgress.level === 'pre_a1'
+      ? `Pre-A1 · ${cefrProgress.preA1StepsDone}/${cefrProgress.preA1StepsTotal}`
+      : cefrProgress.levelLabel;
 
   const guidanceContext: GuidanceContext =
     activeView === 'constellation'
       ? 'constellation'
-      : activeView === 'market'
-        ? marketStage === 'explore'
-          ? 'market_explore'
-          : marketStage === 'contrast'
-            ? 'market_contrast'
-            : 'market_basket'
-        : activeView === 'plaza'
-          ? plazaStage === 'explore'
-            ? 'plaza_explore'
-            : 'plaza_rhythm'
-          : activeView === 'map'
-            ? mapBlockedHint
-              ? 'map_locked_border'
-              : 'map_explore'
-            : lesson.phase === 'action_pour'
-              ? 'cafe_pour'
-              : lesson.phase === 'personal_choice'
-                ? 'cafe_choice'
-                : lesson.phase === 'micro_echo'
-                  ? 'cafe_echo'
-                  : lesson.awaitingInput
-                    ? 'cafe_tap_prop'
-                    : 'cafe_listen';
+      : activeView === 'cafe_cycle'
+        ? activeCafeCycle
+        : activeView === 'market'
+          ? marketStage === 'explore'
+            ? 'market_explore'
+            : marketStage === 'contrast'
+              ? 'market_contrast'
+              : 'market_basket'
+          : activeView === 'plaza'
+            ? plazaStage === 'explore'
+              ? 'plaza_explore'
+              : 'plaza_rhythm'
+            : activeView === 'map'
+              ? mapBlockedHint
+                ? 'map_locked_border'
+                : 'map_explore'
+              : lesson.phase === 'action_pour'
+                ? 'cafe_pour'
+                : lesson.phase === 'personal_choice'
+                  ? 'cafe_choice'
+                  : lesson.phase === 'micro_echo'
+                    ? 'cafe_echo'
+                    : lesson.awaitingInput
+                      ? 'cafe_tap_prop'
+                      : 'cafe_listen';
 
   return (
     <main className="app-shell">
@@ -515,9 +562,11 @@ export default function App() {
         orbsLaunching={lesson.orbsLaunching}
         constellationNodes={profile.constellation}
         selectedConcept={selectedConcept}
+        activeCafeCycle={activeCafeCycle}
         marketStage={marketStage}
         plazaStage={plazaStage}
         onEnterCafe={handleEnterCafe}
+        onCompleteCafeCycle={handleCompleteCafeCycle}
         onEnterMarket={handleEnterMarket}
         onEnterPlaza={handleEnterPlaza}
         onMarketStageChange={setMarketStage}
@@ -543,6 +592,7 @@ export default function App() {
         <GuidancePill
           context={guidanceContext}
           starCount={starCount}
+          cefrBadge={cefrBadge}
           darkSurface={
             activeView === 'constellation' || (activeView === 'map' && timeOfDay === 'night')
           }

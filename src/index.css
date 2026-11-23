@@ -374,3 +374,19 @@ body,
 .guidance-pill-dark .guidance-keyword {
   color: #fbbf24;
 }
+
+.cefr-pill-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(234, 88, 12, 0.14);
+  color: var(--accent-amber);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.guidance-pill-dark .cefr-pill-tag {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;
+}

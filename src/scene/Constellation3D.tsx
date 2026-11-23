@@ -276,6 +276,26 @@ function ConceptMiniature({
           <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.25} />
         </mesh>
       );
+    case 'coin':
+      return (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.125, 0.125, 0.035, 20]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} metalness={0.75} roughness={0.22} />
+        </mesh>
+      );
+    case 'plate':
+      return (
+        <mesh geometry={geos.saucer} position={[0, -0.02, 0]} scale={1.1}>
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.28} />
+        </mesh>
+      );
+    default:
+      return (
+        <mesh>
+          <icosahedronGeometry args={[0.12, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveIntensity} roughness={0.24} />
+        </mesh>
+      );
   }
 }
 

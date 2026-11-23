@@ -5,6 +5,19 @@ export type ConceptId =
   | 'hot'
   | 'cold'
   | 'pour'
+  | 'milk'
+  | 'sugar'
+  | 'cake'
+  | 'sweet'
+  | 'more'
+  | 'one'
+  | 'two'
+  | 'full'
+  | 'empty'
+  | 'plate'
+  | 'next_to'
+  | 'coin'
+  | 'like'
   | 'apple'
   | 'bread'
   | 'big'
@@ -13,6 +26,15 @@ export type ConceptId =
   | 'bird'
   | 'fast'
   | 'slow';
+
+export type CefrLevel = 'pre_a1' | 'a1' | 'a2';
+
+export type CafeCycleId =
+  | 'cafe_c1_drinks'
+  | 'cafe_c2_food'
+  | 'cafe_c3_quantity'
+  | 'cafe_pre_a1_shift'
+  | 'cafe_a1_spiral';
 
 export type AcquisitionStage = 'seed' | 'root' | 'voice';
 
@@ -46,6 +68,8 @@ export interface LearnerProfile {
   oralComfort: OralComfort;
   immersionSeconds: number;
   completedLessonIds: string[];
+  completedCafeCycles?: CafeCycleId[];
+  streetDiscoveries?: string[];
   locations: Record<LocationId, LocationStatus>;
   constellation: Partial<Record<ConceptId, ConceptNode>>;
 }
@@ -161,7 +185,28 @@ export type SpeechKey =
   | 'plaza_slow'
   | 'plaza_ask_fast'
   | 'plaza_ask_slow'
-  | 'plaza_celebrate';
+  | 'plaza_celebrate'
+  | 'cafe_c2_intro'
+  | 'cafe_c2_milk'
+  | 'cafe_c2_sugar'
+  | 'cafe_c2_cake'
+  | 'cafe_c2_sweet'
+  | 'cafe_c2_more_milk'
+  | 'cafe_c2_done'
+  | 'cafe_c3_intro'
+  | 'cafe_c3_one_big'
+  | 'cafe_c3_two_small'
+  | 'cafe_c3_full_empty'
+  | 'cafe_c3_done'
+  | 'cafe_shift_intro'
+  | 'cafe_shift_order_1'
+  | 'cafe_shift_order_2'
+  | 'cafe_shift_order_3'
+  | 'cafe_shift_graduate'
+  | 'cafe_a1_intro'
+  | 'cafe_a1_next_to'
+  | 'cafe_a1_coins'
+  | 'cafe_a1_like_done';
 
 export interface CounterDemoBeat {
   prop: PropName;

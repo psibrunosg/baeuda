@@ -4,6 +4,7 @@ import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
 import type {
+  CafeCycleId,
   CameraAnchorId,
   ConceptId,
   ConceptNode,
@@ -15,6 +16,7 @@ import type {
 } from '../domain/types';
 import type { SpeechClockRef } from '../services/audioPlayer';
 import { CAMERA_ANCHORS, type AssetMode } from './contracts';
+import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
 import { Constellation3D } from './Constellation3D';
 import { LeoBarista } from './LeoBarista';
@@ -22,7 +24,7 @@ import { MarketScene, type MarketStage } from './MarketScene';
 import { NeighborhoodMap } from './NeighborhoodMap';
 import { PlazaScene, type PlazaStage } from './PlazaScene';
 
-export type ActiveView = 'map' | 'lesson' | 'market' | 'plaza' | 'constellation';
+export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'constellation';
 
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
@@ -45,9 +47,11 @@ export interface ExperienceCanvasProps {
   orbsLaunching: boolean;
   constellationNodes: Partial<Record<ConceptId, ConceptNode>>;
   selectedConcept: ConceptId | null;
+  activeCafeCycle?: Exclude<CafeCycleId, 'cafe_c1_drinks'>;
   marketStage?: MarketStage;
   plazaStage?: PlazaStage;
   onEnterCafe: () => void;
+  onCompleteCafeCycle?: (cycleId: CafeCycleId, concepts: readonly ConceptId[]) => void;
   onEnterMarket?: () => void;
   onEnterPlaza?: () => void;
   onMarketStageChange?: (stage: MarketStage) => void;
@@ -136,6 +140,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isConstellation = props.activeView === 'constellation';
   const isMap = props.activeView === 'map';
   const isLesson = props.activeView === 'lesson';
+  const isCafeCycle = props.activeView === 'cafe_cycle';
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
   const isNightMap = isMap && props.timeOfDay === 'night';
@@ -145,11 +150,13 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
     ? 'cam_constelacao'
     : isMap
       ? 'cam_mapa'
-      : isMarket
-        ? 'cam_mercado'
-        : isPlaza
-          ? 'cam_praca'
-          : props.cameraAnchor;
+      : isCafeCycle
+        ? 'cam_balcao'
+        : isMarket
+          ? 'cam_mercado'
+          : isPlaza
+            ? 'cam_praca'
+            : props.cameraAnchor;
 
   const bgColor = isConstellation
     ? '#0a1024'
@@ -244,7 +251,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       {/* Warm overhead café pendant fill light (kept mounted to prevent shader recompilation hitch) */}
       <pointLight
         position={[0, 2.02, 0.14]}
-        intensity={isLesson ? 2.8 : 0}
+        intensity={isLesson || isCafeCycle ? 2.8 : 0}
         distance={6.5}
         decay={2}
         color="#ffd08a"
@@ -297,11 +304,18 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         onPourEnd={props.onPourEnd}
       />
 
+      <CafeDynamicSession
+        visible={isCafeCycle}
+        cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
+        onPlayAudio={props.onExploreObject ?? (() => {})}
+        onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
+      />
+
       <LeoBarista
         assetMode={props.assetMode}
-        animation={props.leoAnim}
+        animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
         speechRef={props.speechRef}
-        visible={isLesson}
+        visible={isLesson || isCafeCycle}
       />
 
       <Constellation3D

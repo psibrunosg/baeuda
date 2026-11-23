@@ -1,10 +1,20 @@
 import {
+  evaluateCefrProgress,
+} from './cefrEngine';
+import {
   LESSON1_CONCEPTS,
   LESSON2_CONCEPTS,
   LESSON3_CONCEPTS,
   upsertConceptNode,
 } from './constellation';
-import type { AcquisitionStage, ConceptId, DrinkChoice, LearnerProfile, OralComfort } from './types';
+import type {
+  AcquisitionStage,
+  CafeCycleId,
+  ConceptId,
+  DrinkChoice,
+  LearnerProfile,
+  OralComfort,
+} from './types';
 
 export interface Lesson1Outcome {
   preferredDrink: DrinkChoice;
@@ -21,6 +31,8 @@ export function createInitialProfile(): LearnerProfile {
     oralComfort: 'unknown',
     immersionSeconds: 0,
     completedLessonIds: [],
+    completedCafeCycles: [],
+    streetDiscoveries: [],
     locations: {
       cafe: 'discovered',
       market: 'unexplored',
@@ -61,18 +73,103 @@ export function applyLesson1Outcome(
     ? profile.completedLessonIds
     : [...profile.completedLessonIds, 'lesson1_cafe'];
 
-  return {
+  const completedCafeCycles: CafeCycleId[] = (profile.completedCafeCycles ?? []).includes(
+    'cafe_c1_drinks',
+  )
+    ? [...(profile.completedCafeCycles ?? [])]
+    : [...(profile.completedCafeCycles ?? []), 'cafe_c1_drinks'];
+
+  const draft: LearnerProfile = {
     ...profile,
     preferredDrink: outcome.preferredDrink,
     oralComfort: outcome.oralComfort,
     completedLessonIds,
+    completedCafeCycles,
     locations: {
       ...profile.locations,
       cafe: 'familiar',
-      market:
-        profile.locations.market === 'unexplored' ? 'discovered' : profile.locations.market,
     },
     constellation: nextConstellation,
+  };
+
+  const progress = evaluateCefrProgress(draft);
+  return {
+    ...draft,
+    locations: {
+      ...draft.locations,
+      market:
+        progress.marketUnlocked && draft.locations.market === 'unexplored'
+          ? 'discovered'
+          : draft.locations.market,
+    },
+  };
+}
+
+export function recordStreetDiscovery(
+  profile: LearnerProfile,
+  discoveryId: string,
+): LearnerProfile {
+  const existing = profile.streetDiscoveries ?? [];
+  if (existing.includes(discoveryId)) return profile;
+
+  const draft: LearnerProfile = {
+    ...profile,
+    streetDiscoveries: [...existing, discoveryId],
+  };
+  const progress = evaluateCefrProgress(draft);
+  return {
+    ...draft,
+    locations: {
+      ...draft.locations,
+      market:
+        progress.marketUnlocked && draft.locations.market === 'unexplored'
+          ? 'discovered'
+          : draft.locations.market,
+    },
+  };
+}
+
+export function applyCafeCycleOutcome(
+  profile: LearnerProfile,
+  cycleId: CafeCycleId,
+  concepts: readonly ConceptId[],
+  nowIso: string,
+): LearnerProfile {
+  let nextConstellation = { ...profile.constellation };
+  for (const conceptId of concepts) {
+    nextConstellation = upsertConceptNode(
+      nextConstellation,
+      conceptId,
+      'root',
+      false,
+      'cafe',
+      nowIso,
+    );
+  }
+
+  const prevCycles = profile.completedCafeCycles ?? [];
+  const completedCafeCycles = prevCycles.includes(cycleId) ? prevCycles : [...prevCycles, cycleId];
+
+  const draft: LearnerProfile = {
+    ...profile,
+    completedCafeCycles,
+    locations: {
+      ...profile.locations,
+      cafe: 'familiar',
+    },
+    constellation: nextConstellation,
+  };
+
+  const progress = evaluateCefrProgress(draft);
+  return {
+    ...draft,
+    locations: {
+      ...draft.locations,
+      market:
+        progress.marketUnlocked && draft.locations.market === 'unexplored'
+          ? 'discovered'
+          : draft.locations.market,
+    },
   };
 }
 

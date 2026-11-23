@@ -32,6 +32,10 @@ export type GuidanceContext =
   | 'cafe_pour'
   | 'cafe_choice'
   | 'cafe_echo'
+  | 'cafe_c2_food'
+  | 'cafe_c3_quantity'
+  | 'cafe_pre_a1_shift'
+  | 'cafe_a1_spiral'
   | 'market_explore'
   | 'market_contrast'
   | 'market_basket'
@@ -160,6 +164,69 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: ' ou toque em 👋 para seguir' },
     ],
     immersive: [{ text: 'Speak into the mic or wave 👋 to continue' }],
+  },
+  cafe_c2_food: {
+    onboarding: [{ text: 'Ciclo 2 · Toque no leite, açúcar e bolo no balcão do Leo' }],
+    blended: [
+      { text: 'Ciclo 2 · Explore ' },
+      { text: 'milk', highlight: true },
+      { text: ', ' },
+      { text: 'sugar', highlight: true },
+      { text: ' e ' },
+      { text: 'cake', highlight: true },
+    ],
+    immersive: [
+      { text: 'Explore ' },
+      { text: 'milk', highlight: true },
+      { text: ', ' },
+      { text: 'sugar', highlight: true },
+      { text: ' and ' },
+      { text: 'cake', highlight: true },
+    ],
+  },
+  cafe_c3_quantity: {
+    onboarding: [{ text: 'Ciclo 3 · Compare grande/pequeno, 1/2 xícaras e cheio/vazio' }],
+    blended: [
+      { text: 'Ciclo 3 · Compare ' },
+      { text: 'one/two', highlight: true },
+      { text: ' e ' },
+      { text: 'full/empty', highlight: true },
+    ],
+    immersive: [
+      { text: 'Compare ' },
+      { text: 'one/two', highlight: true },
+      { text: ' and ' },
+      { text: 'full/empty', highlight: true },
+    ],
+  },
+  cafe_pre_a1_shift: {
+    onboarding: [{ text: 'Turno Pre-A1 · Atenda os 3 clientes combinando o que aprendeu' }],
+    blended: [
+      { text: 'Turno ' },
+      { text: 'Pre-A1', highlight: true },
+      { text: ' · Sirva os pedidos combinados' },
+    ],
+    immersive: [
+      { text: 'Pre-A1 Shift · Serve the combined ' },
+      { text: 'orders', highlight: true },
+    ],
+  },
+  cafe_a1_spiral: {
+    onboarding: [{ text: 'Retorno A1 ao Café · Coloque o bolo ao lado da xícara e pague com moedas' }],
+    blended: [
+      { text: 'Café ' },
+      { text: 'A1', highlight: true },
+      { text: ' · Use ' },
+      { text: 'next to', highlight: true },
+      { text: ' e ' },
+      { text: 'coins', highlight: true },
+    ],
+    immersive: [
+      { text: 'A1 Café · Place ' },
+      { text: 'next to', highlight: true },
+      { text: ' the cup & pay ' },
+      { text: 'coins', highlight: true },
+    ],
   },
   market_explore: {
     onboarding: [{ text: 'Toque na maçã e no pão na barraca da Maya' }],

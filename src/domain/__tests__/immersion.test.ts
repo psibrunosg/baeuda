@@ -71,7 +71,7 @@ describe('multi-lesson district progression (Cafe -> Market -> Plaza)', () => {
       vocalConcepts: ['coffee'],
       nowIso: now,
     });
-    expect(p1.locations).toEqual({ cafe: 'familiar', market: 'discovered', plaza: 'unexplored' });
+    expect(p1.locations).toEqual({ cafe: 'familiar', market: 'unexplored', plaza: 'unexplored' });
     expect(Object.keys(p1.constellation)).toHaveLength(6);
 
     const p2 = applyLesson2Outcome(p1, now);

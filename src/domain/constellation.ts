@@ -15,6 +15,22 @@ export const LESSON1_CONCEPTS: readonly ConceptId[] = [
   'pour',
 ] as const;
 
+export const CAFE_EXTENDED_CONCEPTS: readonly ConceptId[] = [
+  'milk',
+  'sugar',
+  'cake',
+  'sweet',
+  'more',
+  'one',
+  'two',
+  'full',
+  'empty',
+  'plate',
+  'next_to',
+  'coin',
+  'like',
+] as const;
+
 export const LESSON2_CONCEPTS: readonly ConceptId[] = [
   'apple',
   'bread',
@@ -31,6 +47,7 @@ export const LESSON3_CONCEPTS: readonly ConceptId[] = [
 
 export const ALL_CONCEPTS: readonly ConceptId[] = [
   ...LESSON1_CONCEPTS,
+  ...CAFE_EXTENDED_CONCEPTS,
   ...LESSON2_CONCEPTS,
   ...LESSON3_CONCEPTS,
 ] as const;
@@ -47,6 +64,17 @@ export const LESSON1_EDGES: readonly ConstellationEdge[] = [
 
 export const ALL_CONSTELLATION_EDGES: readonly ConstellationEdge[] = [
   ...LESSON1_EDGES,
+  // Café Pre-A1 extended & A1 spiral edges
+  { from: 'coffee', to: 'milk', kind: 'situational' },
+  { from: 'milk', to: 'sugar', kind: 'situational' },
+  { from: 'sugar', to: 'sweet', kind: 'situational' },
+  { from: 'sweet', to: 'cake', kind: 'situational' },
+  { from: 'pour', to: 'full', kind: 'situational' },
+  { from: 'full', to: 'empty', kind: 'contrast' },
+  { from: 'one', to: 'two', kind: 'situational' },
+  { from: 'cake', to: 'plate', kind: 'situational' },
+  { from: 'plate', to: 'next_to', kind: 'situational' },
+  { from: 'coin', to: 'like', kind: 'situational' },
   // Lesson 2: Local Market
   { from: 'cup', to: 'apple', kind: 'narrative' },
   { from: 'apple', to: 'bread', kind: 'situational' },
