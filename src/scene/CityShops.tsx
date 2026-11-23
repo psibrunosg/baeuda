@@ -761,3 +761,360 @@ export function InteractiveTireShop({
     </group>
   );
 }
+
+const OUTFIT_COLORS = ['#f43f5e', '#2563eb', '#10b981', '#eab308'] as const;
+
+/**
+ * Unique Boutique Owner NPC: mint-green cardigan, cream scarf, dark bob hair, friendly wave.
+ */
+function BoutiqueNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.2 + Math.sin(t * 9.5) * 0.35 : -0.22 + Math.sin(t * 2.1) * 0.06;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      {/* Shoes */}
+      <mesh position={[-0.05, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#7f1d1d" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.05, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#7f1d1d" roughness={0.6} />
+      </mesh>
+      {/* Mint-Green Cardigan Dress Torso */}
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.125, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#34d399" roughness={0.85} />
+      </mesh>
+      {/* Cream Scarf */}
+      <mesh position={[0, 0.45, 0.02]} rotation={[0.15, 0, 0]}>
+        <torusGeometry args={[0.068, 0.018, 8, 16]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.88} />
+      </mesh>
+      {/* Left Arm */}
+      <group position={[-0.145, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.034, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#34d399" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.036, 10, 10]} />
+          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
+        </mesh>
+      </group>
+      {/* Right Arm (waves warmly) */}
+      <group ref={rightArmRef} position={[0.145, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.034, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#34d399" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.036, 10, 10]} />
+          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
+        </mesh>
+      </group>
+      {/* Head + Styled Bob Hair */}
+      <group ref={headRef} position={[0, 0.63, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.13, 16, 16]} />
+          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.04, 0.01, 0.115]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0.04, 0.01, 0.115]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        {/* Dark auburn bob hair cap */}
+        <mesh position={[0, 0.03, -0.025]} castShadow>
+          <sphereGeometry args={[0.142, 16, 14]} />
+          <meshStandardMaterial color="#4a2511" roughness={0.85} />
+        </mesh>
+        {/* Rose headband */}
+        <mesh position={[0, 0.1, 0.03]} rotation={[0.45, 0, 0]}>
+          <torusGeometry args={[0.115, 0.014, 8, 16, Math.PI]} />
+          <meshStandardMaterial color="#fb7185" roughness={0.5} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 3: Loja de Roupas Interativa (Neighborhood Clothing Boutique)
+ * 3 tactile real-world learning interactions:
+ * 1) Outdoor Wooden Clothing Rack -> sways red shirt, blue coat, green sweater ("Red shirt! Blue coat! Nice clothes!")
+ * 2) Display Mannequin -> spins & changes outfit color ("Try it on! New outfit!")
+ * 3) Yellow Sun Hat Stand & Boutique Owner -> hops hat & owner waves ("Yellow hat! Looks great!")
+ */
+export function InteractiveClothingStore({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+  const [outfitIndex, setOutfitIndex] = useState(0);
+
+  const rackGarmentsRef = useRef<THREE.Group>(null);
+  const mannequinRef = useRef<THREE.Group>(null);
+  const hatRef = useRef<THREE.Group>(null);
+
+  const rackSwayRef = useRef(0);
+  const mannequinSpinRef = useRef(0);
+  const hatHopRef = useRef(0);
+  const npcWaveRef = useRef(0);
+
+  const glow = isNight ? 1.5 : 0.65;
+  const currentOutfitColor = OUTFIT_COLORS[outfitIndex];
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+
+    if (rackSwayRef.current > 0) {
+      rackSwayRef.current = Math.max(0, rackSwayRef.current - dt * 1.4);
+      if (rackGarmentsRef.current) {
+        rackGarmentsRef.current.rotation.x = Math.sin(rackSwayRef.current * Math.PI * 5) * 0.24 * rackSwayRef.current;
+      }
+    } else if (rackGarmentsRef.current) {
+      rackGarmentsRef.current.rotation.x = 0;
+    }
+
+    if (mannequinSpinRef.current > 0) {
+      mannequinSpinRef.current = Math.max(0, mannequinSpinRef.current - dt * 1.2);
+      if (mannequinRef.current) {
+        mannequinRef.current.rotation.y += dt * 7.5 * mannequinSpinRef.current;
+      }
+    }
+
+    if (hatHopRef.current > 0) {
+      hatHopRef.current = Math.max(0, hatHopRef.current - dt * 1.6);
+      if (hatRef.current) {
+        hatRef.current.position.y = 0.72 + Math.sin(hatHopRef.current * Math.PI) * 0.16;
+        hatRef.current.rotation.y += dt * 6;
+      }
+    } else if (hatRef.current) {
+      hatRef.current.position.y = 0.72;
+    }
+  });
+
+  const handleRackClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    rackSwayRef.current = 1;
+    onTriggerAudio('world_clothes_shirt', [position[0] - 0.15, 0.08, position[2] - 1.25]);
+  };
+
+  const handleMannequinClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    setOutfitIndex((prev) => (prev + 1) % OUTFIT_COLORS.length);
+    mannequinSpinRef.current = 1;
+    onTriggerAudio('world_clothes_dress', [position[0] + 0.72, 0.08, position[2] - 1.2]);
+  };
+
+  const handleHatClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    hatHopRef.current = 1;
+    npcWaveRef.current = 2.0;
+    onTriggerAudio('world_clothes_hat', [position[0] - 0.85, 0.08, position[2] - 1.2]);
+  };
+
+  return (
+    <group name="Shop_Interactive_ClothingStore" position={position} rotation={[0, rotationY, 0]}>
+      {/* Blush-Cream Boutique Building */}
+      <RoundedBox args={[2.45, 2.05, 1.8]} radius={0.05} smoothness={2} position={[0, 1.03, 0]} castShadow receiveShadow>
+        <meshStandardMaterial
+          color="#f8dce0"
+          bumpMap={textures.plasterBump}
+          bumpScale={0.01}
+          roughness={0.86}
+        />
+      </RoundedBox>
+      {/* Stone Plinth & Sage-Teal Mansard Roof */}
+      <RoundedBox args={[2.55, 0.2, 1.9]} radius={0.03} smoothness={2} position={[0, 0.1, 0]} receiveShadow>
+        <meshStandardMaterial color="#e7e5e4" roughness={0.9} />
+      </RoundedBox>
+      <RoundedBox args={[2.62, 0.24, 1.98]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
+        <meshStandardMaterial color="#2f6f62" roughness={0.82} />
+      </RoundedBox>
+
+      {/* Iconic 3D Golden Coat Hanger Emblem Sign above Awning (zero text) */}
+      <group position={[0, 1.84, -0.96]}>
+        <RoundedBox args={[0.72, 0.4, 0.08]} radius={0.04} smoothness={2} castShadow>
+          <meshStandardMaterial color="#2f6f62" roughness={0.75} />
+        </RoundedBox>
+        {/* Golden Hanger Triangle + Hook */}
+        <mesh position={[0, -0.02, -0.06]} rotation={[0, 0, Math.PI / 6]}>
+          <boxGeometry args={[0.24, 0.032, 0.03]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.75} roughness={0.25} />
+        </mesh>
+        <mesh position={[0, -0.02, -0.06]} rotation={[0, 0, -Math.PI / 6]}>
+          <boxGeometry args={[0.24, 0.032, 0.03]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.75} roughness={0.25} />
+        </mesh>
+        <mesh position={[0, -0.08, -0.06]}>
+          <boxGeometry args={[0.38, 0.032, 0.03]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.75} roughness={0.25} />
+        </mesh>
+      </group>
+
+      {/* Striped Rose & Cream Boutique Awning facing street (-z) */}
+      <group position={[0, 1.48, -1.14]} rotation={[-0.28, 0, 0]}>
+        {Array.from({ length: 5 }, (_, i) => (
+          <RoundedBox
+            key={i}
+            args={[0.43, 0.09, 0.58]}
+            radius={0.02}
+            smoothness={2}
+            position={[-0.86 + i * 0.43, 0, 0]}
+            castShadow
+          >
+            <meshStandardMaterial color={i % 2 === 0 ? '#e11d48' : '#fff5f7'} roughness={0.85} />
+          </RoundedBox>
+        ))}
+      </group>
+
+      {/* Warm Boutique Display Window */}
+      <group position={[0, 0.94, -0.92]}>
+        <RoundedBox args={[1.68, 0.88, 0.08]} radius={0.02} smoothness={2}>
+          <meshStandardMaterial color="#fff8ee" roughness={0.82} />
+        </RoundedBox>
+        <mesh position={[0, 0, -0.044]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[1.52, 0.74]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 1: Outdoor Wooden Clothing Rack (Red Shirt, Blue Coat, Green Sweater) */}
+      <group
+        position={[-0.12, 0, -1.26]}
+        onClick={handleRackClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Rack A-frame wooden legs + brass crossbar */}
+        {[-0.48, 0.48].map((rx, idx) => (
+          <mesh key={idx} position={[rx, 0.44, 0]} castShadow>
+            <cylinderGeometry args={[0.024, 0.028, 0.88, 8]} />
+            <meshStandardMaterial color="#8b5a3c" roughness={0.82} />
+          </mesh>
+        ))}
+        <mesh position={[0, 0.86, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.022, 0.022, 1.02, 10]} />
+          <meshStandardMaterial color="#eab308" metalness={0.75} roughness={0.25} />
+        </mesh>
+        {/* Swaying Hanging Garments */}
+        <group ref={rackGarmentsRef} position={[0, 0.85, 0]}>
+          {/* Red Shirt */}
+          <RoundedBox args={[0.24, 0.36, 0.08]} radius={0.02} smoothness={2} position={[-0.28, -0.24, 0]} castShadow>
+            <meshStandardMaterial color="#ef4444" roughness={0.86} />
+          </RoundedBox>
+          {/* Blue Coat */}
+          <RoundedBox args={[0.26, 0.46, 0.09]} radius={0.02} smoothness={2} position={[0, -0.29, 0]} castShadow>
+            <meshStandardMaterial color="#2563eb" roughness={0.86} />
+          </RoundedBox>
+          {/* Emerald Sweater */}
+          <RoundedBox args={[0.24, 0.38, 0.08]} radius={0.02} smoothness={2} position={[0.28, -0.25, 0]} castShadow>
+            <meshStandardMaterial color="#10b981" roughness={0.86} />
+          </RoundedBox>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 2: Spinning Boutique Mannequin (changes outfit color on click) */}
+      <group
+        position={[0.76, 0, -1.24]}
+        onClick={handleMannequinClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Round brass pedestal */}
+        <mesh position={[0, 0.08, 0]} castShadow>
+          <cylinderGeometry args={[0.22, 0.24, 0.16, 16]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.75} />
+        </mesh>
+        <group ref={mannequinRef} position={[0, 0.16, 0]}>
+          {/* Wooden stand pole */}
+          <mesh position={[0, 0.18, 0]}>
+            <cylinderGeometry args={[0.022, 0.022, 0.36, 8]} />
+            <meshStandardMaterial color="#78350f" roughness={0.8} />
+          </mesh>
+          {/* Dress skirt & bodice (cycles color!) */}
+          <mesh position={[0, 0.42, 0]} castShadow>
+            <coneGeometry args={[0.17, 0.38, 14]} />
+            <meshStandardMaterial color={currentOutfitColor} roughness={0.76} />
+          </mesh>
+          <mesh position={[0, 0.64, 0]} castShadow>
+            <capsuleGeometry args={[0.095, 0.14, 8, 12]} />
+            <meshStandardMaterial color={currentOutfitColor} roughness={0.76} />
+          </mesh>
+          {/* Cream wooden finial head */}
+          <mesh position={[0, 0.82, 0]}>
+            <sphereGeometry args={[0.055, 10, 10]} />
+            <meshStandardMaterial color="#e7dac5" roughness={0.7} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 3: Yellow Sun Hat Stand & Boutique Owner NPC */}
+      <group
+        position={[-0.92, 0, -1.2]}
+        onClick={handleHatClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Hat Stand Pole */}
+        <mesh position={[0.16, 0.35, -0.08]} castShadow>
+          <cylinderGeometry args={[0.025, 0.06, 0.7, 10]} />
+          <meshStandardMaterial color="#8b5a3c" roughness={0.82} />
+        </mesh>
+        {/* Bouncing Yellow Sun Hat with Rose Ribbon */}
+        <group ref={hatRef} position={[0.16, 0.72, -0.08]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.19, 0.21, 0.03, 18]} />
+            <meshStandardMaterial color="#facc15" roughness={0.75} />
+          </mesh>
+          <mesh position={[0, 0.06, 0]} castShadow>
+            <cylinderGeometry args={[0.1, 0.12, 0.1, 16]} />
+            <meshStandardMaterial color="#eab308" roughness={0.75} />
+          </mesh>
+          <mesh position={[0, 0.03, 0]}>
+            <cylinderGeometry args={[0.122, 0.122, 0.025, 16]} />
+            <meshStandardMaterial color="#e11d48" roughness={0.6} />
+          </mesh>
+        </group>
+
+        {/* Boutique Owner NPC facing street (-z) */}
+        <group position={[-0.18, 0, 0.02]} rotation={[0, Math.PI, 0]}>
+          <BoutiqueNpc waveTimerRef={npcWaveRef} />
+        </group>
+      </group>
+    </group>
+  );
+}

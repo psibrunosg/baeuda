@@ -656,6 +656,27 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.0, viseme: 'viseme_aa' },
     { at: 1.55, viseme: null },
   ]),
+  world_clothes_shirt: line('world_clothes_shirt', 'Red shirt! Blue coat! Nice clothes!', 2050, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.5, viseme: 'viseme_mbp' },
+    { at: 1.05, viseme: 'viseme_oo' },
+    { at: 1.55, viseme: 'viseme_oo' },
+    { at: 1.95, viseme: null },
+  ]),
+  world_clothes_dress: line('world_clothes_dress', 'Try it on! New outfit!', 1750, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_oo' },
+    { at: 1.35, viseme: 'viseme_fv' },
+    { at: 1.65, viseme: null },
+  ]),
+  world_clothes_hat: line('world_clothes_hat', 'Yellow hat! Looks great!', 1700, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_oo' },
+    { at: 1.35, viseme: 'viseme_ee' },
+    { at: 1.6, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
