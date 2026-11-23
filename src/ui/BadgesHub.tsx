@@ -18,6 +18,7 @@ interface BadgesHubProps {
   cefrBadge: string;
   onPlayAudio: (key: SpeechKey) => void;
   onCompleteGame: (gameKey: string) => void;
+  onOpenDialogues?: () => void;
   onClose: () => void;
 }
 
@@ -26,6 +27,7 @@ export function BadgesHub({
   cefrBadge,
   onPlayAudio,
   onCompleteGame,
+  onOpenDialogues,
   onClose,
 }: BadgesHubProps) {
   const [tab, setTab] = useState<HubTab>('badges');
@@ -162,6 +164,14 @@ export function BadgesHub({
             >
               🃏 Memory
             </button>
+            {onOpenDialogues && (
+              <button
+                type="button"
+                onClick={onOpenDialogues}
+              >
+                💬 Talk
+              </button>
+            )}
           </div>
           <div className="badges-hub-meta">
             <span className="cefr-pill-tag">{cefrBadge}</span>

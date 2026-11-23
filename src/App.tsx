@@ -797,6 +797,11 @@ export default function App() {
           onCompleteGame={(gameKey) => {
             setProfile((prev) => recordStreetDiscovery(prev, gameKey));
           }}
+          onOpenDialogues={() => {
+            stopVoice();
+            setActiveView('map');
+            setTravelDialogueOpen(true);
+          }}
           onClose={() => {
             stopVoice();
             setActiveView('map');
@@ -834,9 +839,10 @@ export default function App() {
 
       {travelDialogueOpen && (
         <TravelDialogueModal
-          onComplete={() => {
-            setProfile((prev) => recordStreetDiscovery(prev, 'world_cafe_travel_dialogue'));
-            showRewardToast('🎉 Travel dialogue mastered!');
+          completedDiscoveries={profile.streetDiscoveries ?? []}
+          onComplete={(scenarioId) => {
+            setProfile((prev) => recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`));
+            showRewardToast(`🎉 ${scenarioId.toUpperCase()} conversation mastered!`);
           }}
           onClose={() => setTravelDialogueOpen(false)}
         />
