@@ -8,6 +8,7 @@ import type {
   ConceptId,
   ConceptNode,
   LeoAnimation,
+  LocationId,
   LocationStatus,
   PropName,
 } from '../domain/types';
@@ -25,6 +26,7 @@ export interface ExperienceCanvasProps {
   assetMode: AssetMode;
   cameraAnchor: CameraAnchorId;
   cafeStatus: LocationStatus;
+  locations?: Record<LocationId, LocationStatus>;
   phase: LessonPhase;
   leoAnim: LeoAnimation;
   speechRef: SpeechClockRef;
@@ -221,6 +223,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
 
       <NeighborhoodMap
         cafeStatus={props.cafeStatus}
+        locations={props.locations}
         visible={isMap}
         onEnterCafe={props.onEnterCafe}
       />

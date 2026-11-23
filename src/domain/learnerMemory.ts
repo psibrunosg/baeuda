@@ -64,6 +64,8 @@ export function applyLesson1Outcome(
     locations: {
       ...profile.locations,
       cafe: 'familiar',
+      market:
+        profile.locations.market === 'unexplored' ? 'discovered' : profile.locations.market,
     },
     constellation: nextConstellation,
   };

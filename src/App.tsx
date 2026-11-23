@@ -386,6 +386,7 @@ export default function App() {
         assetMode={assetMode}
         cameraAnchor={lesson.cameraAnchor}
         cafeStatus={profile.locations.cafe}
+        locations={profile.locations}
         phase={lesson.phase}
         leoAnim={lesson.leoAnim}
         speechRef={audioPlayer.speechRef}

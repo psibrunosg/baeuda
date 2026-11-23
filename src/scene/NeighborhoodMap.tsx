@@ -1,16 +1,29 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
-import type * as THREE from 'three';
-import type { LocationStatus } from '../domain/types';
+import * as THREE from 'three';
+import type { LocationId, LocationStatus } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
+import {
+  LearnerAvatar,
+  MarketVendorNpc,
+  MiniLeoGreeter,
+  PlazaMusicianNpc,
+} from './StylizedCharacters';
 
 interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
+  locations?: Record<LocationId, LocationStatus>;
   visible: boolean;
   onEnterCafe: () => void;
 }
+
+const WALK_SPEED = 2.4;
+const WALK_Z_MIN = -0.85;
+const WALK_Z_MAX = 2.55;
+const MARKET_BORDER_X = -2.05;
+const PLAZA_BORDER_X = 2.05;
 
 function StylizedCloud({
   position,
@@ -105,25 +118,103 @@ function StylizedTree({
   );
 }
 
+/**
+ * Charming wooden sawhorse barrier at locked district borders (zero text).
+ */
+function DistrictBarrier({
+  position,
+  rotationY = 0,
+}: {
+  position: [number, number, number];
+  rotationY?: number;
+}) {
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <RoundedBox args={[0.08, 0.34, 0.85]} radius={0.015} smoothness={2} position={[0, 0.24, 0]} castShadow>
+        <meshStandardMaterial color="#f59e0b" roughness={0.75} />
+      </RoundedBox>
+      <mesh position={[0, 0.24, -0.22]}>
+        <boxGeometry args={[0.085, 0.34, 0.14]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 0.24, 0.22]}>
+        <boxGeometry args={[0.085, 0.34, 0.14]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 0.12, -0.34]} castShadow>
+        <boxGeometry args={[0.06, 0.24, 0.06]} />
+        <meshStandardMaterial color="#7a4e32" roughness={0.88} />
+      </mesh>
+      <mesh position={[0, 0.12, 0.34]} castShadow>
+        <boxGeometry args={[0.06, 0.24, 0.06]} />
+        <meshStandardMaterial color="#7a4e32" roughness={0.88} />
+      </mesh>
+    </group>
+  );
+}
+
 export function NeighborhoodMap({
   cafeStatus,
+  locations,
   visible,
   onEnterCafe,
 }: NeighborhoodMapProps) {
   const pulseRingRef = useRef<THREE.Mesh>(null);
   const puff1Ref = useRef<THREE.Mesh>(null);
   const puff2Ref = useRef<THREE.Mesh>(null);
-  const miniLeoArmRef = useRef<THREE.Mesh>(null);
+  const fountainRingRef = useRef<THREE.Mesh>(null);
+
+  // Walkable learner avatar state (all refs, zero per-frame React re-renders)
+  const avatarGroupRef = useRef<THREE.Group>(null);
+  const walkRingRef = useRef<THREE.Mesh>(null);
+  const walkTargetRef = useRef<THREE.Vector2 | null>(null);
+  const isWalkingRef = useRef(false);
+  const blockedBumpRef = useRef(0);
+  const keysRef = useRef<Record<string, boolean>>({});
 
   const geos = useMemo(() => getCafeGeometries(), []);
   const textures = useMemo(() => getCafeTextures(), []);
 
+  const effectiveCafeStatus = locations?.cafe ?? cafeStatus;
+  const marketLocked = (locations?.market ?? 'unexplored') === 'unexplored';
+  const plazaLocked = (locations?.plaza ?? 'unexplored') === 'unexplored';
+
   useEffect(() => {
     if (!visible) {
       document.body.style.cursor = 'auto';
+      keysRef.current = {};
+      walkTargetRef.current = null;
+      isWalkingRef.current = false;
+      return;
     }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const code = e.code;
+      if (
+        code === 'KeyW' ||
+        code === 'KeyA' ||
+        code === 'KeyS' ||
+        code === 'KeyD' ||
+        code === 'ArrowUp' ||
+        code === 'ArrowDown' ||
+        code === 'ArrowLeft' ||
+        code === 'ArrowRight'
+      ) {
+        keysRef.current[code] = true;
+        walkTargetRef.current = null;
+      }
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      keysRef.current[e.code] = false;
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
     return () => {
       document.body.style.cursor = 'auto';
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
     };
   }, [visible]);
 
@@ -132,9 +223,11 @@ export function NeighborhoodMap({
     if (puff2Ref.current) puff2Ref.current.position.y = 0.45;
   }, [visible]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!visible) return;
+    const dt = Math.min(delta, 0.05);
     const t = state.clock.elapsedTime;
+
     if (pulseRingRef.current) {
       const s = 1 + Math.sin(t * 3.2) * 0.14;
       pulseRingRef.current.scale.set(s, s, 1);
@@ -149,8 +242,89 @@ export function NeighborhoodMap({
       puff2Ref.current.position.y = cycle * 0.92;
       puff2Ref.current.scale.setScalar(0.18 + cycle * 0.24);
     }
-    if (miniLeoArmRef.current) {
-      miniLeoArmRef.current.rotation.z = -0.6 + Math.sin(t * 5.5) * 0.35;
+    if (fountainRingRef.current && !plazaLocked) {
+      const ripple = 1 + Math.sin(t * 4) * 0.12;
+      fountainRingRef.current.scale.set(ripple, ripple, 1);
+    }
+
+    // Update walkable learner avatar
+    const avatar = avatarGroupRef.current;
+    if (!avatar) return;
+
+    const minX = marketLocked ? MARKET_BORDER_X : -6.1;
+    const maxX = plazaLocked ? PLAZA_BORDER_X : 6.1;
+
+    const keys = keysRef.current;
+    let dx = 0;
+    let dz = 0;
+    if (keys.KeyA || keys.ArrowLeft) dx -= 1;
+    if (keys.KeyD || keys.ArrowRight) dx += 1;
+    if (keys.KeyW || keys.ArrowUp) dz -= 1;
+    if (keys.KeyS || keys.ArrowDown) dz += 1;
+
+    if (dx !== 0 || dz !== 0) {
+      const len = Math.hypot(dx, dz);
+      dx /= len;
+      dz /= len;
+      const nextX = avatar.position.x + dx * WALK_SPEED * dt;
+      const nextZ = avatar.position.z + dz * WALK_SPEED * dt;
+
+      if ((marketLocked && nextX < minX) || (plazaLocked && nextX > maxX)) {
+        if (blockedBumpRef.current <= 0.05) {
+          blockedBumpRef.current = 1;
+        }
+      }
+
+      avatar.position.x = THREE.MathUtils.clamp(nextX, minX, maxX);
+      avatar.position.z = THREE.MathUtils.clamp(nextZ, WALK_Z_MIN, WALK_Z_MAX);
+      avatar.rotation.y = Math.atan2(dx, dz);
+      isWalkingRef.current = true;
+    } else if (walkTargetRef.current) {
+      const tx = THREE.MathUtils.clamp(walkTargetRef.current.x, minX, maxX);
+      const tz = THREE.MathUtils.clamp(walkTargetRef.current.y, WALK_Z_MIN, WALK_Z_MAX);
+
+      if (
+        (marketLocked && walkTargetRef.current.x < minX) ||
+        (plazaLocked && walkTargetRef.current.x > maxX)
+      ) {
+        if (
+          Math.abs(avatar.position.x - tx) < 0.15 &&
+          blockedBumpRef.current <= 0.05
+        ) {
+          blockedBumpRef.current = 1;
+        }
+      }
+
+      const toX = tx - avatar.position.x;
+      const toZ = tz - avatar.position.z;
+      const dist = Math.hypot(toX, toZ);
+      if (dist < 0.08) {
+        walkTargetRef.current = null;
+        isWalkingRef.current = false;
+      } else {
+        const step = Math.min(dist, WALK_SPEED * dt);
+        avatar.position.x += (toX / dist) * step;
+        avatar.position.z += (toZ / dist) * step;
+        avatar.rotation.y = Math.atan2(toX, toZ);
+        isWalkingRef.current = true;
+      }
+    } else {
+      isWalkingRef.current = false;
+    }
+
+    if (walkRingRef.current) {
+      if (walkTargetRef.current) {
+        walkRingRef.current.visible = true;
+        walkRingRef.current.position.set(
+          THREE.MathUtils.clamp(walkTargetRef.current.x, minX, maxX),
+          0.055,
+          THREE.MathUtils.clamp(walkTargetRef.current.y, WALK_Z_MIN, WALK_Z_MAX),
+        );
+        const pulse = 1 + Math.sin(t * 6) * 0.12;
+        walkRingRef.current.scale.set(pulse, pulse, 1);
+      } else {
+        walkRingRef.current.visible = false;
+      }
     }
   });
 
@@ -170,22 +344,27 @@ export function NeighborhoodMap({
     document.body.style.cursor = 'auto';
   };
 
+  const handleGroundWalkClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    walkTargetRef.current = new THREE.Vector2(e.point.x, e.point.z);
+  };
+
   return (
     <group name="Neighborhood_Diorama">
-      {/* Grounded studio AO across the whole diorama island */}
+      {/* Grounded studio AO across the expanded town island */}
       <ContactShadows
         frames={1}
         position={[0, 0.012, 0]}
-        opacity={0.34}
-        scale={13}
+        opacity={0.32}
+        scale={18}
         blur={2.4}
         far={3.5}
         color="#4a3728"
       />
 
-      {/* Sculpted miniature diorama island: warm terracotta soil rim + sage turf top */}
+      {/* Expanded Diorama Town Island: warm terracotta soil rim + sage turf */}
       <mesh position={[0, -0.32, 0]} receiveShadow>
-        <cylinderGeometry args={[6.45, 6.1, 0.44, 40]} />
+        <cylinderGeometry args={[9.2, 8.7, 0.44, 48]} />
         <meshStandardMaterial
           color="#a67c52"
           bumpMap={textures.clayBump}
@@ -194,7 +373,7 @@ export function NeighborhoodMap({
         />
       </mesh>
       <mesh position={[0, -0.05, 0]} receiveShadow>
-        <cylinderGeometry args={[6.42, 6.48, 0.12, 40]} />
+        <cylinderGeometry args={[9.15, 9.22, 0.12, 48]} />
         <meshStandardMaterial
           color="#b9c698"
           bumpMap={textures.clayBump}
@@ -203,9 +382,13 @@ export function NeighborhoodMap({
         />
       </mesh>
 
-      {/* Cobblestone street + raised warm stone sidewalk & curb */}
-      <mesh position={[0, 0.015, 1.55]} receiveShadow>
-        <boxGeometry args={[11.2, 0.04, 1.5]} />
+      {/* Main Walkable Cobblestone Boulevard + Crosswalk + Raised Sidewalk */}
+      <mesh
+        position={[0, 0.015, 1.72]}
+        receiveShadow
+        onClick={handleGroundWalkClick}
+      >
+        <boxGeometry args={[15.8, 0.04, 1.85]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.cobblestoneColor}
@@ -214,7 +397,21 @@ export function NeighborhoodMap({
           roughness={0.9}
         />
       </mesh>
-      <RoundedBox args={[5.2, 0.075, 2.75]} radius={0.03} smoothness={3} position={[0, 0.025, -0.42]} receiveShadow>
+      {/* Zebra crosswalk stripes leading to the café */}
+      {[-0.45, -0.15, 0.15, 0.45].map((cx, idx) => (
+        <mesh key={idx} position={[cx, 0.038, 1.72]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.16, 1.25]} />
+          <meshStandardMaterial color="#f5ebd8" roughness={0.85} />
+        </mesh>
+      ))}
+      <RoundedBox
+        args={[13.8, 0.075, 2.85]}
+        radius={0.03}
+        smoothness={3}
+        position={[0, 0.025, -0.45]}
+        receiveShadow
+        onClick={handleGroundWalkClick}
+      >
         <meshStandardMaterial
           color="#dfd3be"
           bumpMap={textures.plasterBump}
@@ -222,6 +419,45 @@ export function NeighborhoodMap({
           roughness={0.88}
         />
       </RoundedBox>
+
+      {/* Walk target destination ring */}
+      <mesh ref={walkRingRef} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.16, 0.24, 24]} />
+        <meshBasicMaterial color="#f59e0b" transparent opacity={0.85} />
+      </mesh>
+
+      {/* Walkable Learner Avatar (starts outside Café on the sidewalk) */}
+      <group ref={avatarGroupRef} position={[-0.35, 0.06, 1.98]}>
+        <LearnerAvatar isWalkingRef={isWalkingRef} blockedBumpRef={blockedBumpRef} />
+      </group>
+
+      {/* Background Storybook Town Silhouettes (Bakery & Bookshop Clocktower framing the horizon) */}
+      <group position={[-2.9, 0.05, -4.35]}>
+        <RoundedBox args={[2.4, 2.3, 1.6]} radius={0.05} smoothness={2} position={[0, 1.15, 0]}>
+          <meshStandardMaterial color="#ead2a8" roughness={0.9} />
+        </RoundedBox>
+        <RoundedBox args={[2.6, 0.24, 1.8]} radius={0.04} smoothness={2} position={[0, 2.38, 0]}>
+          <meshStandardMaterial color="#8c4f38" roughness={0.86} />
+        </RoundedBox>
+        <mesh position={[0, 1.35, 0.82]}>
+          <boxGeometry args={[1.1, 0.7, 0.05]} />
+          <meshStandardMaterial color="#fde68a" emissive="#f59e0b" emissiveIntensity={0.45} />
+        </mesh>
+      </group>
+      <group position={[2.8, 0.05, -4.45]}>
+        <RoundedBox args={[2.3, 2.8, 1.6]} radius={0.05} smoothness={2} position={[0, 1.4, 0]}>
+          <meshStandardMaterial color="#cbd5e1" roughness={0.9} />
+        </RoundedBox>
+        <mesh position={[0, 3.1, 0]}>
+          <coneGeometry args={[1.55, 0.85, 4]} />
+          <meshStandardMaterial color="#475569" roughness={0.85} />
+        </mesh>
+        {/* Clock face */}
+        <mesh position={[0, 2.2, 0.82]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.26, 0.26, 0.04, 16]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.6} />
+        </mesh>
+      </group>
 
       {/* Café da Esquina — tactile artisan diorama hero */}
       <group position={[0, 0.06, -0.55]}>
@@ -313,7 +549,7 @@ export function NeighborhoodMap({
             <meshStandardMaterial
               color="#ffe9a6"
               emissive="#f59e0b"
-              emissiveIntensity={cafeStatus === 'familiar' ? 0.95 : 0.62}
+              emissiveIntensity={effectiveCafeStatus === 'familiar' ? 0.95 : 0.62}
               roughness={0.25}
             />
           </mesh>
@@ -373,11 +609,9 @@ export function NeighborhoodMap({
           onPointerOver={handleDoorPointerOver}
           onPointerOut={handleDoorPointerOut}
         >
-          {/* Doorframe */}
           <RoundedBox args={[0.84, 1.38, 0.09]} radius={0.02} smoothness={2} position={[0, 0.02, -0.01]}>
             <meshStandardMaterial color="#f5ebd8" roughness={0.82} />
           </RoundedBox>
-          {/* Door leaf */}
           <RoundedBox args={[0.72, 1.28, 0.08]} radius={0.02} smoothness={2} castShadow>
             <meshStandardMaterial
               color="#693e22"
@@ -386,51 +620,29 @@ export function NeighborhoodMap({
               roughness={0.72}
             />
           </RoundedBox>
-          {/* Small upper door window pane */}
           <mesh position={[0, 0.28, 0.045]}>
             <planeGeometry args={[0.42, 0.36]} />
-            <meshStandardMaterial
-              color="#fde68a"
-              emissive="#f59e0b"
-              emissiveIntensity={0.65}
-            />
+            <meshStandardMaterial color="#fde68a" emissive="#f59e0b" emissiveIntensity={0.65} />
           </mesh>
-          {/* Brass doorknob */}
           <mesh position={[0.24, -0.04, 0.062]}>
             <sphereGeometry args={[0.044, 12, 12]} />
             <meshStandardMaterial color="#facc15" metalness={0.78} roughness={0.22} />
           </mesh>
-          {/* Pulsing floor ring cleanly above sidewalk/road (zero z-fighting) */}
           <mesh ref={pulseRingRef} position={[0, -0.59, 0.38]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.4, 0.54, 36]} />
             <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} />
           </mesh>
         </group>
 
-        {/* Expressive Mini Leo waving outside the door */}
+        {/* Unique Detailed Mini Leo Greeter outside the café door */}
         <group
           name="prop_cafe_door"
-          position={[1.18, 0.02, 1.38]}
+          position={[1.18, 0.01, 1.38]}
           onClick={handleDoorClick}
           onPointerOver={handleDoorPointerOver}
           onPointerOut={handleDoorPointerOut}
         >
-          <mesh position={[0, 0.36, 0]} castShadow>
-            <capsuleGeometry args={[0.135, 0.26, 8, 14]} />
-            <meshStandardMaterial color="#355f4e" bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.86} />
-          </mesh>
-          <mesh position={[0, 0.72, 0]} castShadow>
-            <sphereGeometry args={[0.155, 16, 16]} />
-            <meshStandardMaterial color="#f3c6a0" bumpMap={textures.clayBump} bumpScale={0.004} roughness={0.82} />
-          </mesh>
-          <mesh position={[0, 0.78, -0.01]} castShadow>
-            <sphereGeometry args={[0.16, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
-            <meshStandardMaterial color="#4b2e1e" roughness={0.88} />
-          </mesh>
-          <mesh ref={miniLeoArmRef} position={[0.19, 0.52, 0]} castShadow>
-            <capsuleGeometry args={[0.044, 0.19, 6, 10]} />
-            <meshStandardMaterial color="#f3c6a0" roughness={0.82} />
-          </mesh>
+          <MiniLeoGreeter />
         </group>
 
         {/* Outdoor Sidewalk Bistro Table & Chairs */}
@@ -446,7 +658,6 @@ export function NeighborhoodMap({
           <mesh geometry={geos.mug} position={[0.05, 0.58, 0.04]} scale={0.65} castShadow>
             <meshStandardMaterial color="#dc5a2c" roughness={0.3} />
           </mesh>
-          {/* Two little bistro chairs */}
           {[-0.44, 0.44].map((cx, idx) => (
             <group key={idx} position={[cx, 0, 0]} rotation={[0, idx === 0 ? 0.25 : -0.25, 0]}>
               <mesh position={[0, 0.3, 0]} castShadow>
@@ -465,7 +676,7 @@ export function NeighborhoodMap({
           ))}
         </group>
 
-        {/* Cozy Vintage Streetlamp on left sidewalk corner (keeps hanging café sign unobstructed) */}
+        {/* Cozy Vintage Streetlamp */}
         <group position={[-2.28, 0.02, 1.48]}>
           <mesh position={[0, 0.95, 0]} castShadow>
             <cylinderGeometry args={[0.035, 0.06, 1.9, 10]} />
@@ -504,7 +715,6 @@ export function NeighborhoodMap({
             <planeGeometry args={[0.22, 0.3]} />
             <meshStandardMaterial color="#27312f" roughness={0.95} />
           </mesh>
-          {/* Minimalist chalk cup silhouette */}
           <mesh position={[0, 0.24, 0.088]} rotation={[-0.18, 0, 0]}>
             <cylinderGeometry args={[0.04, 0.03, 0.07, 12]} />
             <meshBasicMaterial color="#fef3c7" />
@@ -552,61 +762,136 @@ export function NeighborhoodMap({
             <cylinderGeometry args={[0.014, 0.014, 0.22, 8]} />
             <meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.25} />
           </mesh>
-          {/* Wicker front basket */}
           <RoundedBox args={[0.14, 0.1, 0.11]} radius={0.015} smoothness={2} position={[0, 0.36, 0.26]} castShadow>
             <meshStandardMaterial color="#c49563" roughness={0.88} />
           </RoundedBox>
         </group>
       </group>
 
-      {/* Soft Claybound-style drifting clouds above the diorama */}
-      <StylizedCloud position={[-2.9, 3.15, -3.1]} scale={0.92} speed={0.22} phase={0.4} />
-      <StylizedCloud position={[2.8, 3.3, -2.8]} scale={0.8} speed={0.18} phase={2.1} />
-      <StylizedCloud position={[0.1, 3.45, -3.9]} scale={1.0} speed={0.15} phase={4.2} />
-
       {/* Cozy green neighborhood trees framing the café */}
       <StylizedTree position={[-2.15, 0, -2.3]} scale={0.95} />
       <StylizedTree position={[2.45, 0, -2.1]} scale={1.08} />
 
-      {/* Unexplored Local Market (Lesson 2 teaser: stall + crates under dreamy translucent fog) */}
-      <group position={[-3.55, 0, -0.35]}>
-        <RoundedBox args={[1.95, 1.15, 1.35]} radius={0.05} smoothness={2} position={[0, 0.58, 0]}>
-          <meshStandardMaterial color="#cbd5e1" transparent opacity={0.42} roughness={0.95} />
+      {/* DISTRICT 2: Local Market (Lesson 2 — locked under fog until Café Lesson 1 completes) */}
+      <group position={[-4.35, 0.06, -0.45]}>
+        <RoundedBox args={[2.25, 1.32, 1.45]} radius={0.05} smoothness={2} position={[0, 0.66, 0]}>
+          <meshStandardMaterial
+            color={marketLocked ? '#cbd5e1' : '#f5ebd8'}
+            transparent={marketLocked}
+            opacity={marketLocked ? 0.45 : 1}
+            roughness={0.9}
+          />
         </RoundedBox>
-        <mesh position={[0, 1.32, 0.1]} rotation={[0.22, 0, 0]}>
-          <boxGeometry args={[2.15, 0.14, 1.55]} />
-          <meshStandardMaterial color="#e2e8f0" transparent opacity={0.48} roughness={0.9} />
+        {/* Striped market awning */}
+        <mesh position={[0, 1.48, 0.18]} rotation={[0.25, 0, 0]}>
+          <boxGeometry args={[2.45, 0.14, 1.75]} />
+          <meshStandardMaterial
+            color={marketLocked ? '#e2e8f0' : '#d97757'}
+            transparent={marketLocked}
+            opacity={marketLocked ? 0.5 : 1}
+            roughness={0.88}
+          />
         </mesh>
-        <mesh position={[-0.45, 0.22, 0.85]}>
-          <boxGeometry args={[0.42, 0.36, 0.36]} />
-          <meshStandardMaterial color="#cbd5e1" transparent opacity={0.4} />
+        {/* Wooden fruit crates */}
+        <mesh position={[-0.52, 0.22, 0.92]}>
+          <boxGeometry args={[0.5, 0.36, 0.4]} />
+          <meshStandardMaterial
+            color={marketLocked ? '#cbd5e1' : '#b47b4e'}
+            transparent={marketLocked}
+            opacity={marketLocked ? 0.45 : 1}
+          />
         </mesh>
-        <mesh position={[0.15, 1.72, 0.2]}>
-          <sphereGeometry args={[1.05, 14, 14]} />
-          <meshStandardMaterial color="#f8fafc" transparent opacity={0.64} roughness={1} depthWrite={false} />
-        </mesh>
-        <mesh position={[-0.75, 1.48, -0.15]}>
-          <sphereGeometry args={[0.78, 12, 12]} />
-          <meshStandardMaterial color="#f8fafc" transparent opacity={0.58} roughness={1} depthWrite={false} />
-        </mesh>
+        {!marketLocked && (
+          <>
+            <mesh position={[-0.58, 0.45, 0.9]}>
+              <sphereGeometry args={[0.08, 10, 10]} />
+              <meshStandardMaterial color="#f97316" roughness={0.65} />
+            </mesh>
+            <mesh position={[-0.44, 0.45, 0.94]}>
+              <sphereGeometry args={[0.08, 10, 10]} />
+              <meshStandardMaterial color="#22c55e" roughness={0.65} />
+            </mesh>
+          </>
+        )}
+        {/* Unique Market Vendor NPC */}
+        <group position={[0.55, 0.02, 1.05]}>
+          <MarketVendorNpc fogged={marketLocked} />
+        </group>
+
+        {/* Map Lock Fog + Sawhorse Barrier */}
+        {marketLocked && (
+          <>
+            <mesh position={[0.15, 1.75, 0.2]}>
+              <sphereGeometry args={[1.25, 14, 14]} />
+              <meshStandardMaterial color="#f8fafc" transparent opacity={0.64} roughness={1} depthWrite={false} />
+            </mesh>
+            <mesh position={[-0.75, 1.5, -0.15]}>
+              <sphereGeometry args={[0.88, 12, 12]} />
+              <meshStandardMaterial color="#f8fafc" transparent opacity={0.58} roughness={1} depthWrite={false} />
+            </mesh>
+            <DistrictBarrier position={[2.0, 0, 1.85]} />
+          </>
+        )}
       </group>
 
-      {/* Unexplored Central Plaza (trees + fountain silhouette under translucent fog) */}
-      <group position={[3.55, 0, -0.65]}>
-        <StylizedTree position={[0.35, 0, -0.3]} scale={0.92} fogged />
-        <mesh position={[-0.35, 0.22, 0.3]}>
-          <cylinderGeometry args={[0.52, 0.58, 0.32, 16]} />
-          <meshStandardMaterial color="#cbd5e1" transparent opacity={0.42} />
+      {/* DISTRICT 3: Central Plaza (Lesson 3 — locked under fog until discovered) */}
+      <group position={[4.45, 0.06, -0.55]}>
+        <StylizedTree position={[0.45, 0, -0.45]} scale={0.95} fogged={plazaLocked} />
+        {/* Tiered Water Fountain */}
+        <mesh position={[-0.35, 0.22, 0.35]}>
+          <cylinderGeometry args={[0.62, 0.68, 0.32, 18]} />
+          <meshStandardMaterial
+            color={plazaLocked ? '#cbd5e1' : '#e7dac5'}
+            transparent={plazaLocked}
+            opacity={plazaLocked ? 0.45 : 1}
+          />
         </mesh>
-        <mesh position={[-0.1, 1.35, 0.25]}>
-          <sphereGeometry args={[1.02, 14, 14]} />
-          <meshStandardMaterial color="#f8fafc" transparent opacity={0.62} roughness={1} depthWrite={false} />
+        <mesh position={[-0.35, 0.56, 0.35]}>
+          <cylinderGeometry args={[0.2, 0.28, 0.42, 14]} />
+          <meshStandardMaterial
+            color={plazaLocked ? '#cbd5e1' : '#d6cbb8'}
+            transparent={plazaLocked}
+            opacity={plazaLocked ? 0.45 : 1}
+          />
         </mesh>
-        <mesh position={[0.65, 1.25, -0.25]}>
-          <sphereGeometry args={[0.76, 12, 12]} />
-          <meshStandardMaterial color="#f8fafc" transparent opacity={0.56} roughness={1} depthWrite={false} />
-        </mesh>
+        {!plazaLocked && (
+          <mesh ref={fountainRingRef} position={[-0.35, 0.4, 0.35]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.25, 0.52, 24]} />
+            <meshBasicMaterial color="#38bdf8" transparent opacity={0.75} />
+          </mesh>
+        )}
+        {/* Park Bench + Unique Plaza Musician NPC */}
+        <RoundedBox args={[0.85, 0.12, 0.35]} radius={0.02} smoothness={2} position={[0.72, 0.22, 0.62]}>
+          <meshStandardMaterial
+            color={plazaLocked ? '#cbd5e1' : '#8b5a3c'}
+            transparent={plazaLocked}
+            opacity={plazaLocked ? 0.45 : 1}
+          />
+        </RoundedBox>
+        <group position={[0.72, 0.1, 0.65]}>
+          <PlazaMusicianNpc fogged={plazaLocked} />
+        </group>
+
+        {/* Map Lock Fog + Sawhorse Barrier */}
+        {plazaLocked && (
+          <>
+            <mesh position={[-0.1, 1.45, 0.25]}>
+              <sphereGeometry args={[1.22, 14, 14]} />
+              <meshStandardMaterial color="#f8fafc" transparent opacity={0.62} roughness={1} depthWrite={false} />
+            </mesh>
+            <mesh position={[0.75, 1.25, -0.25]}>
+              <sphereGeometry args={[0.88, 12, 12]} />
+              <meshStandardMaterial color="#f8fafc" transparent opacity={0.56} roughness={1} depthWrite={false} />
+            </mesh>
+            <DistrictBarrier position={[-2.1, 0, 1.95]} />
+          </>
+        )}
       </group>
+
+      {/* Soft Claybound-style drifting clouds above the city */}
+      <StylizedCloud position={[-3.2, 3.25, -3.1]} scale={0.95} speed={0.22} phase={0.4} />
+      <StylizedCloud position={[3.1, 3.4, -2.9]} scale={0.85} speed={0.18} phase={2.1} />
+      <StylizedCloud position={[0.1, 3.55, -3.9]} scale={1.0} speed={0.15} phase={4.2} />
     </group>
   );
 }
