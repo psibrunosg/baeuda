@@ -424,6 +424,8 @@ export default function App() {
         setInventoryIds((prev) => (prev.includes('bread') ? prev : [...prev, 'bread']));
       } else if (key === 'world_pharmacy_medicine') {
         setInventoryIds((prev) => (prev.includes('medicine') ? prev : [...prev, 'medicine']));
+      } else if (key === 'world_pet_food') {
+        setInventoryIds((prev) => (prev.includes('petfood') ? prev : [...prev, 'petfood']));
       }
     },
     [audioPlayer],

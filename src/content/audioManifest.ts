@@ -908,6 +908,34 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: 'viseme_oo' },
     { at: 1.95, viseme: null },
   ]),
+  job_vet: line('job_vet', 'Vet! Takes care of animals!', 1900, [
+    { at: 0.0, viseme: 'viseme_fv' },
+    { at: 0.45, viseme: 'viseme_ee' },
+    { at: 0.95, viseme: 'viseme_aa' },
+    { at: 1.45, viseme: 'viseme_mbp' },
+    { at: 1.8, viseme: null },
+  ]),
+  world_pet_dog: line('world_pet_dog', 'Happy dog! Good puppy!', 1750, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.45, viseme: 'viseme_oo' },
+    { at: 0.95, viseme: 'viseme_oo' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.65, viseme: null },
+  ]),
+  world_pet_food: line('world_pet_food', 'Pet food! Feed the puppy!', 1800, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_fv' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.7, viseme: null },
+  ]),
+  world_pet_toy: line('world_pet_toy', 'Red ball! Play with the dog!', 1850, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.45, viseme: 'viseme_oo' },
+    { at: 1.75, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

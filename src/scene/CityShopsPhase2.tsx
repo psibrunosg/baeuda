@@ -306,3 +306,292 @@ export function InteractivePharmacy({
     </group>
   );
 }
+
+/**
+ * Unique Veterinarian NPC: sky-blue scrubs, stethoscope around neck, warm smile.
+ */
+function VetNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.15 + Math.sin(t * 10) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.9) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#0369a1" roughness={0.7} />
+      </mesh>
+      <mesh position={[0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#0369a1" roughness={0.7} />
+      </mesh>
+      {/* Sky-blue vet scrubs */}
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#38bdf8" roughness={0.84} />
+      </mesh>
+      {/* Dark stethoscope around neck */}
+      <mesh position={[0, 0.44, 0.02]} rotation={[0.35, 0, 0]}>
+        <torusGeometry args={[0.082, 0.014, 8, 16]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.4} />
+      </mesh>
+      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.84} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.84} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.132, 16, 16]} />
+          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0, 0.06, -0.015]} castShadow>
+          <sphereGeometry args={[0.138, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+          <meshStandardMaterial color="#92400e" roughness={0.85} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 7: Pet Shop & Clínica Veterinária (Vet & Pet Shop)
+ * Mounted on the Far North-West boulevard facing +z.
+ * 4 interactive everyday props + clickable Vet profession:
+ * 1) Vet NPC -> opens "What is this job?" (Vet)
+ * 2) Wagging Golden Puppy -> hops & opens "What animal is this?" (Dog)
+ * 3) Pet Food Bowl & Bag -> fills kibble ("Pet food! Feed the puppy!", collects 🦴)
+ * 4) Red Rubber Toy Ball -> bounces ("Red ball! Play with the dog!")
+ */
+export function InteractivePetShop({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+  onInspectCuriosity,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+  const [bowlFilled, setBowlFilled] = useState(false);
+
+  const dogRef = useRef<THREE.Group>(null);
+  const tailRef = useRef<THREE.Mesh>(null);
+  const ballRef = useRef<THREE.Mesh>(null);
+  const dogHopRef = useRef(0);
+  const ballBounceRef = useRef(0);
+  const npcWaveRef = useRef(0);
+
+  const glow = isNight ? 1.5 : 0.65;
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+
+    if (tailRef.current) {
+      const speed = dogHopRef.current > 0 ? 18 : 8;
+      tailRef.current.rotation.z = Math.sin(t * speed) * 0.45;
+    }
+    if (dogHopRef.current > 0) {
+      dogHopRef.current = Math.max(0, dogHopRef.current - dt * 1.6);
+      if (dogRef.current) {
+        dogRef.current.position.y = Math.sin(dogHopRef.current * Math.PI) * 0.16;
+      }
+    } else if (dogRef.current) {
+      dogRef.current.position.y = 0;
+    }
+    if (ballBounceRef.current > 0) {
+      ballBounceRef.current = Math.max(0, ballBounceRef.current - dt * 1.4);
+      if (ballRef.current) {
+        ballRef.current.position.y = 0.12 + Math.abs(Math.sin(ballBounceRef.current * Math.PI * 2)) * 0.24;
+      }
+    } else if (ballRef.current) {
+      ballRef.current.position.y = 0.12;
+    }
+  });
+
+  return (
+    <group name="Shop_Interactive_PetShop" position={position} rotation={[0, rotationY, 0]}>
+      {/* Warm Cream & Sky-Blue Pet Shop Building */}
+      <RoundedBox args={[2.45, 2.02, 1.8]} radius={0.04} smoothness={2} position={[0, 1.01, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#e0f2fe" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.84} />
+      </RoundedBox>
+      {/* Warm Orange Roof Cap */}
+      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
+        <meshStandardMaterial color="#ea580c" roughness={0.78} />
+      </RoundedBox>
+
+      {/* Iconic 3D Golden Paw Print Roof Emblem (zero text) */}
+      <group position={[0, 2.48, 0.65]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.14, 12, 12]} />
+          <meshStandardMaterial color="#facc15" roughness={0.45} />
+        </mesh>
+        {[
+          [-0.14, 0.14, 0],
+          [0, 0.19, 0],
+          [0.14, 0.14, 0],
+        ].map(([px, py, pz], idx) => (
+          <mesh key={idx} position={[px, py, pz]} castShadow>
+            <sphereGeometry args={[0.065, 10, 10]} />
+            <meshStandardMaterial color="#facc15" roughness={0.45} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Warm Lit Pet Shop Window (+z) */}
+      <group position={[0, 0.98, 0.92]}>
+        <RoundedBox args={[1.72, 0.9, 0.07]} radius={0.02} smoothness={2}>
+          <meshStandardMaterial color="#fff8ee" roughness={0.8} />
+        </RoundedBox>
+        <mesh position={[0, 0, 0.04]}>
+          <planeGeometry args={[1.56, 0.76]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 1: Wagging Golden Puppy (opens Curiosity Card: Dog!) */}
+      <group
+        ref={dogRef}
+        position={[-0.25, 0, 1.28]}
+        onClick={(e) => {
+          e.stopPropagation();
+          dogHopRef.current = 1;
+          onInspectCuriosity?.('city_dog');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Puppy body */}
+        <mesh position={[0, 0.17, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <capsuleGeometry args={[0.1, 0.18, 8, 12]} />
+          <meshStandardMaterial color="#d97706" roughness={0.85} />
+        </mesh>
+        {/* Puppy head + floppy ears */}
+        <mesh position={[0.14, 0.28, 0]} castShadow>
+          <sphereGeometry args={[0.11, 14, 14]} />
+          <meshStandardMaterial color="#f59e0b" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.13, 0.27, 0.095]} castShadow>
+          <boxGeometry args={[0.055, 0.11, 0.03]} />
+          <meshStandardMaterial color="#92400e" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.13, 0.27, -0.095]} castShadow>
+          <boxGeometry args={[0.055, 0.11, 0.03]} />
+          <meshStandardMaterial color="#92400e" roughness={0.85} />
+        </mesh>
+        {/* Wagging tail */}
+        <mesh ref={tailRef} position={[-0.17, 0.24, 0]} rotation={[0, 0, 0.5]} castShadow>
+          <capsuleGeometry args={[0.024, 0.11, 6, 8]} />
+          <meshStandardMaterial color="#d97706" roughness={0.85} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 2: Pet Food Bowl & Kibble Bag */}
+      <group
+        position={[-0.86, 0, 1.24]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setBowlFilled(true);
+          onTriggerAudio('world_pet_food', [position[0] - 0.86, 0.08, position[2] + 1.24]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <mesh position={[0, 0.05, 0.12]} castShadow>
+          <cylinderGeometry args={[0.14, 0.17, 0.09, 14]} />
+          <meshStandardMaterial color="#2563eb" roughness={0.45} />
+        </mesh>
+        {bowlFilled && (
+          <mesh position={[0, 0.1, 0.12]}>
+            <sphereGeometry args={[0.1, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+            <meshStandardMaterial color="#78350f" roughness={0.9} />
+          </mesh>
+        )}
+        {/* Pet food bag */}
+        <RoundedBox args={[0.26, 0.36, 0.16]} radius={0.03} smoothness={2} position={[0, 0.18, -0.14]} castShadow>
+          <meshStandardMaterial color="#f97316" roughness={0.8} />
+        </RoundedBox>
+      </group>
+
+      {/* INTERACTIVE 3: Bouncing Red Rubber Toy Ball */}
+      <mesh
+        ref={ballRef}
+        position={[0.32, 0.12, 1.3]}
+        castShadow
+        onClick={(e) => {
+          e.stopPropagation();
+          ballBounceRef.current = 1;
+          onTriggerAudio('world_pet_toy', [position[0] + 0.32, 0.08, position[2] + 1.3]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <sphereGeometry args={[0.12, 14, 14]} />
+        <meshStandardMaterial color="#ef4444" roughness={0.35} />
+      </mesh>
+
+      {/* INTERACTIVE 4: Vet NPC (click to learn Vet profession!) */}
+      <group
+        position={[0.92, 0, 1.2]}
+        onClick={(e) => {
+          e.stopPropagation();
+          npcWaveRef.current = 2.0;
+          onInspectCuriosity?.('job_vet');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <VetNpc waveTimerRef={npcWaveRef} />
+      </group>
+    </group>
+  );
+}

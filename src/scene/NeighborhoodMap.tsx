@@ -20,7 +20,7 @@ import {
   InteractiveTechShop,
   InteractiveTireShop,
 } from './CityShops';
-import { InteractivePharmacy } from './CityShopsPhase2';
+import { InteractivePetShop, InteractivePharmacy } from './CityShopsPhase2';
 import {
   AcrossStreetPromenade,
   BackgroundBakery,
@@ -318,8 +318,8 @@ export function NeighborhoodMap({
     const avatar = avatarGroupRef.current;
     if (!avatar) return;
 
-    const minX = marketLocked ? MARKET_BORDER_X : -7.9;
-    const maxX = plazaLocked ? PLAZA_BORDER_X : 7.9;
+    const minX = marketLocked ? MARKET_BORDER_X : -10.2;
+    const maxX = plazaLocked ? PLAZA_BORDER_X : 10.2;
 
     const keys = keysRef.current;
     let dx = 0;
@@ -493,7 +493,7 @@ export function NeighborhoodMap({
         receiveShadow
         onClick={handleGroundWalkClick}
       >
-        <boxGeometry args={[15.8, 0.04, 1.85]} />
+        <boxGeometry args={[22.4, 0.04, 1.85]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.cobblestoneColor}
@@ -504,10 +504,10 @@ export function NeighborhoodMap({
         />
       </mesh>
       {/* Beveled stone street curbs framing both sides of the cobblestone boulevard */}
-      <RoundedBox args={[15.8, 0.075, 0.14]} radius={0.02} smoothness={2} position={[0, 0.042, 0.82]} receiveShadow>
+      <RoundedBox args={[22.4, 0.075, 0.14]} radius={0.02} smoothness={2} position={[0, 0.042, 0.82]} receiveShadow>
         <meshStandardMaterial color="#cfc3ae" roughness={0.86} />
       </RoundedBox>
-      <RoundedBox args={[15.8, 0.075, 0.14]} radius={0.02} smoothness={2} position={[0, 0.042, 2.66]} receiveShadow>
+      <RoundedBox args={[22.4, 0.075, 0.14]} radius={0.02} smoothness={2} position={[0, 0.042, 2.66]} receiveShadow>
         <meshStandardMaterial color="#cfc3ae" roughness={0.86} />
       </RoundedBox>
       {/* Reflective rain puddles on the street during real city rain */}
@@ -634,6 +634,20 @@ export function NeighborhoodMap({
           }
         }}
       />
+      <InteractivePetShop
+        position={[-9.95, 0.06, -0.45]}
+        rotationY={0.26}
+        isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
       {/* Zebra crosswalk stripes leading to the café */}
       {[-0.45, -0.15, 0.15, 0.45].map((cx, idx) => (
         <mesh key={idx} position={[cx, 0.038, 1.72]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -642,7 +656,7 @@ export function NeighborhoodMap({
         </mesh>
       ))}
       <RoundedBox
-        args={[17.6, 0.075, 2.85]}
+        args={[22.4, 0.075, 2.85]}
         radius={0.03}
         smoothness={3}
         position={[0, 0.025, -0.45]}

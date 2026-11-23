@@ -248,7 +248,11 @@ export type SpeechKey =
   | 'job_pharmacist'
   | 'world_pharmacy_medicine'
   | 'world_pharmacy_bandaid'
-  | 'world_pharmacy_thermometer';
+  | 'world_pharmacy_thermometer'
+  | 'job_vet'
+  | 'world_pet_dog'
+  | 'world_pet_food'
+  | 'world_pet_toy';
 
 export interface CounterDemoBeat {
   prop: PropName;

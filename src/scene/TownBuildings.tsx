@@ -382,7 +382,7 @@ export function AcrossStreetPromenade({
   return (
     <group name="South_Side_Of_Street">
       {/* Raised South Sidewalk spanning the entire boulevard */}
-      <RoundedBox args={[17.6, 0.08, 3.2]} radius={0.03} smoothness={2} position={[0, 0.025, 4.32]} receiveShadow>
+      <RoundedBox args={[22.4, 0.08, 3.2]} radius={0.03} smoothness={2} position={[0, 0.025, 4.32]} receiveShadow>
         <meshStandardMaterial
           color="#dfd3be"
           bumpMap={textures.plasterBump}

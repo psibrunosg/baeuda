@@ -199,6 +199,26 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
     discoveryKey: 'world_pharmacy_bandaid',
     collectible: { itemId: 'bandaid', icon: '🩹', label: 'Band-aid' },
   },
+  job_vet: {
+    id: 'job_vet',
+    category: 'profession',
+    icon: '🩺',
+    question: 'What is this job?',
+    canonicalAnswer: 'Vet',
+    acceptedAnswers: ['vet', 'a vet', 'veterinarian', 'animal doctor'],
+    speechKey: 'job_vet',
+    discoveryKey: 'world_job_vet',
+  },
+  city_dog: {
+    id: 'city_dog',
+    category: 'city',
+    icon: '🐶',
+    question: 'What animal is this?',
+    canonicalAnswer: 'Dog',
+    acceptedAnswers: ['dog', 'a dog', 'puppy', 'a puppy'],
+    speechKey: 'world_pet_dog',
+    discoveryKey: 'world_pet_dog',
+  },
 };
 
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {
