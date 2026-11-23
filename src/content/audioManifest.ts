@@ -845,6 +845,41 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.45, viseme: 'viseme_oo' },
     { at: 1.75, viseme: null },
   ]),
+  world_bakery_cake: line('world_bakery_cake', 'Chocolate cake and sweet donuts!', 1950, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.5, viseme: 'viseme_ee' },
+    { at: 1.05, viseme: 'viseme_ee' },
+    { at: 1.55, viseme: 'viseme_oo' },
+    { at: 1.85, viseme: null },
+  ]),
+  world_tire_oil: line('world_tire_oil', 'Motor oil! Check the engine!', 1850, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_oo' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_ee' },
+    { at: 1.75, viseme: null },
+  ]),
+  world_clothes_shoes: line('world_clothes_shoes', 'Clean shoes! Try them on!', 1800, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.45, viseme: 'viseme_oo' },
+    { at: 0.95, viseme: 'viseme_aa' },
+    { at: 1.4, viseme: 'viseme_aa' },
+    { at: 1.7, viseme: null },
+  ]),
+  world_tech_headphones: line('world_tech_headphones', 'Headphones! Listen to music!', 1900, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.5, viseme: 'viseme_fv' },
+    { at: 1.0, viseme: 'viseme_ee' },
+    { at: 1.5, viseme: 'viseme_oo' },
+    { at: 1.8, viseme: null },
+  ]),
+  world_construction_ladder: line('world_construction_ladder', 'Tall ladder! Climb carefully!', 1900, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.5, viseme: 'viseme_aa' },
+    { at: 1.0, viseme: 'viseme_aa' },
+    { at: 1.5, viseme: 'viseme_ee' },
+    { at: 1.8, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

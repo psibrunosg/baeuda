@@ -239,7 +239,12 @@ export type SpeechKey =
   | 'quest_leo_bread_ask'
   | 'quest_leo_bread_done'
   | 'quest_mechanic_banana_ask'
-  | 'quest_mechanic_banana_done';
+  | 'quest_mechanic_banana_done'
+  | 'world_bakery_cake'
+  | 'world_tire_oil'
+  | 'world_clothes_shoes'
+  | 'world_tech_headphones'
+  | 'world_construction_ladder';
 
 export interface CounterDemoBeat {
   prop: PropName;

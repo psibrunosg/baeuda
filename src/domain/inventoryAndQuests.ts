@@ -9,6 +9,9 @@ export interface InventoryItem {
 
 export const INVENTORY_CATALOG: Record<string, InventoryItem> = {
   bread: { id: 'bread', icon: '🥖', label: 'Bread', speechKey: 'world_bakery_bread' },
+  cake: { id: 'cake', icon: '🎂', label: 'Cake', speechKey: 'world_bakery_cake' },
+  shoes: { id: 'shoes', icon: '👟', label: 'Shoes', speechKey: 'world_clothes_shoes' },
+  headphones: { id: 'headphones', icon: '🎧', label: 'Headphones', speechKey: 'world_tech_headphones' },
   apple: { id: 'apple', icon: '🍎', label: 'Apple', speechKey: 'market_apple' },
   banana: { id: 'banana', icon: '🍌', label: 'Banana', speechKey: 'fruit_banana' },
   orange: { id: 'orange', icon: '🍊', label: 'Orange', speechKey: 'fruit_orange' },

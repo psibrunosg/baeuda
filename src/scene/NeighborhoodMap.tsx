@@ -553,6 +553,7 @@ export function NeighborhoodMap({
         position={[-4.55, 0.06, 4.45]}
         rotationY={0.16}
         isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
           if (exploreRingRef.current) {
@@ -566,6 +567,7 @@ export function NeighborhoodMap({
         position={[4.65, 0.06, 4.42]}
         rotationY={-0.16}
         isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
           if (exploreRingRef.current) {
@@ -579,6 +581,7 @@ export function NeighborhoodMap({
         position={[-7.35, 0.06, 4.35]}
         rotationY={0.22}
         isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
           if (exploreRingRef.current) {
@@ -592,6 +595,7 @@ export function NeighborhoodMap({
         position={[7.25, 0.06, -0.55]}
         rotationY={-0.18}
         isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
           if (exploreRingRef.current) {
@@ -605,6 +609,7 @@ export function NeighborhoodMap({
         position={[7.45, 0.06, 4.35]}
         rotationY={-0.22}
         isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
           if (exploreRingRef.current) {

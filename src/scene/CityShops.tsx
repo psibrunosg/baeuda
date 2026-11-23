@@ -10,6 +10,7 @@ export interface InteractiveShopProps {
   rotationY?: number;
   isNight: boolean;
   onTriggerAudio: (key: SpeechKey, ringPos: [number, number, number]) => void;
+  onInspectCuriosity?: (curiosityId: string) => void;
 }
 
 function setPointer(over: boolean) {
@@ -144,6 +145,7 @@ export function InteractiveBakery({
   rotationY = 0,
   isNight,
   onTriggerAudio,
+  onInspectCuriosity,
 }: InteractiveShopProps) {
   const textures = useMemo(() => getCafeTextures(), []);
   const [ovenBoost, setOvenBoost] = useState(false);
@@ -394,10 +396,50 @@ export function InteractiveBakery({
           </mesh>
         </group>
 
-        {/* Baker NPC facing the street (-z -> rotate Y by PI) */}
-        <group position={[-0.14, 0, -0.04]} rotation={[0, Math.PI, 0]}>
+        {/* Baker NPC facing the street (-z -> rotate Y by PI) — click to learn Baker profession */}
+        <group
+          position={[-0.14, 0, -0.04]}
+          rotation={[0, Math.PI, 0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            bakerWaveRef.current = 2.0;
+            onInspectCuriosity?.('job_baker');
+          }}
+        >
           <BakerNpc waveTimerRef={bakerWaveRef} />
         </group>
+      </group>
+
+      {/* INTERACTIVE 4: Sidewalk Chocolate Cake & Pink Donut Pedestal (opens Curiosity Card!) */}
+      <group
+        position={[-1.32, 0, -0.82]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_cake');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <mesh position={[0, 0.28, 0]} castShadow>
+          <cylinderGeometry args={[0.24, 0.26, 0.56, 14]} />
+          <meshStandardMaterial color="#f5ebd8" roughness={0.82} />
+        </mesh>
+        {/* Two-tier chocolate cake with cherry */}
+        <mesh position={[0, 0.64, 0]} castShadow>
+          <cylinderGeometry args={[0.16, 0.17, 0.14, 16]} />
+          <meshStandardMaterial color="#5c3527" roughness={0.65} />
+        </mesh>
+        <mesh position={[0, 0.72, 0]}>
+          <cylinderGeometry args={[0.165, 0.165, 0.03, 16]} />
+          <meshStandardMaterial color="#fde68a" roughness={0.5} />
+        </mesh>
+        <mesh position={[0, 0.77, 0]}>
+          <sphereGeometry args={[0.035, 10, 10]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.3} />
+        </mesh>
       </group>
     </group>
   );
@@ -526,6 +568,7 @@ export function InteractiveTireShop({
   rotationY = 0,
   isNight,
   onTriggerAudio,
+  onInspectCuriosity,
 }: InteractiveShopProps) {
   const textures = useMemo(() => getCafeTextures(), []);
   const [tireInflated, setTireInflated] = useState(false);
@@ -753,10 +796,43 @@ export function InteractiveTireShop({
           </group>
         </group>
 
-        {/* Mechanic NPC facing the street (-z) */}
-        <group position={[0.16, 0, 0]} rotation={[0, Math.PI, 0]}>
+        {/* Mechanic NPC facing the street (-z) — click to learn Mechanic profession */}
+        <group
+          position={[0.16, 0, 0]}
+          rotation={[0, Math.PI, 0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            mechanicWaveRef.current = 2.0;
+            onInspectCuriosity?.('job_mechanic');
+          }}
+        >
           <MechanicNpc waveTimerRef={mechanicWaveRef} />
         </group>
+      </group>
+
+      {/* INTERACTIVE 4: Yellow Motor Oil Can & Red Toolbox */}
+      <group
+        position={[1.34, 0, -0.82]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTriggerAudio('world_tire_oil', [position[0] + 1.34, 0.08, position[2] - 0.82]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.42, 0.24, 0.24]} radius={0.02} smoothness={2} position={[0, 0.12, 0]} castShadow>
+          <meshStandardMaterial color="#dc2626" roughness={0.45} metalness={0.3} />
+        </RoundedBox>
+        <RoundedBox args={[0.16, 0.26, 0.1]} radius={0.02} smoothness={2} position={[0, 0.36, 0]} castShadow>
+          <meshStandardMaterial color="#facc15" roughness={0.4} />
+        </RoundedBox>
+        <mesh position={[0.04, 0.52, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.06, 10]} />
+          <meshStandardMaterial color="#18181b" roughness={0.6} />
+        </mesh>
       </group>
     </group>
   );
@@ -871,6 +947,7 @@ export function InteractiveClothingStore({
   rotationY = 0,
   isNight,
   onTriggerAudio,
+  onInspectCuriosity,
 }: InteractiveShopProps) {
   const textures = useMemo(() => getCafeTextures(), []);
   const [outfitIndex, setOutfitIndex] = useState(0);
@@ -1110,10 +1187,47 @@ export function InteractiveClothingStore({
           </mesh>
         </group>
 
-        {/* Boutique Owner NPC facing street (-z) */}
-        <group position={[-0.18, 0, 0.02]} rotation={[0, Math.PI, 0]}>
+        {/* Boutique Owner NPC facing street (-z) — click to learn Shopkeeper profession */}
+        <group
+          position={[-0.18, 0, 0.02]}
+          rotation={[0, Math.PI, 0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            npcWaveRef.current = 2.0;
+            onInspectCuriosity?.('job_shopkeeper');
+          }}
+        >
           <BoutiqueNpc waveTimerRef={npcWaveRef} />
         </group>
+      </group>
+
+      {/* INTERACTIVE 4: White Sneakers Display Pedestal (opens Curiosity Card!) */}
+      <group
+        position={[1.3, 0, -0.82]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_shoes');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.48, 0.34, 0.32]} radius={0.025} smoothness={2} position={[0, 0.17, 0]} castShadow>
+          <meshStandardMaterial color="#f5ebd8" roughness={0.82} />
+        </RoundedBox>
+        {[-0.11, 0.11].map((sx, i) => (
+          <group key={i} position={[sx, 0.39, 0]}>
+            <RoundedBox args={[0.12, 0.09, 0.22]} radius={0.02} smoothness={2} castShadow>
+              <meshStandardMaterial color="#ffffff" roughness={0.5} />
+            </RoundedBox>
+            <mesh position={[0, -0.04, 0]}>
+              <boxGeometry args={[0.125, 0.025, 0.225]} />
+              <meshStandardMaterial color="#e11d48" roughness={0.6} />
+            </mesh>
+          </group>
+        ))}
       </group>
     </group>
   );
@@ -1227,6 +1341,7 @@ export function InteractiveTechShop({
   rotationY = 0,
   isNight,
   onTriggerAudio,
+  onInspectCuriosity,
 }: InteractiveShopProps) {
   const textures = useMemo(() => getCafeTextures(), []);
   const [laptopOpen, setLaptopOpen] = useState(true);
@@ -1433,10 +1548,46 @@ export function InteractiveTechShop({
           <meshStandardMaterial color="#7dd3fc" emissive="#38bdf8" emissiveIntensity={1.4} />
         </mesh>
 
-        {/* Technician NPC facing street (+z) */}
-        <group position={[0.14, 0, 0]}>
+        {/* Technician NPC facing street (+z) — click to learn Technician profession */}
+        <group
+          position={[0.14, 0, 0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            techWaveRef.current = 2.0;
+            onInspectCuriosity?.('job_technician');
+          }}
+        >
           <TechNpc waveTimerRef={techWaveRef} />
         </group>
+      </group>
+
+      {/* INTERACTIVE 4: Over-Ear Headphones Stand on Side Pedestal (opens Curiosity Card!) */}
+      <group
+        position={[-1.28, 0, 0.92]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_headphones');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.34, 0.56, 0.34]} radius={0.025} smoothness={2} position={[0, 0.28, 0]} castShadow>
+          <meshStandardMaterial color="#334155" roughness={0.6} />
+        </RoundedBox>
+        {/* Headphones arch + earcups */}
+        <mesh position={[0, 0.72, 0]} castShadow>
+          <torusGeometry args={[0.12, 0.022, 8, 16, Math.PI]} />
+          <meshStandardMaterial color="#0ea5e9" roughness={0.35} />
+        </mesh>
+        {[-0.12, 0.12].map((hx, i) => (
+          <mesh key={i} position={[hx, 0.66, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.06, 0.06, 0.045, 12]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.45} />
+          </mesh>
+        ))}
       </group>
     </group>
   );
@@ -1553,6 +1704,7 @@ export function InteractiveConstructionSite({
   rotationY = 0,
   isNight,
   onTriggerAudio,
+  onInspectCuriosity,
 }: InteractiveShopProps) {
   const [brickTiers, setBrickTiers] = useState(1);
 
@@ -1769,10 +1921,46 @@ export function InteractiveConstructionSite({
           </mesh>
         </group>
 
-        {/* Construction Worker NPC facing street (-z) */}
-        <group position={[0.18, 0, -0.04]} rotation={[0, Math.PI, 0]}>
+        {/* Construction Worker NPC facing street (-z) — click to learn Builder profession */}
+        <group
+          position={[0.18, 0, -0.04]}
+          rotation={[0, Math.PI, 0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            workerWaveRef.current = 2.0;
+            onInspectCuriosity?.('job_builder');
+          }}
+        >
           <ConstructionWorkerNpc waveTimerRef={workerWaveRef} />
         </group>
+      </group>
+
+      {/* INTERACTIVE 4: Tall Wooden Ladder leaning on scaffold */}
+      <group
+        position={[-1.32, 0, -0.35]}
+        rotation={[0, 0, -0.22]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTriggerAudio('world_construction_ladder', [position[0] - 1.32, 0.08, position[2] - 0.35]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {[-0.15, 0.15].map((lx, i) => (
+          <mesh key={i} position={[lx, 0.88, 0]} castShadow>
+            <boxGeometry args={[0.045, 1.76, 0.045]} />
+            <meshStandardMaterial color="#b47b4e" roughness={0.86} />
+          </mesh>
+        ))}
+        {[0.25, 0.55, 0.85, 1.15, 1.45].map((ry, i) => (
+          <mesh key={i} position={[0, ry, 0]}>
+            <boxGeometry args={[0.3, 0.035, 0.035]} />
+            <meshStandardMaterial color="#d97706" roughness={0.82} />
+          </mesh>
+        ))}
       </group>
     </group>
   );
