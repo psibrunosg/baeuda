@@ -12,6 +12,45 @@ interface NeighborhoodMapProps {
   onEnterCafe: () => void;
 }
 
+function StylizedCloud({
+  position,
+  scale = 1,
+  speed = 0.25,
+  phase = 0,
+}: {
+  position: [number, number, number];
+  scale?: number;
+  speed?: number;
+  phase?: number;
+}) {
+  const cloudRef = useRef<THREE.Group>(null);
+  useFrame((state) => {
+    if (!cloudRef.current) return;
+    const t = state.clock.elapsedTime;
+    cloudRef.current.position.x = Math.sin(t * speed + phase) * 0.28;
+    cloudRef.current.position.y = Math.cos(t * speed * 1.4 + phase) * 0.06;
+  });
+
+  return (
+    <group position={position} scale={scale}>
+      <group ref={cloudRef}>
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[0.42, 14, 14]} />
+          <meshStandardMaterial color="#fffaf2" roughness={0.96} />
+        </mesh>
+        <mesh position={[-0.36, -0.06, 0.04]}>
+          <sphereGeometry args={[0.31, 12, 12]} />
+          <meshStandardMaterial color="#fffaf2" roughness={0.96} />
+        </mesh>
+        <mesh position={[0.36, -0.05, -0.04]}>
+          <sphereGeometry args={[0.33, 12, 12]} />
+          <meshStandardMaterial color="#fffaf2" roughness={0.96} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
 function StylizedTree({
   position,
   scale = 1,
@@ -437,16 +476,93 @@ export function NeighborhoodMap({
             <meshStandardMaterial
               color="#fef9c3"
               emissive="#fbbf24"
-              emissiveIntensity={1.25}
+              emissiveIntensity={1.35}
               roughness={0.2}
             />
+          </mesh>
+          <mesh position={[0, 1.98, 0]}>
+            <sphereGeometry args={[0.24, 12, 12]} />
+            <meshBasicMaterial color="#fde68a" transparent opacity={0.18} depthWrite={false} />
           </mesh>
           <mesh position={[0, 2.13, 0]} castShadow>
             <coneGeometry args={[0.18, 0.12, 12]} />
             <meshStandardMaterial color="#27272a" metalness={0.65} roughness={0.4} />
           </mesh>
         </group>
+
+        {/* Sidewalk Wooden A-Frame Easel (icon-only, zero text) */}
+        <group position={[-0.98, 0.06, 1.24]} rotation={[0, 0.35, 0]}>
+          <mesh position={[0, 0.22, 0.06]} rotation={[-0.18, 0, 0]} castShadow>
+            <boxGeometry args={[0.28, 0.42, 0.025]} />
+            <meshStandardMaterial color="#7a4e32" roughness={0.82} />
+          </mesh>
+          <mesh position={[0, 0.22, -0.06]} rotation={[0.18, 0, 0]} castShadow>
+            <boxGeometry args={[0.28, 0.42, 0.025]} />
+            <meshStandardMaterial color="#7a4e32" roughness={0.82} />
+          </mesh>
+          <mesh position={[0, 0.24, 0.075]} rotation={[-0.18, 0, 0]}>
+            <planeGeometry args={[0.22, 0.3]} />
+            <meshStandardMaterial color="#27312f" roughness={0.95} />
+          </mesh>
+          {/* Minimalist chalk cup silhouette */}
+          <mesh position={[0, 0.24, 0.088]} rotation={[-0.18, 0, 0]}>
+            <cylinderGeometry args={[0.04, 0.03, 0.07, 12]} />
+            <meshBasicMaterial color="#fef3c7" />
+          </mesh>
+        </group>
+
+        {/* Lush Flowering Bushes flanking café corners */}
+        {[
+          [-1.52, 0.14, 0.58],
+          [1.5, 0.14, 0.46],
+        ].map(([bx, by, bz], idx) => (
+          <group key={idx} position={[bx, by, bz]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.22, 12, 12]} />
+              <meshStandardMaterial color="#4d7c54" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.9} />
+            </mesh>
+            <mesh position={[0.14, -0.04, 0.08]} castShadow>
+              <sphereGeometry args={[0.15, 10, 10]} />
+              <meshStandardMaterial color="#5f8d5b" roughness={0.9} />
+            </mesh>
+            <mesh position={[-0.08, 0.12, 0.12]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshStandardMaterial color="#f472b6" roughness={0.7} />
+            </mesh>
+            <mesh position={[0.09, 0.08, 0.14]}>
+              <sphereGeometry args={[0.036, 8, 8]} />
+              <meshStandardMaterial color="#facc15" roughness={0.7} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Cute Mint-Green Vintage Bicycle parked along the right patio wall */}
+        <group position={[1.64, 0.06, 0.05]} rotation={[0, -0.3, 0]}>
+          {[-0.24, 0.24].map((wz, idx) => (
+            <mesh key={idx} position={[0, 0.16, wz]} rotation={[0, Math.PI / 2, 0]} castShadow>
+              <torusGeometry args={[0.15, 0.022, 8, 18]} />
+              <meshStandardMaterial color="#292524" roughness={0.75} />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.016, 0.016, 0.48, 8]} />
+            <meshStandardMaterial color="#6ee7b7" roughness={0.45} />
+          </mesh>
+          <mesh position={[0, 0.34, 0.18]} rotation={[0.25, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.014, 0.014, 0.22, 8]} />
+            <meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.25} />
+          </mesh>
+          {/* Wicker front basket */}
+          <RoundedBox args={[0.14, 0.1, 0.11]} radius={0.015} smoothness={2} position={[0, 0.36, 0.26]} castShadow>
+            <meshStandardMaterial color="#c49563" roughness={0.88} />
+          </RoundedBox>
+        </group>
       </group>
+
+      {/* Soft Claybound-style drifting clouds above the diorama */}
+      <StylizedCloud position={[-2.9, 3.15, -3.1]} scale={0.92} speed={0.22} phase={0.4} />
+      <StylizedCloud position={[2.8, 3.3, -2.8]} scale={0.8} speed={0.18} phase={2.1} />
+      <StylizedCloud position={[0.1, 3.45, -3.9]} scale={1.0} speed={0.15} phase={4.2} />
 
       {/* Cozy green neighborhood trees framing the café */}
       <StylizedTree position={[-2.15, 0, -2.3]} scale={0.95} />

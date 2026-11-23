@@ -133,6 +133,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       shadows="percentage"
       dpr={[1, 1.5]}
       camera={{ position: [5.4, 4.6, 6.2], fov: 42 }}
+      gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
     >
       <color attach="background" args={[bgColor]} />
       <fog attach="fog" args={[bgColor, isConstellation ? 14 : 8.2, isConstellation ? 34 : 20]} />
@@ -207,16 +208,14 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         color={isConstellation ? '#c4b5fd' : '#dbeafe'}
       />
 
-      {/* Warm overhead café pendant fill light */}
-      {isLesson && (
-        <pointLight
-          position={[0, 2.15, 0.25]}
-          intensity={2.6}
-          distance={6}
-          decay={2}
-          color="#ffd08a"
-        />
-      )}
+      {/* Warm overhead café pendant fill light (kept mounted to prevent shader recompilation hitch) */}
+      <pointLight
+        position={[0, 2.02, 0.14]}
+        intensity={isLesson ? 2.8 : 0}
+        distance={6.5}
+        decay={2}
+        color="#ffd08a"
+      />
 
       <CameraRig anchorId={effectiveAnchor} orbitEnabled={isMap || isConstellation} />
 

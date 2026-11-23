@@ -59,6 +59,9 @@ export interface PbrTextureBundle {
   latteArtColor: THREE.CanvasTexture | null;
   floorPlankColor: THREE.CanvasTexture | null;
   floorPlankBump: THREE.CanvasTexture | null;
+  tileColor: THREE.CanvasTexture | null;
+  tileBump: THREE.CanvasTexture | null;
+  sunbeamAlpha: THREE.CanvasTexture | null;
 }
 
 function createWoodCounterMaps(): {
@@ -273,23 +276,27 @@ function createTerracottaMaps(): {
   const { ctx: c } = colorBuf;
   const { ctx: b } = bumpBuf;
 
-  c.fillStyle = '#dd785b';
+  c.fillStyle = '#d97658';
   c.fillRect(0, 0, size, size);
   b.fillStyle = '#808080';
   b.fillRect(0, 0, size, size);
 
-  for (let i = 0; i < 180; i++) {
+  // Subtle sun-baked stucco clouds (soft gradients, no harsh spots)
+  for (let i = 0; i < 140; i++) {
     const x = rand() * size;
     const y = rand() * size;
-    const rad = 12 + rand() * 30;
+    const rad = 18 + rand() * 36;
     const warm = rand() > 0.45;
-    c.fillStyle = warm ? 'rgba(196, 86, 56, 0.11)' : 'rgba(245, 165, 130, 0.12)';
+    const grad = c.createRadialGradient(x, y, 2, x, y, rad);
+    grad.addColorStop(0, warm ? 'rgba(196, 86, 56, 0.09)' : 'rgba(248, 178, 144, 0.1)');
+    grad.addColorStop(1, 'rgba(217, 118, 88, 0)');
+    c.fillStyle = grad;
     c.beginPath();
     c.arc(x, y, rad, 0, Math.PI * 2);
     c.fill();
 
-    const bv = warm ? 105 : 150;
-    b.fillStyle = `rgba(${bv},${bv},${bv},0.18)`;
+    const bv = warm ? 114 : 142;
+    b.fillStyle = `rgba(${bv},${bv},${bv},0.12)`;
     b.beginPath();
     b.arc(x, y, rad * 0.6, 0, Math.PI * 2);
     b.fill();
@@ -480,6 +487,92 @@ function createFloorPlankMaps(): {
   };
 }
 
+/**
+ * Warm ceramic subway-tile backsplash for the café barista wall.
+ */
+function createTileBacksplashMaps(): {
+  color: THREE.CanvasTexture | null;
+  bump: THREE.CanvasTexture | null;
+} {
+  const size = 256;
+  const colorBuf = makeCanvas(size, size);
+  const bumpBuf = makeCanvas(size, size);
+  if (!colorBuf || !bumpBuf) return { color: null, bump: null };
+
+  const rand = mulberry32(808);
+  const { ctx: c } = colorBuf;
+  const { ctx: b } = bumpBuf;
+
+  // Warm cream grout
+  c.fillStyle = '#d9ccb8';
+  c.fillRect(0, 0, size, size);
+  b.fillStyle = '#484848';
+  b.fillRect(0, 0, size, size);
+
+  const rows = 8;
+  const cols = 4;
+  const rowH = size / rows;
+  const colW = size / cols;
+
+  for (let row = 0; row < rows; row++) {
+    const offset = (row % 2) * (colW * 0.5);
+    for (let col = -1; col <= cols; col++) {
+      const x = col * colW + offset + 2;
+      const y = row * rowH + 2;
+      const w = colW - 4;
+      const h = rowH - 4;
+      const shift = Math.round((rand() - 0.5) * 10);
+
+      c.fillStyle = `rgb(${245 + shift}, ${236 + shift}, ${220 + shift})`;
+      c.beginPath();
+      c.roundRect(x, y, w, h, 3);
+      c.fill();
+
+      b.fillStyle = '#dedede';
+      b.beginPath();
+      b.roundRect(x, y, w, h, 3);
+      b.fill();
+    }
+  }
+
+  return {
+    color: toTexture(colorBuf.canvas, { color: true, repeatX: 4, repeatY: 1 }),
+    bump: toTexture(bumpBuf.canvas, { color: false, repeatX: 4, repeatY: 1 }),
+  };
+}
+
+/**
+ * Soft additive gradient texture for warm morning sunbeams streaming from the window.
+ */
+function createSunbeamMap(): THREE.CanvasTexture | null {
+  const size = 128;
+  const buf = makeCanvas(size, size);
+  if (!buf) return null;
+
+  const { ctx: c } = buf;
+  const grad = c.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, 'rgba(255, 240, 195, 0.42)');
+  grad.addColorStop(0.55, 'rgba(255, 234, 175, 0.16)');
+  grad.addColorStop(1, 'rgba(255, 234, 175, 0.0)');
+  c.fillStyle = grad;
+  c.fillRect(0, 0, size, size);
+
+  // Soft horizontal fade at left/right edges
+  c.globalCompositeOperation = 'destination-in';
+  const sideGrad = c.createLinearGradient(0, 0, size, 0);
+  sideGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  sideGrad.addColorStop(0.25, 'rgba(255,255,255,1)');
+  sideGrad.addColorStop(0.75, 'rgba(255,255,255,1)');
+  sideGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = sideGrad;
+  c.fillRect(0, 0, size, size);
+
+  const tex = new THREE.CanvasTexture(buf.canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
 let cachedTextures: PbrTextureBundle | null = null;
 
 export function getCafeTextures(): PbrTextureBundle {
@@ -491,6 +584,7 @@ export function getCafeTextures(): PbrTextureBundle {
     const cobble = createCobblestoneMaps();
     const crate = createWoodCrateMaps();
     const floor = createFloorPlankMaps();
+    const tile = createTileBacksplashMaps();
 
     cachedTextures = {
       woodCounterColor: wood.color,
@@ -509,6 +603,9 @@ export function getCafeTextures(): PbrTextureBundle {
       latteArtColor: createLatteArtMap(),
       floorPlankColor: floor.color,
       floorPlankBump: floor.bump,
+      tileColor: tile.color,
+      tileBump: tile.bump,
+      sunbeamAlpha: createSunbeamMap(),
     };
   }
   return cachedTextures;

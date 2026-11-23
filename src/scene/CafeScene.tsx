@@ -25,6 +25,68 @@ export interface CafeSceneProps {
   onPourEnd: () => void;
 }
 
+const DUST_MOTE_COUNT = 26;
+
+interface DustMoteSeed {
+  x: number;
+  y: number;
+  z: number;
+  speed: number;
+  phase: number;
+  scale: number;
+}
+
+const DUST_SEEDS: readonly DustMoteSeed[] = Array.from({ length: DUST_MOTE_COUNT }, (_, i) => {
+  const s1 = Math.sin(i * 12.9898) * 43758.5453;
+  const s2 = Math.sin(i * 78.233) * 24634.6345;
+  const s3 = Math.sin(i * 39.425) * 19283.4712;
+  const r1 = s1 - Math.floor(s1);
+  const r2 = s2 - Math.floor(s2);
+  const r3 = s3 - Math.floor(s3);
+  return {
+    x: -1.35 + r1 * 2.1,
+    y: 1.05 + r2 * 1.1,
+    z: -0.9 + r3 * 1.15,
+    speed: 0.35 + (i % 5) * 0.11,
+    phase: i * 0.85,
+    scale: 0.65 + (i % 4) * 0.22,
+  };
+});
+
+/**
+ * Single-draw-call floating golden dust motes drifting inside the morning window sunbeam.
+ */
+function SunlitDustMotes() {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  useFrame((state) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < DUST_MOTE_COUNT; i++) {
+      const seed = DUST_SEEDS[i];
+      dummy.position.set(
+        seed.x + Math.sin(t * seed.speed + seed.phase) * 0.06,
+        seed.y + Math.cos(t * seed.speed * 0.8 + seed.phase) * 0.05,
+        seed.z + Math.sin(t * seed.speed * 0.6 + seed.phase * 1.3) * 0.04,
+      );
+      const twinkle = seed.scale * (0.7 + Math.sin(t * 2.1 + seed.phase) * 0.3);
+      dummy.scale.setScalar(twinkle);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, DUST_MOTE_COUNT]} frustumCulled={false}>
+      <sphereGeometry args={[0.0085, 6, 6]} />
+      <meshBasicMaterial color="#fef3c7" transparent opacity={0.58} depthWrite={false} />
+    </instancedMesh>
+  );
+}
+
 function SteamParticles({
   position,
   intensity = 1,
@@ -656,9 +718,21 @@ function CafeGreybox({
           />
         </mesh>
 
+        {/* Warm ceramic subway-tile backsplash behind counter */}
+        <mesh position={[0, 1.18, -1.53]} receiveShadow>
+          <boxGeometry args={[6.8, 0.72, 0.04]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            map={textures.tileColor}
+            bumpMap={textures.tileBump}
+            bumpScale={0.01}
+            roughness={0.42}
+          />
+        </mesh>
+
         {/* Warm wooden wainscoting lower back-wall trim */}
-        <mesh position={[0, 0.55, -1.54]} receiveShadow>
-          <boxGeometry args={[6.8, 1.1, 0.06]} />
+        <mesh position={[0, 0.41, -1.52]} receiveShadow>
+          <boxGeometry args={[6.8, 0.82, 0.06]} />
           <meshStandardMaterial
             color="#8b5a3c"
             bumpMap={textures.woodCounterBump}
@@ -667,7 +741,7 @@ function CafeGreybox({
           />
         </mesh>
 
-        {/* Sunlit Café Window on left back wall */}
+        {/* Sunlit Café Window on left back wall + soft morning sunbeam shaft */}
         <group position={[-1.62, 1.86, -1.53]}>
           <RoundedBox args={[1.05, 1.2, 0.08]} radius={0.02} smoothness={3}>
             <meshStandardMaterial color="#6b4226" roughness={0.78} />
@@ -677,7 +751,7 @@ function CafeGreybox({
             <meshStandardMaterial
               color="#fff6d6"
               emissive="#fde68a"
-              emissiveIntensity={0.75}
+              emissiveIntensity={0.82}
               roughness={0.2}
             />
           </mesh>
@@ -690,7 +764,24 @@ function CafeGreybox({
             <boxGeometry args={[0.92, 0.04, 0.03]} />
             <meshStandardMaterial color="#6b4226" roughness={0.78} />
           </mesh>
+          {/* Soft morning light shaft */}
+          {textures.sunbeamAlpha && (
+            <mesh position={[0.45, -0.35, 0.75]} rotation={[0.62, 0.28, -0.32]} renderOrder={4}>
+              <planeGeometry args={[1.15, 2.2]} />
+              <meshBasicMaterial
+                map={textures.sunbeamAlpha}
+                transparent
+                opacity={0.45}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          )}
         </group>
+
+        {/* Floating golden dust motes drifting in the morning light */}
+        <SunlitDustMotes />
 
         {/* Floating wooden wall shelf + bean jars + potted terracotta plant */}
         <group position={[-0.78, 1.84, -1.4]}>
@@ -756,6 +847,15 @@ function CafeGreybox({
             </mesh>
             <mesh position={[0.065, 0.17, -0.02]} castShadow>
               <sphereGeometry args={[0.054, 10, 10]} />
+              <meshStandardMaterial color="#5a8f69" roughness={0.88} />
+            </mesh>
+            {/* Trailing ivy vine draping off shelf */}
+            <mesh position={[0.09, 0.02, 0.07]} castShadow>
+              <sphereGeometry args={[0.038, 8, 8]} />
+              <meshStandardMaterial color="#4d7c5b" roughness={0.88} />
+            </mesh>
+            <mesh position={[0.12, -0.06, 0.09]} castShadow>
+              <sphereGeometry args={[0.03, 8, 8]} />
               <meshStandardMaterial color="#5a8f69" roughness={0.88} />
             </mesh>
           </group>
@@ -855,11 +955,64 @@ function CafeGreybox({
             <cylinderGeometry args={[0.014, 0.018, 0.15, 10]} />
             <meshStandardMaterial color="#4a2b18" roughness={0.62} />
           </mesh>
-          {/* Steam wand */}
+          {/* Steam wand + stainless milk pitcher on drip tray + glowing power LED */}
           <mesh position={[0.16, 0.19, 0.22]} rotation={[0.25, 0, -0.22]}>
             <cylinderGeometry args={[0.008, 0.008, 0.18, 8]} />
             <meshStandardMaterial color="#e4e4e7" metalness={0.9} roughness={0.15} />
           </mesh>
+          <mesh position={[-0.17, 0.115, 0.19]} castShadow>
+            <cylinderGeometry args={[0.036, 0.044, 0.095, 14]} />
+            <meshStandardMaterial color="#e4e4e7" metalness={0.88} roughness={0.18} />
+          </mesh>
+          <mesh position={[-0.17, 0.37, 0.185]}>
+            <sphereGeometry args={[0.011, 8, 8]} />
+            <meshStandardMaterial color="#4ade80" emissive="#22c55e" emissiveIntensity={1.6} />
+          </mesh>
+        </group>
+
+        {/* Decorative Glass Pastry Cloche Dome with Golden Croissant (hidden during thermal_contrast so customer has room) */}
+        {phase !== 'thermal_contrast' && (
+          <group position={[-0.98, 0.973, -0.26]}>
+            <mesh position={[0, 0.014, 0]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.145, 0.13, 0.028, 22]} />
+              <meshStandardMaterial color="#8b5a3c" roughness={0.65} />
+            </mesh>
+            {/* Golden croissant */}
+            <mesh position={[0, 0.05, 0]} rotation={[0.2, 0.4, 0]} scale={[1.25, 0.72, 0.85]} castShadow>
+              <torusGeometry args={[0.042, 0.022, 8, 16, Math.PI * 1.4]} />
+              <meshStandardMaterial color="#d98a36" bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.72} />
+            </mesh>
+            {/* Clear glass cloche bell */}
+            <mesh position={[0, 0.028, 0]} renderOrder={3}>
+              <sphereGeometry args={[0.125, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+              <meshPhysicalMaterial
+                color="#fffdf9"
+                transparent
+                opacity={0.24}
+                roughness={0.04}
+                clearcoat={1}
+                depthWrite={false}
+              />
+            </mesh>
+            <mesh position={[0, 0.16, 0]}>
+              <sphereGeometry args={[0.018, 10, 10]} />
+              <meshPhysicalMaterial color="#fffdf9" transparent opacity={0.45} roughness={0.06} clearcoat={1} />
+            </mesh>
+          </group>
+        )}
+
+        {/* Ceramic Barista Utensil Crock with Wooden Stirrers between carafe & water */}
+        <group position={[0.31, 0.973, -0.32]}>
+          <mesh position={[0, 0.065, 0]} castShadow>
+            <cylinderGeometry args={[0.048, 0.042, 0.13, 16]} />
+            <meshStandardMaterial color="#2a6f62" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.45} />
+          </mesh>
+          {[-0.012, 0.004, 0.016].map((sx, idx) => (
+            <mesh key={idx} position={[sx, 0.145, idx * 0.006]} rotation={[0.08 * (idx - 1), 0, -0.12 + idx * 0.11]}>
+              <cylinderGeometry args={[0.0045, 0.0045, 0.11, 6]} />
+              <meshStandardMaterial color="#d4a373" roughness={0.82} />
+            </mesh>
+          ))}
         </group>
 
         {/* Main Wooden Café Counter (0.95m height) with fluted front slats & beveled grained top */}
