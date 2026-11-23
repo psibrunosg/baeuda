@@ -9,7 +9,7 @@ import {
   type LessonPhase,
 } from './domain/lessonEngine';
 import { createInitialProfile, promoteConceptToVoice } from './domain/learnerMemory';
-import type { ConceptId, LearnerProfile, PropName } from './domain/types';
+import type { ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
 import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapture';
@@ -313,6 +313,13 @@ export default function App() {
     [audioPlayer, beginVoiceCapture],
   );
 
+  const handleExploreObject = useCallback(
+    (key: SpeechKey) => {
+      audioPlayer.play(key);
+    },
+    [audioPlayer],
+  );
+
   const handleSelectConcept = useCallback(
     (id: ConceptId) => {
       stopVoice();
@@ -401,6 +408,7 @@ export default function App() {
         constellationNodes={profile.constellation}
         selectedConcept={selectedConcept}
         onEnterCafe={handleEnterCafe}
+        onExploreObject={handleExploreObject}
         onPropTap={handlePropTap}
         onPourStart={handlePourStart}
         onPourEnd={handlePourEnd}

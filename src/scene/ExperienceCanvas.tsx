@@ -11,6 +11,7 @@ import type {
   LocationId,
   LocationStatus,
   PropName,
+  SpeechKey,
 } from '../domain/types';
 import type { SpeechClockRef } from '../services/audioPlayer';
 import { CAMERA_ANCHORS, type AssetMode } from './contracts';
@@ -41,6 +42,7 @@ export interface ExperienceCanvasProps {
   constellationNodes: Partial<Record<ConceptId, ConceptNode>>;
   selectedConcept: ConceptId | null;
   onEnterCafe: () => void;
+  onExploreObject?: (key: SpeechKey) => void;
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
@@ -226,6 +228,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         locations={props.locations}
         visible={isMap}
         onEnterCafe={props.onEnterCafe}
+        onExploreObject={props.onExploreObject}
       />
 
       <CafeScene

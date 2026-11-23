@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import type { LocationId, LocationStatus } from '../domain/types';
+import type { LocationId, LocationStatus, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
 import {
@@ -17,6 +17,7 @@ interface NeighborhoodMapProps {
   locations?: Record<LocationId, LocationStatus>;
   visible: boolean;
   onEnterCafe: () => void;
+  onExploreObject?: (key: SpeechKey) => void;
 }
 
 const WALK_SPEED = 2.4;
@@ -158,11 +159,14 @@ export function NeighborhoodMap({
   locations,
   visible,
   onEnterCafe,
+  onExploreObject,
 }: NeighborhoodMapProps) {
   const pulseRingRef = useRef<THREE.Mesh>(null);
   const puff1Ref = useRef<THREE.Mesh>(null);
   const puff2Ref = useRef<THREE.Mesh>(null);
   const fountainRingRef = useRef<THREE.Mesh>(null);
+  const exploreRingRef = useRef<THREE.Mesh>(null);
+  const exploreTimerRef = useRef(0);
 
   // Walkable learner avatar state (all refs, zero per-frame React re-renders)
   const avatarGroupRef = useRef<THREE.Group>(null);
@@ -245,6 +249,17 @@ export function NeighborhoodMap({
     if (fountainRingRef.current && !plazaLocked) {
       const ripple = 1 + Math.sin(t * 4) * 0.12;
       fountainRingRef.current.scale.set(ripple, ripple, 1);
+    }
+
+    if (exploreRingRef.current) {
+      if (exploreTimerRef.current > 0) {
+        exploreTimerRef.current = Math.max(0, exploreTimerRef.current - dt);
+        exploreRingRef.current.visible = true;
+        const p = 1 + (1 - exploreTimerRef.current) * 0.45;
+        exploreRingRef.current.scale.set(p, p, 1);
+      } else {
+        exploreRingRef.current.visible = false;
+      }
     }
 
     // Update walkable learner avatar
@@ -349,6 +364,16 @@ export function NeighborhoodMap({
     walkTargetRef.current = new THREE.Vector2(e.point.x, e.point.z);
   };
 
+  const handleExploreTap = (key: SpeechKey, ringPos: [number, number, number]) => (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    onExploreObject?.(key);
+    if (exploreRingRef.current) {
+      exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+      exploreRingRef.current.visible = true;
+      exploreTimerRef.current = 0.9;
+    }
+  };
+
   return (
     <group name="Neighborhood_Diorama">
       {/* Grounded studio AO across the expanded town island */}
@@ -424,6 +449,12 @@ export function NeighborhoodMap({
       <mesh ref={walkRingRef} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.16, 0.24, 24]} />
         <meshBasicMaterial color="#f59e0b" transparent opacity={0.85} />
+      </mesh>
+
+      {/* Sensory discovery highlight ring when tapping outdoor objects */}
+      <mesh ref={exploreRingRef} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.24, 0.34, 28]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} />
       </mesh>
 
       {/* Walkable Learner Avatar (starts outside Café on the sidewalk) */}
@@ -645,8 +676,13 @@ export function NeighborhoodMap({
           <MiniLeoGreeter />
         </group>
 
-        {/* Outdoor Sidewalk Bistro Table & Chairs */}
-        <group position={[-1.62, 0.02, 0.92]}>
+        {/* Outdoor Sidewalk Bistro Table & Chairs (interactive: "Table.") */}
+        <group
+          position={[-1.62, 0.02, 0.92]}
+          onClick={handleExploreTap('world_table', [-1.62, 0.07, 0.37])}
+          onPointerOver={handleDoorPointerOver}
+          onPointerOut={handleDoorPointerOut}
+        >
           <mesh position={[0, 0.28, 0]} castShadow>
             <cylinderGeometry args={[0.03, 0.04, 0.56, 10]} />
             <meshStandardMaterial color="#27272a" metalness={0.6} roughness={0.45} />
@@ -676,8 +712,13 @@ export function NeighborhoodMap({
           ))}
         </group>
 
-        {/* Cozy Vintage Streetlamp */}
-        <group position={[-2.28, 0.02, 1.48]}>
+        {/* Cozy Vintage Streetlamp (interactive: "Light.") */}
+        <group
+          position={[-2.28, 0.02, 1.48]}
+          onClick={handleExploreTap('world_light', [-2.28, 0.07, 0.93])}
+          onPointerOver={handleDoorPointerOver}
+          onPointerOut={handleDoorPointerOut}
+        >
           <mesh position={[0, 0.95, 0]} castShadow>
             <cylinderGeometry args={[0.035, 0.06, 1.9, 10]} />
             <meshStandardMaterial color="#27272a" metalness={0.65} roughness={0.38} />
@@ -721,12 +762,18 @@ export function NeighborhoodMap({
           </mesh>
         </group>
 
-        {/* Lush Flowering Bushes flanking café corners */}
+        {/* Lush Flowering Bushes flanking café corners (interactive: "Flowers.") */}
         {[
           [-1.52, 0.14, 0.58],
           [1.5, 0.14, 0.46],
         ].map(([bx, by, bz], idx) => (
-          <group key={idx} position={[bx, by, bz]}>
+          <group
+            key={idx}
+            position={[bx, by, bz]}
+            onClick={handleExploreTap('world_flowers', [bx, 0.07, bz - 0.55])}
+            onPointerOver={handleDoorPointerOver}
+            onPointerOut={handleDoorPointerOut}
+          >
             <mesh castShadow>
               <sphereGeometry args={[0.22, 12, 12]} />
               <meshStandardMaterial color="#4d7c54" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.9} />
@@ -746,8 +793,14 @@ export function NeighborhoodMap({
           </group>
         ))}
 
-        {/* Cute Mint-Green Vintage Bicycle parked along the right patio wall */}
-        <group position={[1.64, 0.06, 0.05]} rotation={[0, -0.3, 0]}>
+        {/* Cute Mint-Green Vintage Bicycle parked along the right patio wall (interactive: "Bicycle.") */}
+        <group
+          position={[1.64, 0.06, 0.05]}
+          rotation={[0, -0.3, 0]}
+          onClick={handleExploreTap('world_bicycle', [1.64, 0.07, -0.5])}
+          onPointerOver={handleDoorPointerOver}
+          onPointerOut={handleDoorPointerOut}
+        >
           {[-0.24, 0.24].map((wz, idx) => (
             <mesh key={idx} position={[0, 0.16, wz]} rotation={[0, Math.PI / 2, 0]} castShadow>
               <torusGeometry args={[0.15, 0.022, 8, 18]} />
@@ -768,9 +821,15 @@ export function NeighborhoodMap({
         </group>
       </group>
 
-      {/* Cozy green neighborhood trees framing the café */}
-      <StylizedTree position={[-2.15, 0, -2.3]} scale={0.95} />
-      <StylizedTree position={[2.45, 0, -2.1]} scale={1.08} />
+      {/* Cozy green neighborhood trees framing the café (interactive: "Tree.") */}
+      <group
+        onClick={handleExploreTap('world_tree', [2.45, 0.07, -2.1])}
+        onPointerOver={handleDoorPointerOver}
+        onPointerOut={handleDoorPointerOut}
+      >
+        <StylizedTree position={[-2.15, 0, -2.3]} scale={0.95} />
+        <StylizedTree position={[2.45, 0, -2.1]} scale={1.08} />
+      </group>
 
       {/* DISTRICT 2: Local Market (Lesson 2 — locked under fog until Café Lesson 1 completes) */}
       <group position={[-4.35, 0.06, -0.45]}>

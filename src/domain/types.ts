@@ -111,7 +111,13 @@ export type SpeechKey =
   | 'echo_silent_hot_coffee'
   | 'echo_silent_cold_water'
   | 'echo_silent_cold_coffee'
-  | 'farewell_see_you';
+  | 'farewell_see_you'
+  | 'world_tree'
+  | 'world_bicycle'
+  | 'world_flowers'
+  | 'world_light'
+  | 'world_table'
+  | 'world_water_fountain';
 
 export interface CounterDemoBeat {
   prop: PropName;

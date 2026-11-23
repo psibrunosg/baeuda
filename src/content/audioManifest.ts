@@ -297,6 +297,33 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 0.48, viseme: 'viseme_oo' },
     { at: 1.05, viseme: null },
   ]),
+  world_tree: line('world_tree', 'Tree.', 850, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.72, viseme: null },
+  ]),
+  world_bicycle: line('world_bicycle', 'Bicycle.', 1050, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.35, viseme: 'viseme_aa' },
+    { at: 0.9, viseme: null },
+  ]),
+  world_flowers: line('world_flowers', 'Flowers.', 1000, [
+    { at: 0.0, viseme: 'viseme_fv' },
+    { at: 0.38, viseme: 'viseme_aa' },
+    { at: 0.85, viseme: null },
+  ]),
+  world_light: line('world_light', 'Light.', 850, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.72, viseme: null },
+  ]),
+  world_table: line('world_table', 'Table.', 900, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.76, viseme: null },
+  ]),
+  world_water_fountain: line('world_water_fountain', 'Water!', 950, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.32, viseme: 'viseme_aa' },
+    { at: 0.82, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
