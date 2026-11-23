@@ -5,8 +5,11 @@ interface TopNavProps {
   cameraMode?: CameraMode;
   starCount: number;
   immersionSeconds: number;
+  coins?: number;
+  streakCount?: number;
   onSelectView: (view: 'map' | 'badges') => void;
   onCycleCameraMode?: () => void;
+  onOpenWardrobe?: () => void;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -21,8 +24,11 @@ export function TopNav({
   cameraMode = 'third_person',
   starCount,
   immersionSeconds,
+  coins,
+  streakCount,
   onSelectView,
   onCycleCameraMode,
+  onOpenWardrobe,
 }: TopNavProps) {
   const cameraIcon =
     cameraMode === 'first_person' ? '👁' : cameraMode === 'overview' ? '🛰' : '🚶';
@@ -33,6 +39,25 @@ export function TopNav({
         <span aria-hidden="true">⏱</span>
         <span>{formatClock(immersionSeconds)}</span>
       </div>
+
+      {typeof streakCount === 'number' && streakCount > 0 && (
+        <div className="clock-pill streak-pill" aria-label="Daily streak">
+          <span aria-hidden="true">🔥</span>
+          <span>{streakCount}</span>
+        </div>
+      )}
+
+      {typeof coins === 'number' && onOpenWardrobe && (
+        <button
+          type="button"
+          className="coin-pill-btn"
+          aria-label="Avatar wardrobe and coins"
+          onClick={onOpenWardrobe}
+        >
+          <span aria-hidden="true">🪙</span>
+          <span>{coins}</span>
+        </button>
+      )}
 
       {activeView === 'map' && onCycleCameraMode && (
         <button

@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
+import type { AvatarStyle } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 
 /**
@@ -161,10 +162,15 @@ export function MiniLeoGreeter() {
 export function LearnerAvatar({
   isWalkingRef,
   blockedBumpRef,
+  avatarStyle,
 }: {
   isWalkingRef: React.MutableRefObject<boolean>;
   blockedBumpRef: React.MutableRefObject<number>;
+  avatarStyle?: AvatarStyle;
 }) {
+  const coatColor = avatarStyle?.coatColor ?? '#e09f3e';
+  const hatColor = avatarStyle?.hatColor ?? '#e05a47';
+  const hairColor = avatarStyle?.hairColor ?? '#292524';
   const bodyRef = useRef<THREE.Group>(null);
   const leftLegRef = useRef<THREE.Group>(null);
   const rightLegRef = useRef<THREE.Group>(null);
@@ -227,10 +233,10 @@ export function LearnerAvatar({
         </mesh>
       </group>
 
-      {/* Mustard-Ochre Knit Sweater Torso */}
+      {/* Knit Sweater Torso (live customizable color!) */}
       <mesh position={[0, 0.34, 0]} castShadow>
         <capsuleGeometry args={[0.13, 0.22, 8, 14]} />
-        <meshStandardMaterial color="#e09f3e" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.9} />
+        <meshStandardMaterial color={coatColor} bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.9} />
       </mesh>
       {/* Cream traveler scarf */}
       <mesh position={[0, 0.48, 0.01]} rotation={[0.1, 0, 0]} castShadow>
@@ -250,7 +256,7 @@ export function LearnerAvatar({
       <group ref={leftArmRef} position={[-0.155, 0.42, 0]}>
         <mesh position={[0, -0.08, 0]} castShadow>
           <capsuleGeometry args={[0.036, 0.12, 6, 10]} />
-          <meshStandardMaterial color="#e09f3e" roughness={0.9} />
+          <meshStandardMaterial color={coatColor} roughness={0.9} />
         </mesh>
         <mesh position={[0, -0.17, 0]}>
           <sphereGeometry args={[0.038, 10, 10]} />
@@ -260,7 +266,7 @@ export function LearnerAvatar({
       <group ref={rightArmRef} position={[0.155, 0.42, 0]}>
         <mesh position={[0, -0.08, 0]} castShadow>
           <capsuleGeometry args={[0.036, 0.12, 6, 10]} />
-          <meshStandardMaterial color="#e09f3e" roughness={0.9} />
+          <meshStandardMaterial color={coatColor} roughness={0.9} />
         </mesh>
         <mesh position={[0, -0.17, 0]}>
           <sphereGeometry args={[0.038, 10, 10]} />
@@ -283,16 +289,16 @@ export function LearnerAvatar({
           <sphereGeometry args={[0.02, 8, 8]} />
           <meshStandardMaterial color="#f29489" transparent opacity={0.45} roughness={0.9} />
         </mesh>
-        {/* Dark hair */}
+        {/* Hair (customizable at Barber Shop!) */}
         <mesh position={[0, 0.04, -0.01]} castShadow>
           <sphereGeometry args={[0.146, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
-          <meshStandardMaterial color="#292524" roughness={0.9} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
         </mesh>
-        {/* Cozy Coral Beret tilted jauntily */}
+        {/* Cozy Beret (customizable at Boutique!) */}
         <group position={[0.02, 0.135, -0.01]} rotation={[0.08, 0, -0.22]}>
           <mesh scale={[1.15, 0.55, 1.15]} castShadow>
             <sphereGeometry args={[0.135, 16, 12]} />
-            <meshStandardMaterial color="#e05a47" bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.88} />
+            <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.88} />
           </mesh>
           <mesh position={[0, 0.085, 0]}>
             <cylinderGeometry args={[0.012, 0.012, 0.035, 8]} />

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import type { LocationId, LocationStatus, SpeechKey } from '../domain/types';
+import type { AvatarStyle, LocationId, LocationStatus, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
 import {
@@ -51,6 +51,7 @@ interface NeighborhoodMapProps {
   weather?: 'sunny' | 'rainy';
   visible: boolean;
   hideAvatar?: boolean;
+  avatarStyle?: AvatarStyle;
   avatarPoseRef?: MutableRefObject<AvatarPose>;
   teleportRequest?: { x: number; z: number; yaw: number; seq: number } | null;
   onEnterCafe: () => void;
@@ -221,6 +222,7 @@ export function NeighborhoodMap({
   weather = 'sunny',
   visible,
   hideAvatar = false,
+  avatarStyle,
   avatarPoseRef,
   teleportRequest,
   onEnterCafe,
@@ -735,7 +737,11 @@ export function NeighborhoodMap({
         rotation={[0, Math.PI, 0]}
         visible={!hideAvatar}
       >
-        <LearnerAvatar isWalkingRef={isWalkingRef} blockedBumpRef={blockedBumpRef} />
+        <LearnerAvatar
+          isWalkingRef={isWalkingRef}
+          blockedBumpRef={blockedBumpRef}
+          avatarStyle={avatarStyle}
+        />
       </group>
 
       {/* Emergent zero-dialogue street micro-events (Mailbox, Rolled Apple, Patio Parasol) */}

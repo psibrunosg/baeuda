@@ -9,6 +9,13 @@ import {
   type LessonPhase,
 } from './domain/lessonEngine';
 import { countEarnedBadges, evaluateNeighborhoodBadges } from './domain/badgesAndGames';
+import {
+  awardCoins,
+  getEffectiveAvatarStyle,
+  getEffectiveCoins,
+  purchaseOrEquipStyle,
+  updateDailyStreak,
+} from './domain/avatarShop';
 import { CURIOSITY_CATALOG } from './domain/curiosityCatalog';
 import { evaluateCefrProgress } from './domain/cefrEngine';
 import { getActiveQuest } from './domain/inventoryAndQuests';
@@ -29,6 +36,7 @@ import type { AssetMode } from './scene/contracts';
 import { ExperienceCanvas, type ActiveView, type CameraMode } from './scene/ExperienceCanvas';
 import type { MarketStage } from './scene/MarketScene';
 import type { PlazaStage } from './scene/PlazaScene';
+import { AvatarCustomizerModal } from './ui/AvatarCustomizerModal';
 import { BadgesHub } from './ui/BadgesHub';
 import { CityMinimapModal } from './ui/CityMinimapModal';
 import { CuriosityModal } from './ui/CuriosityModal';
@@ -49,6 +57,7 @@ export default function App() {
   const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [travelDialogueOpen, setTravelDialogueOpen] = useState(false);
+  const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [teleportRequest, setTeleportRequest] = useState<{
     x: number;
     z: number;
@@ -159,7 +168,11 @@ export default function App() {
       prev.locations === merged.locations &&
       prev.constellation === merged.constellation &&
       prev.inventoryIds === merged.inventoryIds &&
-      prev.completedQuestIds === merged.completedQuestIds;
+      prev.completedQuestIds === merged.completedQuestIds &&
+      prev.coins === merged.coins &&
+      prev.avatarStyle === merged.avatarStyle &&
+      prev.unlockedStyleIds === merged.unlockedStyleIds &&
+      prev.dailyStreak === merged.dailyStreak;
 
     // Throttle pure 1s clock ticks to every 15s; persist all real progress immediately
     if (onlyClockChanged && merged.immersionSeconds % 15 !== 0) {
@@ -179,11 +192,17 @@ export default function App() {
     }
   }, []);
 
-  // Escape key exits interiors or closes CuriosityModal / BadgesHub
+  // Escape key exits interiors or closes modals
   useEffect(() => {
     const onEscape = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (activeCuriosityId) {
+      if (wardrobeOpen) {
+        setWardrobeOpen(false);
+      } else if (travelDialogueOpen) {
+        setTravelDialogueOpen(false);
+      } else if (minimapOpen) {
+        setMinimapOpen(false);
+      } else if (activeCuriosityId) {
         setActiveCuriosityId(null);
       } else if (activeView !== 'map') {
         audioPlayer.stop();
@@ -193,7 +212,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onEscape);
     return () => window.removeEventListener('keydown', onEscape);
-  }, [activeCuriosityId, activeView, audioPlayer, stopVoice]);
+  }, [activeCuriosityId, activeView, audioPlayer, minimapOpen, stopVoice, travelDialogueOpen, wardrobeOpen]);
 
   const resetPourState = useCallback(() => {
     pourProgressRef.current = 0;
@@ -631,6 +650,7 @@ export default function App() {
       <ExperienceCanvas
         activeView={activeView}
         cameraMode={cameraMode}
+        avatarStyle={getEffectiveAvatarStyle(profile)}
         teleportRequest={teleportRequest}
         assetMode={assetMode}
         cameraAnchor={lesson.cameraAnchor}
@@ -682,7 +702,13 @@ export default function App() {
         cameraMode={cameraMode}
         starCount={badgeCount}
         immersionSeconds={profile.immersionSeconds}
+        coins={getEffectiveCoins(profile)}
+        streakCount={profile.dailyStreak?.count ?? 1}
         onSelectView={handleSelectView}
+        onOpenWardrobe={() => {
+          stopVoice();
+          setWardrobeOpen((prev) => !prev);
+        }}
         onCycleCameraMode={() =>
           setCameraMode((prev) =>
             prev === 'third_person'
@@ -729,15 +755,19 @@ export default function App() {
             audioPlayer.play(key);
           }}
           onSolved={(item) => {
-            setProfile((prev) => recordStreetDiscovery(prev, item.discoveryKey));
+            setProfile((prev) =>
+              updateDailyStreak(awardCoins(recordStreetDiscovery(prev, item.discoveryKey), 5)),
+            );
             if (item.collectible) {
               const cid = item.collectible.itemId;
               const label = `${item.collectible.icon} ${item.collectible.label}`;
               setInventoryIds((prev) => {
                 if (prev.includes(cid)) return prev;
-                showRewardToast(`🎒 +1 ${label} in backpack!`);
+                showRewardToast(`🎒 +1 ${label} & +5 🪙!`);
                 return [...prev, cid];
               });
+            } else {
+              showRewardToast('🪙 +5 coins earned!');
             }
           }}
           onClose={() => setActiveCuriosityId(null)}
@@ -758,8 +788,10 @@ export default function App() {
             audioPlayer.play(quest.doneSpeechKey);
             setInventoryIds((prev) => prev.filter((id) => id !== quest.targetItemId));
             setCompletedQuestIds((prev) => (prev.includes(quest.id) ? prev : [...prev, quest.id]));
-            setProfile((prev) => recordStreetDiscovery(prev, `world_${quest.id}`));
-            showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}!`);
+            setProfile((prev) =>
+              updateDailyStreak(awardCoins(recordStreetDiscovery(prev, `world_${quest.id}`), 15)),
+            );
+            showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}! +15 🪙`);
           }}
           onInspectEmptyBag={() => showRewardToast('🎒 Tap shops & fruits to collect items!')}
         />
@@ -795,7 +827,10 @@ export default function App() {
             audioPlayer.play(key);
           }}
           onCompleteGame={(gameKey) => {
-            setProfile((prev) => recordStreetDiscovery(prev, gameKey));
+            setProfile((prev) =>
+              updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10)),
+            );
+            showRewardToast('🏆 Mini-game complete! +10 🪙');
           }}
           onOpenDialogues={() => {
             stopVoice();
@@ -841,10 +876,38 @@ export default function App() {
         <TravelDialogueModal
           completedDiscoveries={profile.streetDiscoveries ?? []}
           onComplete={(scenarioId) => {
-            setProfile((prev) => recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`));
-            showRewardToast(`🎉 ${scenarioId.toUpperCase()} conversation mastered!`);
+            setProfile((prev) =>
+              updateDailyStreak(
+                awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
+              ),
+            );
+            showRewardToast(`🎉 ${scenarioId.toUpperCase()} mastered! +15 🪙`);
           }}
           onClose={() => setTravelDialogueOpen(false)}
+        />
+      )}
+
+      {wardrobeOpen && (
+        <AvatarCustomizerModal
+          profile={profile}
+          onSelectItem={(item) => {
+            const result = purchaseOrEquipStyle(profileRef.current, item.id);
+            if (!result.insufficientCoins) {
+              profileRef.current = result.profile;
+              setProfile(result.profile);
+              if (result.purchased) {
+                playRewardFanfare();
+                showRewardToast(`✨ New style: ${item.label}!`);
+              } else {
+                playSuccessChime();
+              }
+            }
+            return {
+              purchased: result.purchased,
+              insufficientCoins: result.insufficientCoins,
+            };
+          }}
+          onClose={() => setWardrobeOpen(false)}
         />
       )}
 

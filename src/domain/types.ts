@@ -62,11 +62,26 @@ export interface ConstellationEdge {
   kind: ConstellationEdgeKind;
 }
 
+export interface AvatarStyle {
+  coatColor: string;
+  hatColor: string;
+  hairColor: string;
+}
+
+export interface DailyStreak {
+  count: number;
+  lastDate: string;
+}
+
 export interface LearnerProfile {
   schemaVersion: 1;
   preferredDrink: DrinkChoice | null;
   oralComfort: OralComfort;
   immersionSeconds: number;
+  coins?: number;
+  avatarStyle?: AvatarStyle;
+  unlockedStyleIds?: string[];
+  dailyStreak?: DailyStreak;
   completedLessonIds: string[];
   completedCafeCycles?: CafeCycleId[];
   streetDiscoveries?: string[];

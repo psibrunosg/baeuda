@@ -4,6 +4,7 @@ import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
 import type {
+  AvatarStyle,
   CafeCycleId,
   CameraAnchorId,
   ConceptId,
@@ -29,6 +30,7 @@ export type CameraMode = 'third_person' | 'first_person' | 'overview';
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
   cameraMode?: CameraMode;
+  avatarStyle?: AvatarStyle;
   teleportRequest?: { x: number; z: number; yaw: number; seq: number } | null;
   assetMode: AssetMode;
   cameraAnchor: CameraAnchorId;
@@ -316,6 +318,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         weather={props.weather}
         visible={isMap}
         hideAvatar={props.activeView === 'map' && cameraMode === 'first_person'}
+        avatarStyle={props.avatarStyle}
         avatarPoseRef={avatarPoseRef}
         teleportRequest={props.teleportRequest}
         onEnterCafe={props.onEnterCafe}
