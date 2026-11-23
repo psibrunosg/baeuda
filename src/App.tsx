@@ -541,6 +541,23 @@ export default function App() {
     setActiveView('map');
   }, [showRewardToast]);
 
+  const handleEnterPharmacy = useCallback(() => {
+    audioPlayer.stop();
+    stopVoice();
+    resetPourState();
+    setMinimapOpen(false);
+    setActiveCuriosityId(null);
+    setActiveView('pharmacy');
+  }, [audioPlayer, resetPourState, stopVoice]);
+
+  const handleCompletePharmacy = useCallback(() => {
+    setProfile((prev) =>
+      updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pharmacy_counter'), 20)),
+    );
+    showRewardToast('💊 Patient cared for! +20 🪙 earned!');
+    setActiveView('map');
+  }, [showRewardToast]);
+
   const handleMapBlockedBump = useCallback(() => {
     setMapBlockedHint(true);
     if (mapBlockedTimerRef.current) {
@@ -650,7 +667,9 @@ export default function App() {
               : 'plaza_rhythm'
             : activeView === 'pizzeria'
               ? 'pizzeria_kitchen'
-              : activeView === 'map'
+              : activeView === 'pharmacy'
+                ? 'pharmacy_counter'
+                : activeView === 'map'
               ? mapBlockedHint
                 ? 'map_locked_border'
                 : 'map_explore'
@@ -699,6 +718,8 @@ export default function App() {
         onEnterPlaza={handleEnterPlaza}
         onEnterPizzeria={handleEnterPizzeria}
         onCompletePizzeria={handleCompletePizzeria}
+        onEnterPharmacy={handleEnterPharmacy}
+        onCompletePharmacy={handleCompletePharmacy}
         onMarketStageChange={setMarketStage}
         onCompleteMarket={handleCompleteMarket}
         onPlazaStageChange={setPlazaStage}
@@ -836,6 +857,7 @@ export default function App() {
             setMinimapOpen(false);
           }}
           onEnterPizzeria={handleEnterPizzeria}
+          onEnterPharmacy={handleEnterPharmacy}
           onClose={() => setMinimapOpen(false)}
         />
       )}

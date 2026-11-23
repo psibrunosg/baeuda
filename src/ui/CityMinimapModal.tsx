@@ -29,12 +29,14 @@ export const CITY_DIRECTORY: readonly CityDirectoryEntry[] = [
 interface CityMinimapModalProps {
   onSelectLocation: (entry: CityDirectoryEntry) => void;
   onEnterPizzeria?: () => void;
+  onEnterPharmacy?: () => void;
   onClose: () => void;
 }
 
 export function CityMinimapModal({
   onSelectLocation,
   onEnterPizzeria,
+  onEnterPharmacy,
   onClose,
 }: CityMinimapModalProps) {
   const north = CITY_DIRECTORY.filter((e) => e.side === 'north');
@@ -89,19 +91,32 @@ export function CityMinimapModal({
           ))}
         </div>
 
-        {onEnterPizzeria && (
+        {(onEnterPizzeria || onEnterPharmacy) && (
           <div className="minimap-interiors-bar">
             <span className="minimap-section-label" style={{ margin: 0 }}>Playable 3D Interiors</span>
             <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="minimap-card"
-                style={{ flexDirection: 'row', gap: 8, padding: '8px 14px' }}
-                onClick={onEnterPizzeria}
-              >
-                <span aria-hidden="true">🍕</span>
-                <span className="minimap-name">Enter Pizzeria Kitchen</span>
-              </button>
+              {onEnterPizzeria && (
+                <button
+                  type="button"
+                  className="minimap-card"
+                  style={{ flexDirection: 'row', gap: 8, padding: '8px 14px' }}
+                  onClick={onEnterPizzeria}
+                >
+                  <span aria-hidden="true">🍕</span>
+                  <span className="minimap-name">Enter Pizzeria Kitchen</span>
+                </button>
+              )}
+              {onEnterPharmacy && (
+                <button
+                  type="button"
+                  className="minimap-card"
+                  style={{ flexDirection: 'row', gap: 8, padding: '8px 14px' }}
+                  onClick={onEnterPharmacy}
+                >
+                  <span aria-hidden="true">💊</span>
+                  <span className="minimap-name">Enter Pharmacy Counter</span>
+                </button>
+              )}
             </div>
           </div>
         )}

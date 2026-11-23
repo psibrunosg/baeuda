@@ -58,6 +58,7 @@ interface NeighborhoodMapProps {
   onEnterMarket?: () => void;
   onEnterPlaza?: () => void;
   onEnterPizzeria?: () => void;
+  onEnterPharmacy?: () => void;
   onExploreObject?: (key: SpeechKey) => void;
   onInspectCuriosity?: (curiosityId: string) => void;
   onMapBlockedBump?: () => void;
@@ -230,6 +231,7 @@ export function NeighborhoodMap({
   onEnterMarket,
   onEnterPlaza,
   onEnterPizzeria,
+  onEnterPharmacy,
   onExploreObject,
   onInspectCuriosity,
   onMapBlockedBump,
@@ -661,6 +663,7 @@ export function NeighborhoodMap({
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={handleShopAudio}
+        onEnterInterior={onEnterPharmacy}
       />
       <InteractivePetShop
         position={[-9.95, 0.06, -0.45]}

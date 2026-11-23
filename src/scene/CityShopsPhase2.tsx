@@ -125,6 +125,7 @@ export function InteractivePharmacy({
   isNight,
   onTriggerAudio,
   onInspectCuriosity,
+  onEnterInterior,
 }: InteractiveShopProps) {
   const textures = useMemo(() => getCafeTextures(), []);
   const [tempWarm, setTempWarm] = useState(false);
@@ -189,8 +190,21 @@ export function InteractivePharmacy({
         </RoundedBox>
       </group>
 
-      {/* Pharmacy Glass Display Window facing street (+z) */}
-      <group position={[0, 0.98, 0.92]}>
+      {/* Pharmacy Glass Display Window facing street (+z) — tap to enter playable 3D Pharmacy Counter */}
+      <group
+        position={[0, 0.98, 0.92]}
+        onClick={(e) => {
+          if (!onEnterInterior) return;
+          e.stopPropagation();
+          onEnterInterior();
+        }}
+        onPointerOver={(e) => {
+          if (!onEnterInterior) return;
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
         <RoundedBox args={[1.76, 0.92, 0.07]} radius={0.02} smoothness={2}>
           <meshStandardMaterial color="#0f766e" roughness={0.65} />
         </RoundedBox>

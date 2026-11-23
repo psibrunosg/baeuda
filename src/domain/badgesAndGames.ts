@@ -13,7 +13,12 @@ export interface NeighborhoodBadge {
   speechKey: SpeechKey;
 }
 
-export type EvaluationDeckId = 'cafe_food' | 'city_shops' | 'professions' | 'city_services';
+export type EvaluationDeckId =
+  | 'cafe_food'
+  | 'city_shops'
+  | 'professions'
+  | 'city_services'
+  | 'a2_directions';
 
 export interface EvaluationPair {
   id: string;
@@ -81,6 +86,19 @@ export const EVALUATION_DECKS: readonly EvaluationDeck[] = [
       { id: 'shopkeeper', icon: '👗', label: 'Shopkeeper', hint: 'Sells clothes', speechKey: 'job_shopkeeper' },
       { id: 'technician', icon: '💻', label: 'Technician', hint: 'Fixes phones', speechKey: 'job_technician' },
       { id: 'builder', icon: '👷', label: 'Builder', hint: 'Builds walls', speechKey: 'job_builder' },
+    ],
+  },
+  {
+    id: 'a2_directions',
+    icon: '🧭',
+    title: 'A2 · City & Past',
+    pairs: [
+      { id: 'turn_left', icon: '⬅️', label: 'Turn left', hint: 'At the café', speechKey: 'a2_turn_left' },
+      { id: 'turn_right', icon: '➡️', label: 'Turn right', hint: 'Past bakery', speechKey: 'a2_turn_right' },
+      { id: 'go_straight', icon: '⬆️', label: 'Go straight', hint: 'Boulevard', speechKey: 'a2_go_straight' },
+      { id: 'yesterday', icon: '🔙', label: 'Went to market', hint: 'Yesterday', speechKey: 'a2_yesterday_went' },
+      { id: 'bought', icon: '🥖', label: 'Bought bread', hint: 'Past tense', speechKey: 'a2_bought_bread' },
+      { id: 'asked', icon: '🗣️', label: 'Asked for help', hint: 'Pharmacy', speechKey: 'a2_asked_help' },
     ],
   },
 ];

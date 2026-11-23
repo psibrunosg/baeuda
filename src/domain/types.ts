@@ -290,7 +290,17 @@ export type SpeechKey =
   | 'pizza_step_dough'
   | 'pizza_step_sauce'
   | 'pizza_step_cheese'
-  | 'pizza_step_done';
+  | 'pizza_step_done'
+  | 'pharm_intro'
+  | 'pharm_step_thermo'
+  | 'pharm_step_bandaid'
+  | 'pharm_step_done'
+  | 'a2_turn_left'
+  | 'a2_turn_right'
+  | 'a2_go_straight'
+  | 'a2_yesterday_went'
+  | 'a2_bought_bread'
+  | 'a2_asked_help';
 
 export interface CounterDemoBeat {
   prop: PropName;

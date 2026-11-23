@@ -42,6 +42,7 @@ export type GuidanceContext =
   | 'plaza_explore'
   | 'plaza_rhythm'
   | 'pizzeria_kitchen'
+  | 'pharmacy_counter'
   | 'constellation';
 
 export interface GuidanceSegment {
@@ -325,6 +326,25 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: 'cheese', highlight: true },
       { text: ' & ' },
       { text: 'toppings', highlight: true },
+    ],
+  },
+  pharmacy_counter: {
+    onboarding: [{ text: 'Toque nos itens de cuidado na farmácia: termômetro, curativo e remédio' }],
+    blended: [
+      { text: 'Prepare o kit: ' },
+      { text: 'thermometer', highlight: true },
+      { text: ' · ' },
+      { text: 'band-aid', highlight: true },
+      { text: ' · ' },
+      { text: 'medicine', highlight: true },
+    ],
+    immersive: [
+      { text: 'Prepare the care tray: ' },
+      { text: 'thermometer', highlight: true },
+      { text: ', ' },
+      { text: 'band-aid', highlight: true },
+      { text: ' & ' },
+      { text: 'medicine', highlight: true },
     ],
   },
   constellation: {

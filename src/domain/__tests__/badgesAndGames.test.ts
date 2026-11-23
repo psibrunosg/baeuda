@@ -29,6 +29,7 @@ describe('badgesAndGames', () => {
 
   it('builds 12 matched icon/word memory cards and shuffled connect columns for all decks including professions', () => {
     expect(EVALUATION_DECKS.map((d) => d.id)).toContain('professions');
+    expect(EVALUATION_DECKS.map((d) => d.id)).toContain('a2_directions');
 
     const memCards = createMemoryCards('professions', 13);
     expect(memCards).toHaveLength(12);
