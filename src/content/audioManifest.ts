@@ -677,6 +677,27 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.35, viseme: 'viseme_ee' },
     { at: 1.6, viseme: null },
   ]),
+  world_tech_laptop: line('world_tech_laptop', 'Computer! Screen on!', 1700, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.35, viseme: 'viseme_aa' },
+    { at: 1.6, viseme: null },
+  ]),
+  world_tech_phone: line('world_tech_phone', 'Phone! Battery full!', 1700, [
+    { at: 0.0, viseme: 'viseme_fv' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.35, viseme: 'viseme_fv' },
+    { at: 1.6, viseme: null },
+  ]),
+  world_tech_wifi: line('world_tech_wifi', 'Wi-Fi connected! Ready to work!', 1950, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.5, viseme: 'viseme_fv' },
+    { at: 1.05, viseme: 'viseme_ee' },
+    { at: 1.55, viseme: 'viseme_oo' },
+    { at: 1.85, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

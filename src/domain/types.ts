@@ -215,7 +215,10 @@ export type SpeechKey =
   | 'world_tire_fix'
   | 'world_clothes_shirt'
   | 'world_clothes_dress'
-  | 'world_clothes_hat';
+  | 'world_clothes_hat'
+  | 'world_tech_laptop'
+  | 'world_tech_phone'
+  | 'world_tech_wifi';
 
 export interface CounterDemoBeat {
   prop: PropName;

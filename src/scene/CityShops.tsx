@@ -1118,3 +1118,326 @@ export function InteractiveClothingStore({
     </group>
   );
 }
+
+/**
+ * Unique Tech & Phone Shop Technician NPC: teal polo shirt, dark-rimmed glasses, ID lanyard, friendly wave.
+ */
+function TechNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.15 + Math.sin(t * 10) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.7) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      {/* Sneakers */}
+      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.044, 10, 10]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.75} />
+      </mesh>
+      <mesh position={[0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.044, 10, 10]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.75} />
+      </mesh>
+      {/* Teal Tech Polo Shirt */}
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.128, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#0284c7" roughness={0.82} />
+      </mesh>
+      {/* White ID Lanyard Badge */}
+      <mesh position={[0, 0.29, 0.132]}>
+        <boxGeometry args={[0.06, 0.08, 0.014]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.4} />
+      </mesh>
+      {/* Left Arm */}
+      <group position={[-0.148, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.82} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#f0c2a0" roughness={0.82} />
+        </mesh>
+      </group>
+      {/* Right Arm */}
+      <group ref={rightArmRef} position={[0.148, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.82} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#f0c2a0" roughness={0.82} />
+        </mesh>
+      </group>
+      {/* Head + Dark Glasses */}
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.132, 16, 16]} />
+          <meshStandardMaterial color="#f0c2a0" roughness={0.82} />
+        </mesh>
+        {/* Glasses frames */}
+        <mesh position={[-0.044, 0.012, 0.126]}>
+          <torusGeometry args={[0.028, 0.007, 8, 14]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.35} />
+        </mesh>
+        <mesh position={[0.044, 0.012, 0.126]}>
+          <torusGeometry args={[0.028, 0.007, 8, 14]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.35} />
+        </mesh>
+        <mesh position={[0, 0.012, 0.128]}>
+          <boxGeometry args={[0.03, 0.008, 0.008]} />
+          <meshStandardMaterial color="#0f172a" />
+        </mesh>
+        {/* Neat dark hair */}
+        <mesh position={[0, 0.06, -0.015]} castShadow>
+          <sphereGeometry args={[0.136, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.85} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 4: Loja de Informática & Celular (Neighborhood Computer & Smartphone Shop)
+ * Mounted on the North-East sidewalk facing +z toward the boulevard.
+ * 3 tactile real-world learning interactions:
+ * 1) Hinged 3D Laptop on Display Desk -> opens/closes lid & illuminates screen ("Computer! Screen on!")
+ * 2) Smartphone on Charging Stand -> lights green battery bar & hops ("Phone! Battery full!")
+ * 3) Wi-Fi Router & Technician NPC -> pulses glowing signal waves & technician waves ("Wi-Fi connected! Ready to work!")
+ */
+export function InteractiveTechShop({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+  const [laptopOpen, setLaptopOpen] = useState(true);
+  const [phoneCharged, setPhoneCharged] = useState(true);
+
+  const laptopLidRef = useRef<THREE.Group>(null);
+  const phoneGroupRef = useRef<THREE.Group>(null);
+  const wifiRing1Ref = useRef<THREE.Mesh>(null);
+  const wifiRing2Ref = useRef<THREE.Mesh>(null);
+
+  const phoneHopRef = useRef(0);
+  const wifiPulseRef = useRef(0);
+  const techWaveRef = useRef(0);
+
+  const glow = isNight ? 1.8 : 0.9;
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+
+    if (laptopLidRef.current) {
+      const targetRot = laptopOpen ? -1.85 : -0.08;
+      laptopLidRef.current.rotation.x = THREE.MathUtils.lerp(laptopLidRef.current.rotation.x, targetRot, dt * 7);
+    }
+
+    if (phoneHopRef.current > 0) {
+      phoneHopRef.current = Math.max(0, phoneHopRef.current - dt * 1.8);
+      if (phoneGroupRef.current) {
+        phoneGroupRef.current.position.y = 0.72 + Math.sin(phoneHopRef.current * Math.PI) * 0.14;
+      }
+    } else if (phoneGroupRef.current) {
+      phoneGroupRef.current.position.y = 0.72;
+    }
+
+    if (wifiPulseRef.current > 0) {
+      wifiPulseRef.current = Math.max(0, wifiPulseRef.current - dt * 1.2);
+    }
+    const pulseBoost = wifiPulseRef.current > 0 ? 1.45 : 1.0;
+    if (wifiRing1Ref.current) {
+      const s = (1 + Math.sin(t * 4) * 0.12) * pulseBoost;
+      wifiRing1Ref.current.scale.set(s, s, 1);
+    }
+    if (wifiRing2Ref.current) {
+      const s = (1 + Math.sin(t * 4 - 1.2) * 0.14) * pulseBoost;
+      wifiRing2Ref.current.scale.set(s, s, 1);
+    }
+  });
+
+  const handleLaptopClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    setLaptopOpen((prev) => !prev);
+    onTriggerAudio('world_tech_laptop', [position[0] - 0.35, 0.08, position[2] + 1.28]);
+  };
+
+  const handlePhoneClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    setPhoneCharged((prev) => !prev);
+    phoneHopRef.current = 1;
+    onTriggerAudio('world_tech_phone', [position[0] + 0.35, 0.08, position[2] + 1.28]);
+  };
+
+  const handleWifiClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    wifiPulseRef.current = 1.6;
+    techWaveRef.current = 2.0;
+    onTriggerAudio('world_tech_wifi', [position[0] + 0.95, 0.08, position[2] + 1.2]);
+  };
+
+  return (
+    <group name="Shop_Interactive_TechShop" position={position} rotation={[0, rotationY, 0]}>
+      {/* Modern White & Slate-Graphite Tech Storefront */}
+      <RoundedBox args={[2.45, 2.05, 1.8]} radius={0.04} smoothness={2} position={[0, 1.03, 0]} castShadow receiveShadow>
+        <meshStandardMaterial
+          color="#f1f5f9"
+          bumpMap={textures.plasterBump}
+          bumpScale={0.008}
+          roughness={0.78}
+        />
+      </RoundedBox>
+      {/* Dark Slate Roof & Electric Cyan LED Accent Stripe */}
+      <RoundedBox args={[2.62, 0.22, 1.96]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
+        <meshStandardMaterial color="#1e293b" roughness={0.65} />
+      </RoundedBox>
+      <mesh position={[0, 1.96, 0.92]}>
+        <boxGeometry args={[2.46, 0.08, 0.04]} />
+        <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={glow} />
+      </mesh>
+
+      {/* Iconic 3D Glowing Smartphone Roof Emblem (zero text) */}
+      <group position={[0, 2.52, 0.62]}>
+        <RoundedBox args={[0.32, 0.54, 0.07]} radius={0.03} smoothness={2} castShadow>
+          <meshStandardMaterial color="#0f172a" roughness={0.4} metalness={0.5} />
+        </RoundedBox>
+        <mesh position={[0, 0.02, 0.038]}>
+          <planeGeometry args={[0.24, 0.42]} />
+          <meshStandardMaterial color="#bae6fd" emissive="#38bdf8" emissiveIntensity={glow} />
+        </mesh>
+      </group>
+
+      {/* Wide Tech Showcase Window facing street (+z) */}
+      <group position={[0, 0.98, 0.92]}>
+        <RoundedBox args={[1.76, 0.94, 0.07]} radius={0.02} smoothness={2}>
+          <meshStandardMaterial color="#334155" roughness={0.55} />
+        </RoundedBox>
+        <mesh position={[0, 0, 0.04]}>
+          <planeGeometry args={[1.6, 0.8]} />
+          <meshStandardMaterial color="#e0f2fe" emissive="#0ea5e9" emissiveIntensity={isNight ? 1.15 : 0.45} />
+        </mesh>
+      </group>
+
+      {/* Outdoor Sleek Tech Demo Counter (+z) */}
+      <RoundedBox args={[1.48, 0.62, 0.48]} radius={0.03} smoothness={2} position={[-0.08, 0.31, 1.24]} castShadow receiveShadow>
+        <meshStandardMaterial color="#334155" roughness={0.62} />
+      </RoundedBox>
+      <RoundedBox args={[1.52, 0.05, 0.52]} radius={0.015} smoothness={2} position={[-0.08, 0.64, 1.24]} castShadow>
+        <meshStandardMaterial color="#f8fafc" roughness={0.45} />
+      </RoundedBox>
+
+      {/* INTERACTIVE 1: Hinged 3D Laptop Computer on Left of Demo Desk */}
+      <group
+        position={[-0.42, 0.68, 1.24]}
+        onClick={handleLaptopClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Aluminum laptop keyboard base */}
+        <RoundedBox args={[0.42, 0.03, 0.28]} radius={0.01} smoothness={2} castShadow>
+          <meshStandardMaterial color="#cbd5e1" metalness={0.7} roughness={0.28} />
+        </RoundedBox>
+        <mesh position={[0, 0.018, 0.02]}>
+          <boxGeometry args={[0.34, 0.008, 0.16]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.7} />
+        </mesh>
+        {/* Hinged screen lid */}
+        <group ref={laptopLidRef} position={[0, 0.015, -0.13]} rotation={[-1.85, 0, 0]}>
+          <RoundedBox args={[0.42, 0.025, 0.28]} radius={0.01} smoothness={2} position={[0, 0, 0.14]} castShadow>
+            <meshStandardMaterial color="#94a3b8" metalness={0.72} roughness={0.25} />
+          </RoundedBox>
+          <mesh position={[0, -0.015, 0.14]} rotation={[Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.36, 0.22]} />
+            <meshStandardMaterial
+              color={laptopOpen ? '#7dd3fc' : '#0f172a'}
+              emissive={laptopOpen ? '#0ea5e9' : '#000000'}
+              emissiveIntensity={laptopOpen ? 1.6 : 0}
+            />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 2: Smartphone on Charging Stand on Right of Demo Desk */}
+      <group
+        onClick={handlePhoneClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Charging dock base */}
+        <mesh position={[0.26, 0.68, 1.24]} castShadow>
+          <cylinderGeometry args={[0.1, 0.12, 0.04, 14]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.45} />
+        </mesh>
+        <group ref={phoneGroupRef} position={[0.26, 0.72, 1.24]} rotation={[-0.25, 0, 0]}>
+          <RoundedBox args={[0.16, 0.28, 0.03]} radius={0.015} smoothness={2} position={[0, 0.12, 0]} castShadow>
+            <meshStandardMaterial color="#0f172a" metalness={0.5} roughness={0.3} />
+          </RoundedBox>
+          {/* Glowing phone screen + green battery bar */}
+          <mesh position={[0, 0.12, 0.017]}>
+            <planeGeometry args={[0.125, 0.23]} />
+            <meshStandardMaterial
+              color={phoneCharged ? '#86efac' : '#fde047'}
+              emissive={phoneCharged ? '#22c55e' : '#eab308'}
+              emissiveIntensity={1.5}
+            />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 3: Wi-Fi Router Station + Friendly Technician NPC */}
+      <group
+        position={[0.96, 0, 1.2]}
+        onClick={handleWifiClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Wi-Fi Router Pedestal */}
+        <RoundedBox args={[0.3, 0.56, 0.26]} radius={0.02} smoothness={2} position={[-0.28, 0.28, 0.06]} castShadow>
+          <meshStandardMaterial color="#1e293b" roughness={0.6} />
+        </RoundedBox>
+        {/* Glowing Wi-Fi Signal Rings */}
+        <mesh ref={wifiRing1Ref} position={[-0.28, 0.68, 0.06]}>
+          <torusGeometry args={[0.09, 0.016, 8, 14, Math.PI]} />
+          <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={1.6} />
+        </mesh>
+        <mesh ref={wifiRing2Ref} position={[-0.28, 0.68, 0.06]}>
+          <torusGeometry args={[0.15, 0.016, 8, 16, Math.PI]} />
+          <meshStandardMaterial color="#7dd3fc" emissive="#38bdf8" emissiveIntensity={1.4} />
+        </mesh>
+
+        {/* Technician NPC facing street (+z) */}
+        <group position={[0.14, 0, 0]}>
+          <TechNpc waveTimerRef={techWaveRef} />
+        </group>
+      </group>
+    </group>
+  );
+}

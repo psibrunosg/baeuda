@@ -13,7 +13,12 @@ import {
   PlazaMusicianNpc,
 } from './StylizedCharacters';
 import { StreetMicroEvents } from './StreetMicroEvents';
-import { InteractiveBakery, InteractiveClothingStore, InteractiveTireShop } from './CityShops';
+import {
+  InteractiveBakery,
+  InteractiveClothingStore,
+  InteractiveTechShop,
+  InteractiveTireShop,
+} from './CityShops';
 import {
   AcrossStreetPromenade,
   BackgroundBakery,
@@ -540,6 +545,19 @@ export function NeighborhoodMap({
           }
         }}
       />
+      <InteractiveTechShop
+        position={[7.25, 0.06, -0.55]}
+        rotationY={-0.18}
+        isNight={timeOfDay === 'night'}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
       {/* Zebra crosswalk stripes leading to the café */}
       {[-0.45, -0.15, 0.15, 0.45].map((cx, idx) => (
         <mesh key={idx} position={[cx, 0.038, 1.72]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -548,7 +566,7 @@ export function NeighborhoodMap({
         </mesh>
       ))}
       <RoundedBox
-        args={[13.8, 0.075, 2.85]}
+        args={[17.6, 0.075, 2.85]}
         radius={0.03}
         smoothness={3}
         position={[0, 0.025, -0.45]}
