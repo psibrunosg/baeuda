@@ -52,6 +52,7 @@ interface NeighborhoodMapProps {
   visible: boolean;
   hideAvatar?: boolean;
   avatarPoseRef?: MutableRefObject<AvatarPose>;
+  teleportRequest?: { x: number; z: number; yaw: number; seq: number } | null;
   onEnterCafe: () => void;
   onEnterMarket?: () => void;
   onEnterPlaza?: () => void;
@@ -61,10 +62,29 @@ interface NeighborhoodMapProps {
 }
 
 const WALK_SPEED = 2.4;
-const WALK_Z_MIN = -0.85;
-const WALK_Z_MAX = 3.35;
+const WALK_Z_MIN = 0.65;
+const WALK_Z_MAX = 3.15;
 const MARKET_BORDER_X = -2.05;
 const PLAZA_BORDER_X = 2.05;
+
+// Static 2D AABB obstacles along the boulevard (parked car, pocket park bench, bus stop shelter)
+const OBSTACLE_AABBS: readonly { minX: number; maxX: number; minZ: number; maxZ: number }[] = [
+  { minX: -3.75, maxX: -2.15, minZ: 1.78, maxZ: 2.72 }, // RetroParkedCar
+  { minX: -1.75, maxX: -0.35, minZ: 3.05, maxZ: 4.15 }, // South Pocket Park Bench
+  { minX: 0.65, maxX: 2.25, minZ: 3.1, maxZ: 4.15 },    // Bus Stop Shelter
+];
+
+function resolveObstacleCollision(x: number, z: number, prevX: number, prevZ: number): [number, number] {
+  for (const box of OBSTACLE_AABBS) {
+    if (x > box.minX && x < box.maxX && z > box.minZ && z < box.maxZ) {
+      // Slide along whichever axis was outside previously
+      if (prevX <= box.minX || prevX >= box.maxX) return [prevX, z];
+      if (prevZ <= box.minZ || prevZ >= box.maxZ) return [x, prevZ];
+      return [prevX, prevZ];
+    }
+  }
+  return [x, z];
+}
 
 function StylizedCloud({
   position,
@@ -202,6 +222,7 @@ export function NeighborhoodMap({
   visible,
   hideAvatar = false,
   avatarPoseRef,
+  teleportRequest,
   onEnterCafe,
   onEnterMarket,
   onEnterPlaza,
@@ -236,6 +257,20 @@ export function NeighborhoodMap({
   const effectiveCafeStatus = locations?.cafe ?? cafeStatus;
   const marketLocked = (locations?.market ?? 'unexplored') === 'unexplored';
   const plazaLocked = (locations?.plaza ?? 'unexplored') === 'unexplored';
+
+  useEffect(() => {
+    if (!teleportRequest || !avatarGroupRef.current) return;
+    avatarGroupRef.current.position.x = teleportRequest.x;
+    avatarGroupRef.current.position.z = teleportRequest.z;
+    avatarGroupRef.current.rotation.y = teleportRequest.yaw;
+    walkTargetRef.current = null;
+    isWalkingRef.current = false;
+    if (avatarPoseRef) {
+      avatarPoseRef.current.x = teleportRequest.x;
+      avatarPoseRef.current.z = teleportRequest.z;
+      avatarPoseRef.current.yaw = teleportRequest.yaw;
+    }
+  }, [teleportRequest, avatarPoseRef]);
 
   useEffect(() => {
     if (!visible) {
@@ -373,8 +408,16 @@ export function NeighborhoodMap({
         }
       }
 
-      avatar.position.x = THREE.MathUtils.clamp(nextX, minX, maxX);
-      avatar.position.z = THREE.MathUtils.clamp(nextZ, WALK_Z_MIN, WALK_Z_MAX);
+      const clampedX = THREE.MathUtils.clamp(nextX, minX, maxX);
+      const clampedZ = THREE.MathUtils.clamp(nextZ, WALK_Z_MIN, WALK_Z_MAX);
+      const [safeX, safeZ] = resolveObstacleCollision(
+        clampedX,
+        clampedZ,
+        avatar.position.x,
+        avatar.position.z,
+      );
+      avatar.position.x = safeX;
+      avatar.position.z = safeZ;
       if (!hideAvatar) {
         avatar.rotation.y = Math.atan2(dx, dz);
       }

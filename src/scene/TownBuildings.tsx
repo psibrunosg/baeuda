@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -12,9 +12,9 @@ const RAIN_SEEDS = Array.from({ length: RAIN_COUNT }, (_, i) => {
   const r2 = ((Math.sin(i * 78.233) * 24634.6345) % 1 + 1) % 1;
   const r3 = ((Math.sin(i * 39.425) * 19283.4712) % 1 + 1) % 1;
   return {
-    x: (r1 - 0.5) * 15,
+    x: (r1 - 0.5) * 24,
     y: r2 * 6.5,
-    z: (r3 - 0.5) * 11,
+    z: (r3 - 0.5) * 12,
     speed: 6.2 + (i % 5) * 0.7,
   };
 });
@@ -64,9 +64,11 @@ export function PatioStringLights({
   end: [number, number, number];
   isNight: boolean;
 }) {
+  const [sx, sy, sz] = start;
+  const [ex, ey, ez] = end;
   const { curveGeo, bulbs } = useMemo(() => {
-    const p0 = new THREE.Vector3(...start);
-    const p2 = new THREE.Vector3(...end);
+    const p0 = new THREE.Vector3(sx, sy, sz);
+    const p2 = new THREE.Vector3(ex, ey, ez);
     const mid = p0.clone().lerp(p2, 0.5);
     mid.y -= 0.28;
     const curve = new THREE.QuadraticBezierCurve3(p0, mid, p2);
@@ -76,7 +78,13 @@ export function PatioStringLights({
       pts.push(curve.getPoint(i / 8));
     }
     return { curveGeo: geo, bulbs: pts };
-  }, [start, end]);
+  }, [sx, sy, sz, ex, ey, ez]);
+
+  useEffect(() => {
+    return () => {
+      curveGeo.dispose();
+    };
+  }, [curveGeo]);
 
   return (
     <group>

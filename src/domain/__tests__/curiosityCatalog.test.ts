@@ -8,10 +8,12 @@ describe('curiosityCatalog', () => {
     expect(items.filter((i) => i.category === 'profession').length).toBeGreaterThanOrEqual(7);
   });
 
-  it('validates typed or spoken English answers flexibly', () => {
+  it('validates typed or spoken English answers with word boundaries and typo tolerance', () => {
     expect(checkCuriosityAnswer(CURIOSITY_CATALOG.fruit_strawberry, 'Strawberry!')).toBe(true);
     expect(checkCuriosityAnswer(CURIOSITY_CATALOG.fruit_banana, 'a yellow banana')).toBe(true);
+    expect(checkCuriosityAnswer(CURIOSITY_CATALOG.fruit_banana, 'bananna')).toBe(true);
     expect(checkCuriosityAnswer(CURIOSITY_CATALOG.job_mechanic, 'Mechanic')).toBe(true);
+    expect(checkCuriosityAnswer(CURIOSITY_CATALOG.fruit_apple, 'pineapple')).toBe(false);
     expect(checkCuriosityAnswer(CURIOSITY_CATALOG.fruit_apple, 'orange')).toBe(false);
     expect(checkCuriosityAnswer(CURIOSITY_CATALOG.fruit_apple, '   ')).toBe(false);
   });

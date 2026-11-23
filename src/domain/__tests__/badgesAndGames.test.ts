@@ -9,10 +9,10 @@ import {
 import { createInitialProfile, recordStreetDiscovery } from '../learnerMemory';
 
 describe('badgesAndGames', () => {
-  it('evaluates 8 neighborhood & profession badges and unlocks tiers from exploration', () => {
+  it('evaluates all 14 neighborhood & profession badges and unlocks tiers from exploration', () => {
     let profile = createInitialProfile();
     const initial = evaluateNeighborhoodBadges(profile);
-    expect(initial).toHaveLength(8);
+    expect(initial).toHaveLength(14);
     expect(countEarnedBadges(initial)).toBe(0);
 
     profile = recordStreetDiscovery(profile, 'world_bakery_bread');

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { checkCuriosityAnswer, type CuriosityItem } from '../domain/curiosityCatalog';
 import type { SpeechKey } from '../domain/types';
+import { playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
 
 interface CuriosityModalProps {
   item: CuriosityItem;
@@ -28,10 +29,12 @@ export function CuriosityModal({
   const evaluate = (value: string) => {
     if (checkCuriosityAnswer(item, value)) {
       setStatus('correct');
+      playSuccessChime();
       onPlayAudio(item.speechKey);
       onSolved(item);
     } else {
       setStatus('try_again');
+      playSoftErrorTone();
       onPlayAudio(item.speechKey);
     }
   };
@@ -48,11 +51,9 @@ export function CuriosityModal({
       (window as unknown as { webkitSpeechRecognition?: new () => any }).webkitSpeechRecognition;
 
     if (!SpeechRec) {
-      // Fallback: play spoken audio and let learner echo/reveal
+      // Honest degradation when browser lacks Web Speech API: play audio & hint without faking pass
       onPlayAudio(item.speechKey);
-      setInput(item.canonicalAnswer);
-      setStatus('correct');
-      onSolved(item);
+      setStatus('try_again');
       return;
     }
 

@@ -305,6 +305,24 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
   },
 };
 
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const dp: number[] = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = dp[0];
+    dp[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const temp = dp[j];
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + cost);
+      prev = temp;
+    }
+  }
+  return dp[b.length];
+}
+
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {
   const normalized = rawInput
     .trim()
@@ -312,7 +330,18 @@ export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boo
     .replace(/[^a-z\s]/g, '')
     .replace(/\s+/g, ' ');
   if (!normalized) return false;
-  return item.acceptedAnswers.some(
-    (ans) => normalized === ans || normalized.includes(ans),
-  );
+  const stripped = normalized.replace(/^(a|an|the)\s+/, '');
+  const words = stripped.split(' ');
+
+  return item.acceptedAnswers.some((ans) => {
+    const cleanAns = ans.replace(/^(a|an|the)\s+/, '');
+    if (stripped === cleanAns || normalized === ans) return true;
+    // Word-boundary exact match for multi-word answers (blocks "pineapple" matching "apple")
+    if (cleanAns.includes(' ')) {
+      return new RegExp(`\\b${cleanAns}\\b`).test(stripped);
+    }
+    return words.some(
+      (w) => w === cleanAns || (cleanAns.length >= 5 && levenshtein(w, cleanAns) <= 1),
+    );
+  });
 }

@@ -29,6 +29,7 @@ import { ExperienceCanvas, type ActiveView, type CameraMode } from './scene/Expe
 import type { MarketStage } from './scene/MarketScene';
 import type { PlazaStage } from './scene/PlazaScene';
 import { BadgesHub } from './ui/BadgesHub';
+import { CityMinimapModal } from './ui/CityMinimapModal';
 import { CuriosityModal } from './ui/CuriosityModal';
 import { DebugAudioBar } from './ui/DebugAudioBar';
 import { GuidancePill } from './ui/GuidancePill';
@@ -44,6 +45,13 @@ export default function App() {
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
   const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
+  const [minimapOpen, setMinimapOpen] = useState(false);
+  const [teleportRequest, setTeleportRequest] = useState<{
+    x: number;
+    z: number;
+    yaw: number;
+    seq: number;
+  } | null>(null);
   const [activeCuriosityId, setActiveCuriosityId] = useState<string | null>(null);
   const [inventoryIds, setInventoryIds] = useState<string[]>(() => profile.inventoryIds ?? []);
   const [completedQuestIds, setCompletedQuestIds] = useState<string[]>(
@@ -496,9 +504,14 @@ export default function App() {
       stopVoice();
       resetPourState();
       setSelectedConcept(null);
+      if (view === 'map' && activeView === 'map') {
+        setMinimapOpen((prev) => !prev);
+        return;
+      }
+      setMinimapOpen(false);
       setActiveView(view);
     },
-    [audioPlayer, resetPourState, stopVoice],
+    [activeView, audioPlayer, resetPourState, stopVoice],
   );
 
   const handleJumpPhase = useCallback(
@@ -590,6 +603,7 @@ export default function App() {
       <ExperienceCanvas
         activeView={activeView}
         cameraMode={cameraMode}
+        teleportRequest={teleportRequest}
         assetMode={assetMode}
         cameraAnchor={lesson.cameraAnchor}
         cafeStatus={profile.locations.cafe}
@@ -712,6 +726,21 @@ export default function App() {
             setCompletedQuestIds((prev) => (prev.includes(quest.id) ? prev : [...prev, quest.id]));
             setProfile((prev) => recordStreetDiscovery(prev, `world_${quest.id}`));
           }}
+        />
+      )}
+
+      {activeView === 'map' && minimapOpen && (
+        <CityMinimapModal
+          onSelectLocation={(entry) => {
+            setTeleportRequest((prev) => ({
+              x: entry.x,
+              z: entry.z,
+              yaw: entry.yaw,
+              seq: (prev?.seq ?? 0) + 1,
+            }));
+            setMinimapOpen(false);
+          }}
+          onClose={() => setMinimapOpen(false)}
         />
       )}
 

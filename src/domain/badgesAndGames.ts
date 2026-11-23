@@ -13,7 +13,7 @@ export interface NeighborhoodBadge {
   speechKey: SpeechKey;
 }
 
-export type EvaluationDeckId = 'cafe_food' | 'city_shops' | 'professions';
+export type EvaluationDeckId = 'cafe_food' | 'city_shops' | 'professions' | 'city_services';
 
 export interface EvaluationPair {
   id: string;
@@ -49,12 +49,25 @@ export const EVALUATION_DECKS: readonly EvaluationDeck[] = [
     icon: '🏙️',
     title: 'Everyday City',
     pairs: [
-      { id: 'tire', icon: '🛞', label: 'Full tire', hint: 'Pump air', speechKey: 'world_tire_pump' },
+      { id: 'tire', icon: '🔧', label: 'Full tire', hint: 'Pump air', speechKey: 'world_tire_pump' },
       { id: 'shirt', icon: '👕', label: 'Red shirt', hint: 'Clothes rack', speechKey: 'world_clothes_shirt' },
       { id: 'hat', icon: '👒', label: 'Yellow hat', hint: 'Sun hat', speechKey: 'world_clothes_hat' },
       { id: 'laptop', icon: '💻', label: 'Computer', hint: 'Screen on', speechKey: 'world_tech_laptop' },
       { id: 'phone', icon: '📱', label: 'Phone', hint: 'Battery full', speechKey: 'world_tech_phone' },
       { id: 'bricks', icon: '🧱', label: 'Red bricks', hint: 'Build wall', speechKey: 'world_construction_bricks' },
+    ],
+  },
+  {
+    id: 'city_services',
+    icon: '🏥',
+    title: 'City Services',
+    pairs: [
+      { id: 'medicine', icon: '💊', label: 'Medicine', hint: 'Pharmacy', speechKey: 'world_pharmacy_medicine' },
+      { id: 'dog', icon: '🐶', label: 'Happy dog', hint: 'Pet shop', speechKey: 'world_pet_dog' },
+      { id: 'scissors', icon: '✂️', label: 'Scissors', hint: 'Barber shop', speechKey: 'world_barber_scissors' },
+      { id: 'book', icon: '📖', label: 'Good book', hint: 'Bookshop', speechKey: 'world_book_read' },
+      { id: 'pizza', icon: '🍕', label: 'Hot pizza', hint: 'Pizzeria', speechKey: 'world_pizza_slice' },
+      { id: 'package', icon: '📦', label: 'Package', hint: 'Post office', speechKey: 'world_post_package' },
     ],
   },
   {
@@ -93,6 +106,12 @@ export function evaluateNeighborhoodBadges(profile: LearnerProfile): Neighborhoo
   const clothesProgress = Math.min(3, countPrefix(discoveries, 'world_clothes_'));
   const techProgress = Math.min(3, countPrefix(discoveries, 'world_tech_'));
   const constructionProgress = Math.min(3, countPrefix(discoveries, 'world_construction_'));
+  const pharmacyProgress = Math.min(2, countPrefix(discoveries, 'world_pharmacy_') + (discoveries.includes('world_job_pharmacist') ? 1 : 0));
+  const petProgress = Math.min(2, countPrefix(discoveries, 'world_pet_') + (discoveries.includes('world_job_vet') ? 1 : 0));
+  const barberProgress = Math.min(2, countPrefix(discoveries, 'world_barber_') + (discoveries.includes('world_job_barber') ? 1 : 0));
+  const bookProgress = Math.min(2, countPrefix(discoveries, 'world_book_') + (discoveries.includes('world_job_librarian') ? 1 : 0));
+  const pizzaProgress = Math.min(2, countPrefix(discoveries, 'world_pizza_') + (discoveries.includes('world_job_chef') ? 1 : 0));
+  const postProgress = Math.min(2, countPrefix(discoveries, 'world_post_') + countPrefix(discoveries, 'world_bank_') + (discoveries.includes('world_job_postal') ? 1 : 0));
   const marketProgress = profile.locations.market === 'familiar' ? 2 : profile.locations.market === 'discovered' ? 1 : 0;
   const plazaProgress = profile.locations.plaza === 'familiar' ? 2 : profile.locations.plaza === 'discovered' ? 1 : 0;
 
@@ -119,7 +138,7 @@ export function evaluateNeighborhoodBadges(profile: LearnerProfile): Neighborhoo
     },
     {
       id: 'badge_mechanic',
-      icon: '🛞',
+      icon: '🔧',
       title: 'Tire Shop',
       profession: 'Mechanic',
       tier: resolveTier(tireProgress, 2),
@@ -156,6 +175,66 @@ export function evaluateNeighborhoodBadges(profile: LearnerProfile): Neighborhoo
       progress: constructionProgress,
       target: 2,
       speechKey: 'job_builder',
+    },
+    {
+      id: 'badge_pharmacy',
+      icon: '💊',
+      title: 'Pharmacy',
+      profession: 'Pharmacist',
+      tier: resolveTier(pharmacyProgress, 2),
+      progress: pharmacyProgress,
+      target: 2,
+      speechKey: 'job_pharmacist',
+    },
+    {
+      id: 'badge_petshop',
+      icon: '🐶',
+      title: 'Pet Shop',
+      profession: 'Vet',
+      tier: resolveTier(petProgress, 2),
+      progress: petProgress,
+      target: 2,
+      speechKey: 'job_vet',
+    },
+    {
+      id: 'badge_barber',
+      icon: '💈',
+      title: 'Barber Shop',
+      profession: 'Barber',
+      tier: resolveTier(barberProgress, 2),
+      progress: barberProgress,
+      target: 2,
+      speechKey: 'job_barber',
+    },
+    {
+      id: 'badge_bookshop',
+      icon: '📚',
+      title: 'Bookshop',
+      profession: 'Librarian',
+      tier: resolveTier(bookProgress, 2),
+      progress: bookProgress,
+      target: 2,
+      speechKey: 'job_librarian',
+    },
+    {
+      id: 'badge_pizzeria',
+      icon: '🍕',
+      title: 'Pizzeria',
+      profession: 'Chef',
+      tier: resolveTier(pizzaProgress, 2),
+      progress: pizzaProgress,
+      target: 2,
+      speechKey: 'job_chef',
+    },
+    {
+      id: 'badge_postbank',
+      icon: '📮',
+      title: 'Post & Bank',
+      profession: 'Postal Worker',
+      tier: resolveTier(postProgress, 2),
+      progress: postProgress,
+      target: 2,
+      speechKey: 'job_postal',
     },
     {
       id: 'badge_market',

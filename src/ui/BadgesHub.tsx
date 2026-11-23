@@ -7,6 +7,7 @@ import {
   type EvaluationDeckId,
 } from '../domain/badgesAndGames';
 import type { LearnerProfile, SpeechKey } from '../domain/types';
+import { playRewardFanfare, playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
 
 type HubTab = 'badges' | 'connect' | 'memory';
 
@@ -66,11 +67,15 @@ export function BadgesHub({
       setMatchedConnectIds(nextMatched);
       setSelectedLeft(null);
       if (nextMatched.length === connectCols.left.length) {
+        playRewardFanfare();
         onCompleteGame(`world_game_connect_${deckId}`);
+      } else {
+        playSuccessChime();
       }
     } else {
+      playSoftErrorTone();
       setWrongPairFlash(pairId);
-      setTimeout(() => setWrongPairFlash(null), 550);
+      setTimeout(() => setWrongPairFlash(null), 650);
     }
   };
 
@@ -89,10 +94,14 @@ export function BadgesHub({
         setMatchedMemoryPairIds(nextMatched);
         setFlippedCardIds([]);
         if (nextMatched.length === 6) {
+          playRewardFanfare();
           onCompleteGame(`world_game_memory_${deckId}`);
+        } else {
+          playSuccessChime();
         }
       } else {
-        setTimeout(() => setFlippedCardIds([]), 750);
+        playSoftErrorTone();
+        setTimeout(() => setFlippedCardIds([]), 1400);
       }
     }
   };
@@ -101,7 +110,12 @@ export function BadgesHub({
   const memoryWon = matchedMemoryPairIds.length === 6;
 
   return (
-    <section className="badges-hub-backdrop" aria-label="Badges and Learning Games">
+    <section
+      className="badges-hub-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Badges and Learning Games"
+    >
       <div className="badges-hub-panel">
         <header className="badges-hub-header">
           <div className="badges-hub-tabs" role="tablist">
@@ -134,7 +148,7 @@ export function BadgesHub({
             </button>
           </div>
           <div className="badges-hub-meta">
-            <span className="guidance-cefr">{cefrBadge}</span>
+            <span className="cefr-pill-tag">{cefrBadge}</span>
             <button type="button" className="badges-close-btn" aria-label="Close" onClick={onClose}>
               ✕
             </button>

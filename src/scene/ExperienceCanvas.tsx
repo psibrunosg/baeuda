@@ -29,6 +29,7 @@ export type CameraMode = 'third_person' | 'first_person' | 'overview';
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
   cameraMode?: CameraMode;
+  teleportRequest?: { x: number; z: number; yaw: number; seq: number } | null;
   assetMode: AssetMode;
   cameraAnchor: CameraAnchorId;
   cafeStatus: LocationStatus;
@@ -173,9 +174,9 @@ function CameraRig({
       makeDefault
       enableDamping
       dampingFactor={0.08}
-      enablePan={false}
+      enablePan
       minDistance={2.8}
-      maxDistance={9.5}
+      maxDistance={15}
       maxPolarAngle={Math.PI * 0.48}
     />
   );
@@ -219,7 +220,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
     >
       <color attach="background" args={[bgColor]} />
-      <fog attach="fog" args={[bgColor, 11.5, 28]} />
+      <fog attach="fog" args={[bgColor, 16, 36]} />
 
       {/* Studio & warm café IBL reflections (no external HDR download required) */}
       <Environment resolution={256} frames={1} environmentIntensity={0.72}>
@@ -273,12 +274,12 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-8}
-        shadow-camera-right={8}
-        shadow-camera-top={8}
-        shadow-camera-bottom={-8}
+        shadow-camera-left={-13}
+        shadow-camera-right={13}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
         shadow-camera-near={0.5}
-        shadow-camera-far={24}
+        shadow-camera-far={28}
         shadow-normalBias={0.025}
         shadow-bias={-0.0002}
         shadow-radius={3}
@@ -316,6 +317,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         visible={isMap}
         hideAvatar={props.activeView === 'map' && cameraMode === 'first_person'}
         avatarPoseRef={avatarPoseRef}
+        teleportRequest={props.teleportRequest}
         onEnterCafe={props.onEnterCafe}
         onEnterMarket={props.onEnterMarket}
         onEnterPlaza={props.onEnterPlaza}
