@@ -22,6 +22,7 @@ import {
 import { resolveWorldAtmosphere, type GuidanceContext } from './domain/immersion';
 import type { CafeCycleId, ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
+import { playRewardFanfare, playSuccessChime } from './services/soundEngine';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
 import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapture';
 import type { AssetMode } from './scene/contracts';
@@ -57,6 +58,16 @@ export default function App() {
   const [completedQuestIds, setCompletedQuestIds] = useState<string[]>(
     () => profile.completedQuestIds ?? [],
   );
+  const [rewardToast, setRewardToast] = useState<string | null>(null);
+  const rewardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showRewardToast = useCallback((msg: string) => {
+    setRewardToast(msg);
+    if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current);
+    rewardTimerRef.current = setTimeout(() => {
+      if (!unmountedRef.current) setRewardToast(null);
+    }, 2600);
+  }, []);
   const isDevMode =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('dev') === '1';
@@ -467,14 +478,29 @@ export default function App() {
         setProfile((prev) => recordStreetDiscovery(prev, key));
       }
       if (key === 'world_bakery_bread') {
-        setInventoryIds((prev) => (prev.includes('bread') ? prev : [...prev, 'bread']));
+        setInventoryIds((prev) => {
+          if (prev.includes('bread')) return prev;
+          playSuccessChime();
+          showRewardToast('🎒 +1 🥖 Fresh bread in backpack!');
+          return [...prev, 'bread'];
+        });
       } else if (key === 'world_pharmacy_medicine') {
-        setInventoryIds((prev) => (prev.includes('medicine') ? prev : [...prev, 'medicine']));
+        setInventoryIds((prev) => {
+          if (prev.includes('medicine')) return prev;
+          playSuccessChime();
+          showRewardToast('🎒 +1 💊 Medicine in backpack!');
+          return [...prev, 'medicine'];
+        });
       } else if (key === 'world_pet_food') {
-        setInventoryIds((prev) => (prev.includes('petfood') ? prev : [...prev, 'petfood']));
+        setInventoryIds((prev) => {
+          if (prev.includes('petfood')) return prev;
+          playSuccessChime();
+          showRewardToast('🎒 +1 🦴 Pet food in backpack!');
+          return [...prev, 'petfood'];
+        });
       }
     },
-    [audioPlayer],
+    [audioPlayer, showRewardToast],
   );
 
   const handleMapBlockedBump = useCallback(() => {
@@ -704,7 +730,12 @@ export default function App() {
             setProfile((prev) => recordStreetDiscovery(prev, item.discoveryKey));
             if (item.collectible) {
               const cid = item.collectible.itemId;
-              setInventoryIds((prev) => (prev.includes(cid) ? prev : [...prev, cid]));
+              const label = `${item.collectible.icon} ${item.collectible.label}`;
+              setInventoryIds((prev) => {
+                if (prev.includes(cid)) return prev;
+                showRewardToast(`🎒 +1 ${label} in backpack!`);
+                return [...prev, cid];
+              });
             }
           }}
           onClose={() => setActiveCuriosityId(null)}
@@ -721,12 +752,21 @@ export default function App() {
           }}
           onDeliverQuest={(quest) => {
             stopVoice();
+            playRewardFanfare();
             audioPlayer.play(quest.doneSpeechKey);
             setInventoryIds((prev) => prev.filter((id) => id !== quest.targetItemId));
             setCompletedQuestIds((prev) => (prev.includes(quest.id) ? prev : [...prev, quest.id]));
             setProfile((prev) => recordStreetDiscovery(prev, `world_${quest.id}`));
+            showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}!`);
           }}
+          onInspectEmptyBag={() => showRewardToast('🎒 Tap shops & fruits to collect items!')}
         />
+      )}
+
+      {rewardToast && (
+        <div className="reward-toast" role="status" aria-live="polite">
+          {rewardToast}
+        </div>
       )}
 
       {activeView === 'map' && minimapOpen && (

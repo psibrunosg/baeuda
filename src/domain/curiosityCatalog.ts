@@ -323,6 +323,24 @@ function levenshtein(a: string, b: string): number {
   return dp[b.length];
 }
 
+export function maskWordHint(word: string): string {
+  return word
+    .split(' ')
+    .map((part) => (part.length <= 1 ? part : `${part[0]}${' _'.repeat(part.length - 1)}`))
+    .join('   ');
+}
+
+export function getCuriosityChoices(item: CuriosityItem): string[] {
+  const sameCategory = Object.values(CURIOSITY_CATALOG)
+    .filter((other) => other.id !== item.id && other.category === item.category)
+    .map((other) => other.canonicalAnswer);
+  const uniqueDistractors = Array.from(new Set(sameCategory)).slice(0, 2);
+  const list = [item.canonicalAnswer, ...uniqueDistractors];
+  // Deterministic rotation by item.id length so correct answer isn't always first
+  const shift = item.id.length % list.length;
+  return [...list.slice(shift), ...list.slice(0, shift)];
+}
+
 export function checkCuriosityAnswer(item: CuriosityItem, rawInput: string): boolean {
   const normalized = rawInput
     .trim()

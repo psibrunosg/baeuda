@@ -880,7 +880,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.5, viseme: 'viseme_ee' },
     { at: 1.8, viseme: null },
   ]),
-  job_pharmacist: line('job_pharmacist', 'Pharmacist! Helps with medicine!', 1950, [
+  job_pharmacist: line('job_pharmacist', 'She is a pharmacist. She helps with medicine!', 2150, [
     { at: 0.0, viseme: 'viseme_fv' },
     { at: 0.5, viseme: 'viseme_mbp' },
     { at: 1.05, viseme: 'viseme_ee' },
@@ -908,7 +908,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: 'viseme_oo' },
     { at: 1.95, viseme: null },
   ]),
-  job_vet: line('job_vet', 'Vet! Takes care of animals!', 1900, [
+  job_vet: line('job_vet', 'He is a vet. He takes care of animals!', 2050, [
     { at: 0.0, viseme: 'viseme_fv' },
     { at: 0.45, viseme: 'viseme_ee' },
     { at: 0.95, viseme: 'viseme_aa' },
@@ -936,7 +936,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.45, viseme: 'viseme_oo' },
     { at: 1.75, viseme: null },
   ]),
-  job_barber: line('job_barber', 'Barber! Cuts and styles hair!', 1850, [
+  job_barber: line('job_barber', 'He is a barber. He cuts and styles hair!', 2050, [
     { at: 0.0, viseme: 'viseme_mbp' },
     { at: 0.45, viseme: 'viseme_aa' },
     { at: 0.95, viseme: 'viseme_aa' },
@@ -964,7 +964,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.55, viseme: 'viseme_ee' },
     { at: 1.85, viseme: null },
   ]),
-  job_librarian: line('job_librarian', 'Librarian! Loves books and reading!', 2050, [
+  job_librarian: line('job_librarian', 'She is a librarian. She loves books and reading!', 2200, [
     { at: 0.0, viseme: 'viseme_aa' },
     { at: 0.55, viseme: 'viseme_ee' },
     { at: 1.1, viseme: 'viseme_mbp' },
@@ -992,7 +992,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.45, viseme: 'viseme_oo' },
     { at: 1.75, viseme: null },
   ]),
-  job_chef: line('job_chef', 'Chef! Cooks delicious food!', 1850, [
+  job_chef: line('job_chef', 'He is a chef. He cooks delicious food!', 2050, [
     { at: 0.0, viseme: 'viseme_ee' },
     { at: 0.45, viseme: 'viseme_oo' },
     { at: 0.95, viseme: 'viseme_ee' },
@@ -1020,7 +1020,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: 'viseme_ee' },
     { at: 1.95, viseme: null },
   ]),
-  job_postal: line('job_postal', 'Postal worker! Delivers letters and packages!', 2200, [
+  job_postal: line('job_postal', 'He is a postal worker. He delivers letters and packages!', 2350, [
     { at: 0.0, viseme: 'viseme_mbp' },
     { at: 0.55, viseme: 'viseme_oo' },
     { at: 1.15, viseme: 'viseme_ee' },

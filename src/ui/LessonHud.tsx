@@ -65,6 +65,18 @@ export function LessonHud({
             onPointerUp={onHoldPourEnd}
             onPointerLeave={onHoldPourEnd}
             onPointerCancel={onHoldPourEnd}
+            onKeyDown={(e) => {
+              if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+                e.preventDefault();
+                onHoldPourStart();
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                onHoldPourEnd();
+              }
+            }}
           >
             <span
               style={{

@@ -10,6 +10,7 @@ interface InventoryQuestBarProps {
   activeQuest: NpcQuest | null;
   onPlayAudio: (key: SpeechKey) => void;
   onDeliverQuest: (quest: NpcQuest) => void;
+  onInspectEmptyBag?: () => void;
 }
 
 export function InventoryQuestBar({
@@ -17,6 +18,7 @@ export function InventoryQuestBar({
   activeQuest,
   onPlayAudio,
   onDeliverQuest,
+  onInspectEmptyBag,
 }: InventoryQuestBarProps) {
   const readyToDeliver = canDeliverQuest(activeQuest, inventoryIds);
 
@@ -49,9 +51,16 @@ export function InventoryQuestBar({
       )}
 
       <div className="inventory-bar" aria-label="Inventory">
-        <span className="inventory-bag-icon" aria-hidden="true">
+        <button
+          type="button"
+          className="inventory-bag-btn"
+          aria-label="Backpack"
+          onClick={() => {
+            if (inventoryIds.length === 0) onInspectEmptyBag?.();
+          }}
+        >
           🎒
-        </span>
+        </button>
         {inventoryIds.length === 0 ? (
           <span className="inventory-empty">· · ·</span>
         ) : (

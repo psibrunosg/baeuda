@@ -59,6 +59,36 @@ export const CITY_QUESTS: readonly NpcQuest[] = [
     askSpeechKey: 'quest_mechanic_banana_ask',
     doneSpeechKey: 'quest_mechanic_banana_done',
   },
+  {
+    id: 'quest_vet_petfood',
+    npcIcon: '🩺',
+    npcName: 'Vet',
+    prompt: 'Bring me pet food for the puppy!',
+    targetItemId: 'petfood',
+    targetIcon: '🦴',
+    askSpeechKey: 'world_pet_food',
+    doneSpeechKey: 'world_pet_dog',
+  },
+  {
+    id: 'quest_librarian_book',
+    npcIcon: '📚',
+    npcName: 'Librarian',
+    prompt: 'Bring me a good book from the bookshop!',
+    targetItemId: 'book',
+    targetIcon: '📖',
+    askSpeechKey: 'world_book_read',
+    doneSpeechKey: 'job_librarian',
+  },
+  {
+    id: 'quest_chef_pizza',
+    npcIcon: '👨‍🍳',
+    npcName: 'Chef',
+    prompt: 'Bring me a hot pizza from the pizzeria!',
+    targetItemId: 'pizza',
+    targetIcon: '🍕',
+    askSpeechKey: 'world_pizza_slice',
+    doneSpeechKey: 'job_chef',
+  },
 ];
 
 export function getActiveQuest(completedQuestIds: readonly string[]): NpcQuest | null {
