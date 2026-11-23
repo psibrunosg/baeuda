@@ -483,26 +483,6 @@ export function AcrossStreetPromenade({ isNight }: { isNight: boolean }) {
       {/* Parked Retro City Car along the south curb */}
       <RetroParkedCar position={[-2.95, 0.06, 2.25]} rotationY={0.04} color="#60a5fa" isNight={isNight} />
 
-      {/* Across-the-Street Corner Florist Shop (far-left foreground, frames the street!) */}
-      <group position={[-5.15, 0.06, 4.35]}>
-        <RoundedBox args={[2.5, 2.15, 1.9]} radius={0.05} smoothness={2} position={[0, 1.08, 0]} castShadow receiveShadow>
-          <meshStandardMaterial color="#e8c7a3" bumpMap={textures.plasterBump} bumpScale={0.01} roughness={0.88} />
-        </RoundedBox>
-        <RoundedBox args={[2.68, 0.24, 2.08]} radius={0.04} smoothness={2} position={[0, 2.24, 0]} castShadow>
-          <meshStandardMaterial color="#4d7c54" roughness={0.84} />
-        </RoundedBox>
-        {/* Shop window facing street (-z) */}
-        <mesh position={[0, 0.92, -0.96]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[1.35, 0.86]} />
-          <meshStandardMaterial color="#fde68a" emissive="#f59e0b" emissiveIntensity={glow} />
-        </mesh>
-        {/* Striped florist awning facing street */}
-        <mesh position={[0, 1.5, -1.18]} rotation={[-0.28, 0, 0]} castShadow>
-          <boxGeometry args={[2.1, 0.1, 0.56]} />
-          <meshStandardMaterial color="#e07a5f" roughness={0.85} />
-        </mesh>
-      </group>
-
       {/* Across-the-Street Corner Gelateria / Newsstand (far-right foreground) */}
       <group position={[5.1, 0.06, 4.45]}>
         <RoundedBox args={[2.4, 2.0, 1.85]} radius={0.05} smoothness={2} position={[0, 1.0, 0]} castShadow receiveShadow>

@@ -615,6 +615,27 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.55, viseme: 'viseme_ee' },
     { at: 1.84, viseme: null },
   ]),
+  world_bakery_bread: line('world_bakery_bread', 'Fresh bread! Warm and soft!', 1850, [
+    { at: 0.0, viseme: 'viseme_fv' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_oo' },
+    { at: 1.4, viseme: 'viseme_aa' },
+    { at: 1.74, viseme: null },
+  ]),
+  world_bakery_oven: line('world_bakery_oven', 'Hot oven! Baking bread!', 1750, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.45, viseme: 'viseme_fv' },
+    { at: 0.95, viseme: 'viseme_mbp' },
+    { at: 1.35, viseme: 'viseme_ee' },
+    { at: 1.65, viseme: null },
+  ]),
+  world_bakery_bell: line('world_bakery_bell', 'Ding! Welcome to the bakery!', 1900, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.5, viseme: 'viseme_oo' },
+    { at: 1.05, viseme: 'viseme_mbp' },
+    { at: 1.5, viseme: 'viseme_ee' },
+    { at: 1.8, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
