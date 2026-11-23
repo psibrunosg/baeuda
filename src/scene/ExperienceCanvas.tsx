@@ -31,6 +31,7 @@ export interface ExperienceCanvasProps {
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
   timeOfDay?: 'day' | 'night';
+  weather?: 'sunny' | 'rainy';
   phase: LessonPhase;
   leoAnim: LeoAnimation;
   speechRef: SpeechClockRef;
@@ -138,6 +139,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
   const isNightMap = isMap && props.timeOfDay === 'night';
+  const isRainyMap = isMap && props.weather === 'rainy';
 
   const effectiveAnchor: CameraAnchorId = isConstellation
     ? 'cam_constelacao'
@@ -149,7 +151,15 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
           ? 'cam_praca'
           : props.cameraAnchor;
 
-  const bgColor = isConstellation ? '#0a1024' : isNightMap ? '#1b2642' : '#f3e5cf';
+  const bgColor = isConstellation
+    ? '#0a1024'
+    : isNightMap
+      ? isRainyMap
+        ? '#141d33'
+        : '#1b2642'
+      : isRainyMap
+        ? '#9eb4c8'
+        : '#f3e5cf';
 
   return (
     <Canvas
@@ -205,11 +215,11 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         ]}
       />
 
-      {/* Key sunlight / moonlight with wide shadow frustum and acne-free bias */}
+      {/* Key sunlight / moonlight / overcast rain light */}
       <directionalLight
         position={[4.2, 6.4, 4.6]}
-        intensity={isConstellation ? 0.8 : isNightMap ? 0.52 : 1.55}
-        color={isNightMap ? '#bfd7ff' : '#ffe9c7'}
+        intensity={isConstellation ? 0.8 : isNightMap ? 0.52 : isRainyMap ? 0.88 : 1.55}
+        color={isNightMap ? '#bfd7ff' : isRainyMap ? '#dbeafe' : '#ffe9c7'}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -246,6 +256,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         cafeStatus={props.cafeStatus}
         locations={props.locations}
         timeOfDay={props.timeOfDay}
+        weather={props.weather}
         visible={isMap}
         onEnterCafe={props.onEnterCafe}
         onEnterMarket={props.onEnterMarket}

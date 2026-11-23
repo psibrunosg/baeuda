@@ -6,12 +6,13 @@ import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 
 interface StreetMicroEventsProps {
+  weather: 'sunny' | 'rainy';
   onTriggerAudio: (key: SpeechKey, ringPos: [number, number, number]) => void;
 }
 
 /**
  * Micro-Event 2: Interactive Red Mailbox ("Open! A letter!" / "Close.")
- * Hinged flap opens, yellow flag lowers, and a wax-sealed letter pops out.
+ * Positioned cleanly on the right sidewalk edge with clear breathing room.
  */
 function MailboxEvent({
   position,
@@ -68,21 +69,17 @@ function MailboxEvent({
         document.body.style.cursor = 'auto';
       }}
     >
-      {/* Wooden post */}
       <mesh position={[0, 0.24, 0]} castShadow>
         <boxGeometry args={[0.075, 0.48, 0.075]} />
         <meshStandardMaterial color="#6b4226" roughness={0.85} />
       </mesh>
-      {/* Crimson mailbox body */}
       <RoundedBox args={[0.22, 0.2, 0.3]} radius={0.05} smoothness={3} position={[0, 0.54, 0]} castShadow>
         <meshStandardMaterial color="#c9463c" roughness={0.42} metalness={0.18} />
       </RoundedBox>
-      {/* Hinged front door */}
       <mesh ref={doorRef} position={[0, 0.5, 0.155]}>
         <boxGeometry args={[0.18, 0.15, 0.016]} />
         <meshStandardMaterial color="#a83229" roughness={0.45} />
       </mesh>
-      {/* Yellow flag on the side */}
       <group ref={flagRef} position={[0.125, 0.54, 0.02]}>
         <mesh position={[0, 0.07, 0]}>
           <boxGeometry args={[0.015, 0.14, 0.02]} />
@@ -93,7 +90,6 @@ function MailboxEvent({
           <meshStandardMaterial color="#facc15" emissive="#eab308" emissiveIntensity={opened ? 0 : 0.45} />
         </mesh>
       </group>
-      {/* Crisp white letter with red wax seal */}
       <group ref={letterRef} position={[0, 0.52, 0.02]}>
         <RoundedBox args={[0.15, 0.1, 0.018]} radius={0.004} smoothness={2} castShadow>
           <meshStandardMaterial color="#fffbeb" roughness={0.75} />
@@ -109,7 +105,7 @@ function MailboxEvent({
 
 /**
  * Micro-Event 3: Rolled Apple & Crate ("Apple! In the box! Thanks!")
- * Clicking the fallen apple arcs it neatly back into the wooden crate.
+ * Placed naturally along the sidewalk toward the Local Market, zero overlap.
  */
 function RolledAppleEvent({
   position,
@@ -132,7 +128,6 @@ function RolledAppleEvent({
     if (appleRef.current) {
       appleRef.current.position.x = THREE.MathUtils.lerp(0.24, 0, p);
       appleRef.current.position.z = THREE.MathUtils.lerp(0.12, 0, p);
-      // Smooth parabolic jump into the wooden crate
       const arc = Math.sin(p * Math.PI) * 0.28;
       appleRef.current.position.y = THREE.MathUtils.lerp(0.065, 0.19, p) + arc;
     }
@@ -161,7 +156,6 @@ function RolledAppleEvent({
         document.body.style.cursor = 'auto';
       }}
     >
-      {/* Mini wooden produce crate */}
       <RoundedBox args={[0.28, 0.18, 0.24]} radius={0.012} smoothness={2} position={[0, 0.09, 0]} castShadow receiveShadow>
         <meshStandardMaterial
           color="#ffffff"
@@ -171,12 +165,10 @@ function RolledAppleEvent({
           roughness={0.85}
         />
       </RoundedBox>
-      {/* Resting crate apple */}
       <mesh position={[-0.055, 0.19, -0.02]} castShadow>
         <sphereGeometry args={[0.055, 12, 12]} />
         <meshStandardMaterial color="#dc2626" roughness={0.28} />
       </mesh>
-      {/* Interactive rolled apple */}
       <group ref={appleRef} position={[0.24, 0.065, 0.12]}>
         <mesh castShadow>
           <sphereGeometry args={[0.064, 14, 14]} />
@@ -192,34 +184,34 @@ function RolledAppleEvent({
 }
 
 /**
- * Micro-Event 4: Drizzle Cloud & Pop-Open Umbrella ("Rain! Open umbrella!" / "Close umbrella.")
+ * Micro-Event 4: Authentic Café Patio Parasol Umbrella mounted cleanly over the bistro table.
+ * Responds naturally to real city rain (no cartoon mini-cloud!).
  */
-function UmbrellaRainEvent({
+function PatioUmbrellaEvent({
   position,
+  weather,
   onTriggerAudio,
 }: {
   position: [number, number, number];
+  weather: 'sunny' | 'rainy';
   onTriggerAudio: (key: SpeechKey, ringPos: [number, number, number]) => void;
 }) {
   const [open, setOpen] = useState(false);
   const canopyRef = useRef<THREE.Group>(null);
-  const dropsRef = useRef<THREE.Group>(null);
+  const pulseRef = useRef<THREE.Mesh>(null);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
     if (canopyRef.current) {
-      const targetScaleXZ = open ? 1.0 : 0.24;
-      const targetScaleY = open ? 0.72 : 1.35;
+      const targetScaleXZ = open ? 1.0 : 0.2;
+      const targetScaleY = open ? 0.72 : 1.4;
       canopyRef.current.scale.x = THREE.MathUtils.damp(canopyRef.current.scale.x, targetScaleXZ, 10, dt);
       canopyRef.current.scale.z = THREE.MathUtils.damp(canopyRef.current.scale.z, targetScaleXZ, 10, dt);
       canopyRef.current.scale.y = THREE.MathUtils.damp(canopyRef.current.scale.y, targetScaleY, 10, dt);
     }
-    if (dropsRef.current) {
-      dropsRef.current.children.forEach((drop, i) => {
-        const cycle = (t * 1.4 + i * 0.25) % 1;
-        drop.position.y = 1.18 - cycle * (open ? 0.36 : 0.92);
-      });
+    if (pulseRef.current) {
+      const s = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.12;
+      pulseRef.current.scale.set(s, s, 1);
     }
   });
 
@@ -246,65 +238,50 @@ function UmbrellaRainEvent({
         document.body.style.cursor = 'auto';
       }}
     >
-      {/* Stand base */}
-      <mesh position={[0, 0.06, 0]} castShadow>
-        <cylinderGeometry args={[0.07, 0.085, 0.12, 12]} />
-        <meshStandardMaterial color="#475569" roughness={0.75} />
+      {/* Timber parasol pole rising cleanly through the center of the bistro table */}
+      <mesh position={[0, 0.72, 0]} castShadow>
+        <cylinderGeometry args={[0.018, 0.02, 1.38, 10]} />
+        <meshStandardMaterial color="#7a4e32" roughness={0.72} />
       </mesh>
-      {/* Umbrella pole */}
-      <mesh position={[0, 0.44, 0]} castShadow>
-        <cylinderGeometry args={[0.015, 0.015, 0.82, 8]} />
-        <meshStandardMaterial color="#7a4e32" roughness={0.7} />
-      </mesh>
-      {/* Pop-open colorful canopy */}
-      <group ref={canopyRef} position={[0, 0.76, 0]} scale={[0.24, 1.35, 0.24]}>
+      {/* Octagonal café patio umbrella canopy (terracotta & cream trim) */}
+      <group ref={canopyRef} position={[0, 1.32, 0]} scale={[0.2, 1.4, 0.2]}>
         <mesh castShadow>
-          <coneGeometry args={[0.38, 0.26, 8]} />
-          <meshStandardMaterial color="#0ea5e9" roughness={0.65} />
+          <coneGeometry args={[0.62, 0.34, 8]} />
+          <meshStandardMaterial color="#2a6f62" roughness={0.72} />
+        </mesh>
+        <mesh position={[0, -0.15, 0]}>
+          <cylinderGeometry args={[0.61, 0.62, 0.05, 8, 1, true]} />
+          <meshStandardMaterial color="#f6e7cc" roughness={0.82} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, 0.18, 0]}>
+          <sphereGeometry args={[0.032, 10, 10]} />
+          <meshStandardMaterial color="#b48a3e" metalness={0.7} roughness={0.3} />
         </mesh>
       </group>
-      {/* Playful miniature drizzle cloud hovering above */}
-      <group position={[0, 1.28, 0]}>
-        <mesh>
-          <sphereGeometry args={[0.14, 10, 10]} />
-          <meshStandardMaterial color="#94a3b8" roughness={0.95} />
+      {/* Subtle ring under table when raining & umbrella still closed */}
+      {weather === 'rainy' && !open && (
+        <mesh ref={pulseRef} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.36, 0.44, 24]} />
+          <meshBasicMaterial color="#38bdf8" transparent opacity={0.85} />
         </mesh>
-        <mesh position={[-0.12, -0.02, 0]}>
-          <sphereGeometry args={[0.1, 10, 10]} />
-          <meshStandardMaterial color="#cbd5e1" roughness={0.95} />
-        </mesh>
-        <mesh position={[0.12, -0.02, 0]}>
-          <sphereGeometry args={[0.105, 10, 10]} />
-          <meshStandardMaterial color="#94a3b8" roughness={0.95} />
-        </mesh>
-      </group>
-      {/* Animated blue raindrops */}
-      <group ref={dropsRef}>
-        {[
-          [-0.08, 1.1, 0.04],
-          [0.07, 0.95, -0.03],
-          [-0.02, 0.8, 0.06],
-          [0.09, 0.65, 0.02],
-        ].map(([dx, dy, dz], idx) => (
-          <mesh key={idx} position={[dx, dy, dz]}>
-            <capsuleGeometry args={[0.011, 0.032, 4, 6]} />
-            <meshBasicMaterial color="#38bdf8" />
-          </mesh>
-        ))}
-      </group>
+      )}
     </group>
   );
 }
 
 /**
- * Collection of zero-dialogue emergent street micro-events around the neighborhood block.
+ * Grounded, clutter-free emergent street micro-events around the café block.
  */
-export function StreetMicroEvents({ onTriggerAudio }: StreetMicroEventsProps) {
+export function StreetMicroEvents({ weather, onTriggerAudio }: StreetMicroEventsProps) {
   return (
     <group name="Street_Micro_Events">
-      <MailboxEvent position={[1.62, 0.06, 0.45]} onTriggerAudio={onTriggerAudio} />
-      <RolledAppleEvent position={[-1.92, 0.06, 0.96]} onTriggerAudio={onTriggerAudio} />
-      <UmbrellaRainEvent position={[-1.32, 0.06, 1.38]} onTriggerAudio={onTriggerAudio} />
+      <MailboxEvent position={[1.92, 0.06, 0.85]} onTriggerAudio={onTriggerAudio} />
+      <RolledAppleEvent position={[-2.55, 0.06, 0.72]} onTriggerAudio={onTriggerAudio} />
+      <PatioUmbrellaEvent
+        position={[-1.62, 0.06, 0.37]}
+        weather={weather}
+        onTriggerAudio={onTriggerAudio}
+      />
     </group>
   );
 }

@@ -39,6 +39,7 @@ export default function App() {
   const [marketStage, setMarketStage] = useState<MarketStage>('explore');
   const [plazaStage, setPlazaStage] = useState<PlazaStage>('explore');
   const [timeOfDay, setTimeOfDay] = useState<'day' | 'night'>('day');
+  const [weather, setWeather] = useState<'sunny' | 'rainy'>('sunny');
   const [mapBlockedHint, setMapBlockedHint] = useState(false);
   const [assetMode, setAssetMode] = useState<AssetMode>('greybox');
   const [selectedConcept, setSelectedConcept] = useState<ConceptId | null>(null);
@@ -395,6 +396,14 @@ export default function App() {
     });
   }, [audioPlayer]);
 
+  const handleToggleWeather = useCallback(() => {
+    setWeather((prev) => {
+      const next = prev === 'sunny' ? 'rainy' : 'sunny';
+      audioPlayer.play(next === 'rainy' ? 'world_umbrella_open' : 'world_day_sun');
+      return next;
+    });
+  }, [audioPlayer]);
+
   const handleMapBlockedBump = useCallback(() => {
     setMapBlockedHint(true);
     if (mapBlockedTimerRef.current) {
@@ -509,6 +518,7 @@ export default function App() {
         cafeStatus={profile.locations.cafe}
         locations={profile.locations}
         timeOfDay={timeOfDay}
+        weather={weather}
         phase={lesson.phase}
         leoAnim={lesson.leoAnim}
         speechRef={audioPlayer.speechRef}
@@ -544,7 +554,9 @@ export default function App() {
         starCount={starCount}
         immersionSeconds={profile.immersionSeconds}
         timeOfDay={timeOfDay}
+        weather={weather}
         onToggleTimeOfDay={handleToggleTimeOfDay}
+        onToggleWeather={handleToggleWeather}
         onSelectView={handleSelectView}
       />
 

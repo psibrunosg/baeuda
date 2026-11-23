@@ -13,11 +13,18 @@ import {
   PlazaMusicianNpc,
 } from './StylizedCharacters';
 import { StreetMicroEvents } from './StreetMicroEvents';
+import {
+  BackgroundBakery,
+  BackgroundClocktower,
+  CityRainParticles,
+  PatioStringLights,
+} from './TownBuildings';
 
 interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
   timeOfDay?: 'day' | 'night';
+  weather?: 'sunny' | 'rainy';
   visible: boolean;
   onEnterCafe: () => void;
   onEnterMarket?: () => void;
@@ -164,6 +171,7 @@ export function NeighborhoodMap({
   cafeStatus,
   locations,
   timeOfDay = 'day',
+  weather = 'sunny',
   visible,
   onEnterCafe,
   onEnterMarket,
@@ -430,7 +438,7 @@ export function NeighborhoodMap({
         />
       </mesh>
 
-      {/* Main Walkable Cobblestone Boulevard + Crosswalk + Raised Sidewalk */}
+      {/* Main Walkable Cobblestone Boulevard + Stone Curbs + Crosswalk + Raised Sidewalk */}
       <mesh
         position={[0, 0.015, 1.72]}
         receiveShadow
@@ -442,9 +450,42 @@ export function NeighborhoodMap({
           map={textures.cobblestoneColor}
           bumpMap={textures.cobblestoneBump}
           bumpScale={0.018}
-          roughness={0.9}
+          roughness={weather === 'rainy' ? 0.35 : 0.9}
+          metalness={weather === 'rainy' ? 0.12 : 0}
         />
       </mesh>
+      {/* Beveled stone street curbs framing both sides of the cobblestone boulevard */}
+      <RoundedBox args={[15.8, 0.075, 0.14]} radius={0.02} smoothness={2} position={[0, 0.042, 0.82]} receiveShadow>
+        <meshStandardMaterial color="#cfc3ae" roughness={0.86} />
+      </RoundedBox>
+      <RoundedBox args={[15.8, 0.075, 0.14]} radius={0.02} smoothness={2} position={[0, 0.042, 2.66]} receiveShadow>
+        <meshStandardMaterial color="#cfc3ae" roughness={0.86} />
+      </RoundedBox>
+      {/* Reflective rain puddles on the street during real city rain */}
+      {weather === 'rainy' && (
+        <>
+          <mesh position={[-1.15, 0.04, 1.55]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.42, 20]} />
+            <meshPhysicalMaterial color="#64748b" transparent opacity={0.55} roughness={0.04} clearcoat={1} />
+          </mesh>
+          <mesh position={[1.45, 0.04, 1.95]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.52, 22]} />
+            <meshPhysicalMaterial color="#64748b" transparent opacity={0.55} roughness={0.04} clearcoat={1} />
+          </mesh>
+        </>
+      )}
+      {/* Low stone garden border wall along the back horizon */}
+      <RoundedBox args={[14.4, 0.34, 0.22]} radius={0.04} smoothness={2} position={[0, 0.18, -3.1]} receiveShadow>
+        <meshStandardMaterial color="#d6cab6" bumpMap={textures.plasterBump} bumpScale={0.01} roughness={0.9} />
+      </RoundedBox>
+      {/* City-wide real rainfall particles */}
+      <CityRainParticles active={weather === 'rainy'} />
+      {/* Warm festoon string lights draped from café awning to vintage streetlamp */}
+      <PatioStringLights
+        start={[-1.22, 1.82, 0.65]}
+        end={[-2.28, 2.0, 0.93]}
+        isNight={timeOfDay === 'night' || weather === 'rainy'}
+      />
       {/* Zebra crosswalk stripes leading to the café */}
       {[-0.45, -0.15, 0.15, 0.45].map((cx, idx) => (
         <mesh key={idx} position={[cx, 0.038, 1.72]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -485,8 +526,9 @@ export function NeighborhoodMap({
         <LearnerAvatar isWalkingRef={isWalkingRef} blockedBumpRef={blockedBumpRef} />
       </group>
 
-      {/* Emergent zero-dialogue street micro-events (Mailbox, Rolled Apple, Rain Umbrella) */}
+      {/* Emergent zero-dialogue street micro-events (Mailbox, Rolled Apple, Patio Parasol) */}
       <StreetMicroEvents
+        weather={weather}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
           if (exploreRingRef.current) {
@@ -497,33 +539,9 @@ export function NeighborhoodMap({
         }}
       />
 
-      {/* Background Storybook Town Silhouettes (Bakery & Bookshop Clocktower framing the horizon) */}
-      <group position={[-2.9, 0.05, -4.35]}>
-        <RoundedBox args={[2.4, 2.3, 1.6]} radius={0.05} smoothness={2} position={[0, 1.15, 0]}>
-          <meshStandardMaterial color="#ead2a8" roughness={0.9} />
-        </RoundedBox>
-        <RoundedBox args={[2.6, 0.24, 1.8]} radius={0.04} smoothness={2} position={[0, 2.38, 0]}>
-          <meshStandardMaterial color="#8c4f38" roughness={0.86} />
-        </RoundedBox>
-        <mesh position={[0, 1.35, 0.82]}>
-          <boxGeometry args={[1.1, 0.7, 0.05]} />
-          <meshStandardMaterial color="#fde68a" emissive="#f59e0b" emissiveIntensity={0.45} />
-        </mesh>
-      </group>
-      <group position={[2.8, 0.05, -4.45]}>
-        <RoundedBox args={[2.3, 2.8, 1.6]} radius={0.05} smoothness={2} position={[0, 1.4, 0]}>
-          <meshStandardMaterial color="#cbd5e1" roughness={0.9} />
-        </RoundedBox>
-        <mesh position={[0, 3.1, 0]}>
-          <coneGeometry args={[1.55, 0.85, 4]} />
-          <meshStandardMaterial color="#475569" roughness={0.85} />
-        </mesh>
-        {/* Clock face */}
-        <mesh position={[0, 2.2, 0.82]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.26, 0.26, 0.04, 16]} />
-          <meshStandardMaterial color="#fef3c7" roughness={0.6} />
-        </mesh>
-      </group>
+      {/* Detailed Background Town Architecture (Artisan Bakery & Bookshop Clocktower) */}
+      <BackgroundBakery position={[-2.85, 0.04, -4.35]} isNight={timeOfDay === 'night'} />
+      <BackgroundClocktower position={[2.85, 0.04, -4.4]} isNight={timeOfDay === 'night'} />
 
       {/* Café da Esquina — tactile artisan diorama hero */}
       <group position={[0, 0.06, -0.55]}>
@@ -948,9 +966,9 @@ export function NeighborhoodMap({
         <StylizedTree position={[2.45, 0, -2.1]} scale={1.08} />
       </group>
 
-      {/* DISTRICT 2: Local Market (Lesson 2 — clickable once unlocked after Café Lesson 1) */}
+      {/* DISTRICT 2: Open-Air Timber-Framed Local Market Pavilion (Lesson 2) */}
       <group
-        position={[-4.35, 0.06, -0.45]}
+        position={[-4.5, 0.06, -0.45]}
         onClick={(e) => {
           if (marketLocked) return;
           e.stopPropagation();
@@ -963,47 +981,90 @@ export function NeighborhoodMap({
         }}
         onPointerOut={handleDoorPointerOut}
       >
-        <RoundedBox args={[2.25, 1.32, 1.45]} radius={0.05} smoothness={2} position={[0, 0.66, 0]}>
+        {/* 4 Timber corner posts */}
+        {[
+          [-1.08, 0.82, -0.62],
+          [1.08, 0.82, -0.62],
+          [-1.08, 0.82, 0.62],
+          [1.08, 0.82, 0.62],
+        ].map(([px, py, pz], idx) => (
+          <mesh key={idx} position={[px, py, pz]} castShadow={!marketLocked}>
+            <boxGeometry args={[0.1, 1.64, 0.1]} />
+            <meshStandardMaterial
+              color={marketLocked ? '#94a3b8' : '#7a4e32'}
+              transparent={marketLocked}
+              opacity={marketLocked ? 0.45 : 1}
+              roughness={0.88}
+            />
+          </mesh>
+        ))}
+        {/* Wooden market counter base */}
+        <RoundedBox args={[2.16, 0.72, 0.92]} radius={0.04} smoothness={2} position={[0, 0.36, 0]} castShadow={!marketLocked}>
           <meshStandardMaterial
-            color={marketLocked ? '#cbd5e1' : '#f5ebd8'}
+            color={marketLocked ? '#cbd5e1' : '#ffffff'}
+            map={marketLocked ? null : textures.woodCrateColor}
+            bumpMap={marketLocked ? null : textures.woodCrateBump}
+            bumpScale={0.01}
             transparent={marketLocked}
             opacity={marketLocked ? 0.45 : 1}
-            roughness={0.9}
+            roughness={0.86}
           />
         </RoundedBox>
-        {/* Striped market awning */}
-        <mesh position={[0, 1.48, 0.18]} rotation={[0.25, 0, 0]}>
-          <boxGeometry args={[2.45, 0.14, 1.75]} />
-          <meshStandardMaterial
-            color={marketLocked ? '#e2e8f0' : '#d97757'}
-            transparent={marketLocked}
-            opacity={marketLocked ? 0.5 : 1}
-            roughness={0.88}
-          />
-        </mesh>
-        {/* Wooden fruit crates */}
-        <mesh position={[-0.52, 0.22, 0.92]}>
-          <boxGeometry args={[0.5, 0.36, 0.4]} />
+        {/* 5-Stripe Scalloped Market Canopy */}
+        <group position={[0, 1.68, 0.06]} rotation={[0.18, 0, 0]}>
+          {Array.from({ length: 5 }, (_, i) => (
+            <RoundedBox
+              key={i}
+              args={[0.48, 0.1, 1.62]}
+              radius={0.03}
+              smoothness={2}
+              position={[-0.96 + i * 0.48, 0, 0]}
+              castShadow={!marketLocked}
+            >
+              <meshStandardMaterial
+                color={marketLocked ? '#e2e8f0' : i % 2 === 0 ? '#d96b47' : '#fdf6ea'}
+                transparent={marketLocked}
+                opacity={marketLocked ? 0.5 : 1}
+                roughness={0.86}
+              />
+            </RoundedBox>
+          ))}
+        </group>
+        {/* Produce display crates (apples, oranges, baguettes) */}
+        <RoundedBox args={[0.56, 0.34, 0.42]} radius={0.02} smoothness={2} position={[-0.55, 0.2, 0.85]}>
           <meshStandardMaterial
             color={marketLocked ? '#cbd5e1' : '#b47b4e'}
             transparent={marketLocked}
             opacity={marketLocked ? 0.45 : 1}
           />
-        </mesh>
+        </RoundedBox>
         {!marketLocked && (
           <>
-            <mesh position={[-0.58, 0.45, 0.9]}>
-              <sphereGeometry args={[0.08, 10, 10]} />
-              <meshStandardMaterial color="#f97316" roughness={0.65} />
+            <mesh position={[-0.65, 0.42, 0.84]}>
+              <sphereGeometry args={[0.085, 10, 10]} />
+              <meshStandardMaterial color="#f97316" roughness={0.6} />
             </mesh>
-            <mesh position={[-0.44, 0.45, 0.94]}>
+            <mesh position={[-0.48, 0.42, 0.86]}>
+              <sphereGeometry args={[0.085, 10, 10]} />
+              <meshStandardMaterial color="#ef4444" roughness={0.5} />
+            </mesh>
+            <mesh position={[-0.56, 0.44, 0.72]}>
               <sphereGeometry args={[0.08, 10, 10]} />
-              <meshStandardMaterial color="#22c55e" roughness={0.65} />
+              <meshStandardMaterial color="#22c55e" roughness={0.6} />
+            </mesh>
+            {/* Hanging warm market lantern */}
+            <mesh position={[0, 1.42, 0.65]}>
+              <sphereGeometry args={[0.09, 12, 12]} />
+              <meshStandardMaterial
+                color="#fef9c3"
+                emissive="#fbbf24"
+                emissiveIntensity={timeOfDay === 'night' ? 2.0 : 0.7}
+              />
             </mesh>
           </>
         )}
         {/* Unique Market Vendor NPC */}
-        <group position={[0.55, 0.02, 1.05]}>
+        <group position={[0.55, 0.02, 0.96]}>
           <MarketVendorNpc fogged={marketLocked} />
         </group>
 

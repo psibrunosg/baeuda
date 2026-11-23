@@ -5,7 +5,9 @@ interface TopNavProps {
   starCount: number;
   immersionSeconds: number;
   timeOfDay?: 'day' | 'night';
+  weather?: 'sunny' | 'rainy';
   onToggleTimeOfDay?: () => void;
+  onToggleWeather?: () => void;
   onSelectView: (view: 'map' | 'constellation') => void;
 }
 
@@ -21,11 +23,23 @@ export function TopNav({
   starCount,
   immersionSeconds,
   timeOfDay = 'day',
+  weather = 'sunny',
   onToggleTimeOfDay,
+  onToggleWeather,
   onSelectView,
 }: TopNavProps) {
   return (
     <nav className="top-nav" aria-label="Navigation">
+      {activeView === 'map' && onToggleWeather && (
+        <button
+          type="button"
+          className="icon-btn time-toggle-btn"
+          aria-label={weather === 'sunny' ? 'Rain' : 'Sun'}
+          onClick={onToggleWeather}
+        >
+          {weather === 'sunny' ? '🌧️' : '☀️'}
+        </button>
+      )}
       {activeView === 'map' && onToggleTimeOfDay && (
         <button
           type="button"
