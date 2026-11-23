@@ -1447,3 +1447,261 @@ export function InteractivePizzeria({
     </group>
   );
 }
+
+/**
+ * Unique Postal Worker NPC: royal-blue uniform, golden messenger strap, postal cap.
+ */
+function PostalWorkerNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.15 + Math.sin(t * 10) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+      </mesh>
+      <mesh position={[0.052, 0.04, 0.015]} castShadow>
+        <sphereGeometry args={[0.042, 10, 10]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#1d4ed8" roughness={0.82} />
+      </mesh>
+      {/* Yellow postal satchel strap */}
+      <mesh position={[0, 0.31, 0.125]} rotation={[0, 0, 0.45]}>
+        <boxGeometry args={[0.036, 0.28, 0.02]} />
+        <meshStandardMaterial color="#facc15" roughness={0.6} />
+      </mesh>
+      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#1d4ed8" roughness={0.82} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#c98e6b" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#1d4ed8" roughness={0.82} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.037, 10, 10]} />
+          <meshStandardMaterial color="#c98e6b" roughness={0.82} />
+        </mesh>
+      </group>
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.132, 16, 16]} />
+          <meshStandardMaterial color="#c98e6b" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.016, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        {/* Royal-blue postal cap */}
+        <mesh position={[0, 0.08, 0]} castShadow>
+          <cylinderGeometry args={[0.135, 0.125, 0.08, 16]} />
+          <meshStandardMaterial color="#1e40af" roughness={0.75} />
+        </mesh>
+        <mesh position={[0, 0.055, 0.11]} rotation={[0.15, 0, 0]}>
+          <boxGeometry args={[0.16, 0.02, 0.11]} />
+          <meshStandardMaterial color="#facc15" roughness={0.6} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 11: Correios & Banco Interativo (Post Office & Community Bank)
+ * Mounted behind the South Pocket Park facing -z toward the crosswalk & Café.
+ * 4 interactive everyday props + clickable Postal Worker profession:
+ * 1) Cardboard Delivery Package -> opens Curiosity Card ("What do you send by mail?" -> Package, collects 📦)
+ * 2) Glowing Blue Bank ATM -> flashes screen ("Bank ATM! Card and money!")
+ * 3) Letter & Stamp Counter -> hops letter ("Letter and stamp! Mail it today!")
+ * 4) Postal Worker NPC -> opens Curiosity Card ("What is this job?" -> Postal worker)
+ */
+export function InteractivePostBank({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+  onInspectCuriosity,
+}: InteractiveShopProps) {
+  const textures = useMemo(() => getCafeTextures(), []);
+  const [atmActive, setAtmActive] = useState(false);
+
+  const letterRef = useRef<THREE.Group>(null);
+  const letterHopRef = useRef(0);
+  const npcWaveRef = useRef(0);
+
+  const glow = isNight ? 1.6 : 0.75;
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+    if (letterHopRef.current > 0) {
+      letterHopRef.current = Math.max(0, letterHopRef.current - dt * 1.8);
+      if (letterRef.current) {
+        letterRef.current.position.y = 0.59 + Math.sin(letterHopRef.current * Math.PI) * 0.14;
+      }
+    } else if (letterRef.current) {
+      letterRef.current.position.y = 0.59;
+    }
+  });
+
+  return (
+    <group name="Shop_Interactive_PostBank" position={position} rotation={[0, rotationY, 0]}>
+      {/* Civic Sandstone & Royal-Blue Post Office / Bank Building */}
+      <RoundedBox args={[2.6, 2.08, 1.72]} radius={0.04} smoothness={2} position={[0, 1.04, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#e7dcc8" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.86} />
+      </RoundedBox>
+      <RoundedBox args={[2.76, 0.24, 1.88]} radius={0.04} smoothness={2} position={[0, 2.18, 0]} castShadow>
+        <meshStandardMaterial color="#1e3a8a" roughness={0.78} />
+      </RoundedBox>
+      {/* Golden Civic Roof Stripe & Envelope Sign */}
+      <mesh position={[0, 1.98, -0.88]}>
+        <boxGeometry args={[2.62, 0.1, 0.04]} />
+        <meshStandardMaterial color="#eab308" metalness={0.65} roughness={0.3} />
+      </mesh>
+      <group position={[0, 2.5, -0.62]}>
+        <RoundedBox args={[0.56, 0.36, 0.08]} radius={0.02} smoothness={2} castShadow>
+          <meshStandardMaterial color="#facc15" roughness={0.45} />
+        </RoundedBox>
+        <mesh position={[0, 0.02, -0.045]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[0.42, 0.24]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.5} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 1: Glowing Blue Bank ATM built into left facade (-z) */}
+      <group
+        position={[-0.78, 0.92, -0.92]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setAtmActive((prev) => !prev);
+          onTriggerAudio('world_bank_atm', [position[0] - 0.78, 0.08, position[2] - 1.15]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.62, 0.92, 0.16]} radius={0.03} smoothness={2} castShadow>
+          <meshStandardMaterial color="#1d4ed8" roughness={0.45} />
+        </RoundedBox>
+        {/* ATM Screen */}
+        <mesh position={[0, 0.14, -0.085]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[0.44, 0.3]} />
+          <meshStandardMaterial
+            color={atmActive ? '#86efac' : '#7dd3fc'}
+            emissive={atmActive ? '#22c55e' : '#0ea5e9'}
+            emissiveIntensity={glow + 0.5}
+          />
+        </mesh>
+        {/* Keypad + Green Card Slot */}
+        <mesh position={[0, -0.18, -0.085]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[0.32, 0.18]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 2: Cardboard Delivery Package Counter (opens Curiosity Card: Package!) */}
+      <group
+        position={[0.12, 0, -1.16]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspectCuriosity?.('city_package');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.56, 0.54, 0.44]} radius={0.02} smoothness={2} position={[0, 0.27, 0]} castShadow>
+          <meshStandardMaterial color="#7a4e32" roughness={0.84} />
+        </RoundedBox>
+        <RoundedBox args={[0.38, 0.28, 0.3]} radius={0.02} smoothness={2} position={[0, 0.68, 0]} castShadow>
+          <meshStandardMaterial color="#c28b5b" roughness={0.88} />
+        </RoundedBox>
+        {/* Packing tape stripe */}
+        <mesh position={[0, 0.825, 0]}>
+          <boxGeometry args={[0.39, 0.015, 0.08]} />
+          <meshStandardMaterial color="#fef08a" roughness={0.5} />
+        </mesh>
+      </group>
+
+      {/* INTERACTIVE 3: Stamped Letter Pedestal */}
+      <group
+        position={[0.72, 0, -1.16]}
+        onClick={(e) => {
+          e.stopPropagation();
+          letterHopRef.current = 1;
+          onTriggerAudio('world_post_letter', [position[0] + 0.72, 0.08, position[2] - 1.16]);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <RoundedBox args={[0.38, 0.54, 0.34]} radius={0.02} smoothness={2} position={[0, 0.27, 0]} castShadow>
+          <meshStandardMaterial color="#e2e8f0" roughness={0.78} />
+        </RoundedBox>
+        <group ref={letterRef} position={[0, 0.59, 0]}>
+          <RoundedBox args={[0.26, 0.04, 0.18]} radius={0.01} smoothness={2} castShadow>
+            <meshStandardMaterial color="#ffffff" roughness={0.5} />
+          </RoundedBox>
+          <mesh position={[-0.08, 0.025, -0.04]}>
+            <boxGeometry args={[0.05, 0.01, 0.05]} />
+            <meshStandardMaterial color="#ef4444" />
+          </mesh>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 4: Postal Worker NPC facing street (-z) */}
+      <group
+        position={[1.18, 0, -1.08]}
+        rotation={[0, Math.PI, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          npcWaveRef.current = 2.0;
+          onInspectCuriosity?.('job_postal');
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        <PostalWorkerNpc waveTimerRef={npcWaveRef} />
+      </group>
+    </group>
+  );
+}

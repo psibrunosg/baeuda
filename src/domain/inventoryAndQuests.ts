@@ -18,6 +18,7 @@ export const INVENTORY_CATALOG: Record<string, InventoryItem> = {
   scissors: { id: 'scissors', icon: '✂️', label: 'Scissors', speechKey: 'world_barber_scissors' },
   book: { id: 'book', icon: '📖', label: 'Book', speechKey: 'world_book_read' },
   pizza: { id: 'pizza', icon: '🍕', label: 'Pizza', speechKey: 'world_pizza_slice' },
+  package: { id: 'package', icon: '📦', label: 'Package', speechKey: 'world_post_package' },
   apple: { id: 'apple', icon: '🍎', label: 'Apple', speechKey: 'market_apple' },
   banana: { id: 'banana', icon: '🍌', label: 'Banana', speechKey: 'fruit_banana' },
   orange: { id: 'orange', icon: '🍊', label: 'Orange', speechKey: 'fruit_orange' },

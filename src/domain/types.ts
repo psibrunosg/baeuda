@@ -264,7 +264,11 @@ export type SpeechKey =
   | 'job_chef'
   | 'world_pizza_slice'
   | 'world_pizza_menu'
-  | 'world_pizza_plate';
+  | 'world_pizza_plate'
+  | 'job_postal'
+  | 'world_post_package'
+  | 'world_post_letter'
+  | 'world_bank_atm';
 
 export interface CounterDemoBeat {
   prop: PropName;

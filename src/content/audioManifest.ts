@@ -1020,6 +1020,34 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: 'viseme_ee' },
     { at: 1.95, viseme: null },
   ]),
+  job_postal: line('job_postal', 'Postal worker! Delivers letters and packages!', 2200, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.55, viseme: 'viseme_oo' },
+    { at: 1.15, viseme: 'viseme_ee' },
+    { at: 1.7, viseme: 'viseme_mbp' },
+    { at: 2.1, viseme: null },
+  ]),
+  world_post_package: line('world_post_package', 'Package! Send the mail!', 1750, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.65, viseme: null },
+  ]),
+  world_post_letter: line('world_post_letter', 'Letter and stamp! Mail it today!', 1950, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.5, viseme: 'viseme_aa' },
+    { at: 1.0, viseme: 'viseme_mbp' },
+    { at: 1.5, viseme: 'viseme_ee' },
+    { at: 1.85, viseme: null },
+  ]),
+  world_bank_atm: line('world_bank_atm', 'Bank ATM! Card and money!', 1900, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_ee' },
+    { at: 0.95, viseme: 'viseme_aa' },
+    { at: 1.45, viseme: 'viseme_mbp' },
+    { at: 1.8, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

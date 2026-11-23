@@ -26,6 +26,7 @@ import {
   InteractivePetShop,
   InteractivePharmacy,
   InteractivePizzeria,
+  InteractivePostBank,
 } from './CityShopsPhase2';
 import {
   AcrossStreetPromenade,
@@ -685,6 +686,20 @@ export function NeighborhoodMap({
       <InteractivePizzeria
         position={[10.0, 0.06, 4.15]}
         rotationY={-0.28}
+        isNight={timeOfDay === 'night'}
+        onInspectCuriosity={onInspectCuriosity}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
+      <InteractivePostBank
+        position={[0.15, 0.06, 5.72]}
+        rotationY={0}
         isNight={timeOfDay === 'night'}
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={(key, ringPos) => {
