@@ -1441,3 +1441,339 @@ export function InteractiveTechShop({
     </group>
   );
 }
+
+/**
+ * Unique Construction Worker NPC: high-vis neon-yellow safety vest with reflective stripes,
+ * bright yellow hard hat, work boots, friendly wave.
+ */
+function ConstructionWorkerNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
+  const rightArmRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+    if (waveTimerRef.current > 0) {
+      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+    }
+    if (rightArmRef.current) {
+      const waving = waveTimerRef.current > 0;
+      const targetZ = waving ? -2.2 + Math.sin(t * 10) * 0.38 : -0.25 + Math.sin(t * 2.1) * 0.06;
+      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
+    }
+    if (headRef.current) {
+      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      {/* Heavy tan work boots */}
+      <mesh position={[-0.055, 0.042, 0.015]} castShadow>
+        <sphereGeometry args={[0.046, 10, 10]} />
+        <meshStandardMaterial color="#78350f" roughness={0.88} />
+      </mesh>
+      <mesh position={[0.055, 0.042, 0.015]} castShadow>
+        <sphereGeometry args={[0.046, 10, 10]} />
+        <meshStandardMaterial color="#78350f" roughness={0.88} />
+      </mesh>
+      {/* High-Vis Safety Vest Torso */}
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <capsuleGeometry args={[0.132, 0.22, 8, 12]} />
+        <meshStandardMaterial color="#eab308" roughness={0.78} />
+      </mesh>
+      {/* Silver Reflective Vest Stripes */}
+      <mesh position={[0, 0.28, 0.128]}>
+        <boxGeometry args={[0.18, 0.03, 0.014]} />
+        <meshStandardMaterial color="#e2e8f0" emissive="#f8fafc" emissiveIntensity={0.35} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.22, 0.128]}>
+        <boxGeometry args={[0.18, 0.03, 0.014]} />
+        <meshStandardMaterial color="#e2e8f0" emissive="#f8fafc" emissiveIntensity={0.35} roughness={0.3} />
+      </mesh>
+      {/* Left Arm */}
+      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.22]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#334155" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.038, 10, 10]} />
+          <meshStandardMaterial color="#e2ab83" roughness={0.82} />
+        </mesh>
+      </group>
+      {/* Right Arm */}
+      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
+        <mesh position={[0, -0.08, 0]} castShadow>
+          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
+          <meshStandardMaterial color="#334155" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, -0.17, 0]}>
+          <sphereGeometry args={[0.038, 10, 10]} />
+          <meshStandardMaterial color="#e2ab83" roughness={0.82} />
+        </mesh>
+      </group>
+      {/* Head + Bright Yellow Hard Hat */}
+      <group ref={headRef} position={[0, 0.64, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.134, 16, 16]} />
+          <meshStandardMaterial color="#e2ab83" roughness={0.82} />
+        </mesh>
+        <mesh position={[-0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.017, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        <mesh position={[0.042, 0.01, 0.12]}>
+          <sphereGeometry args={[0.017, 10, 10]} />
+          <meshStandardMaterial color="#1c1917" roughness={0.15} />
+        </mesh>
+        {/* Hard hat dome + brim */}
+        <mesh position={[0, 0.078, 0]} castShadow>
+          <sphereGeometry args={[0.145, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
+          <meshStandardMaterial color="#facc15" roughness={0.35} />
+        </mesh>
+        <mesh position={[0, 0.068, 0.03]} castShadow>
+          <cylinderGeometry args={[0.165, 0.17, 0.022, 18]} />
+          <meshStandardMaterial color="#eab308" roughness={0.38} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * SHOP 5: Canteiro de Obras Interativo (Neighborhood Construction Site)
+ * 3 tactile real-world learning interactions:
+ * 1) Yellow Concrete Mixer -> spins drum briskly ("Work! Mix and build!")
+ * 2) Red Brick Wall & Pallet -> raises extra brick row smoothly ("Red bricks! Build the wall!")
+ * 3) Hard Hat Barrel, Safety Cones & Worker NPC -> hops hard hat & worker waves ("Careful! Wear a hard hat!")
+ */
+export function InteractiveConstructionSite({
+  position,
+  rotationY = 0,
+  isNight,
+  onTriggerAudio,
+}: InteractiveShopProps) {
+  const [brickTiers, setBrickTiers] = useState(1);
+
+  const mixerDrumRef = useRef<THREE.Group>(null);
+  const helmetRef = useRef<THREE.Group>(null);
+  const mixerSpinRef = useRef(0);
+  const helmetHopRef = useRef(0);
+  const workerWaveRef = useRef(0);
+
+  const glow = isNight ? 1.8 : 0.7;
+
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+
+    if (mixerSpinRef.current > 0.05) {
+      mixerSpinRef.current = Math.max(0, mixerSpinRef.current - dt * 1.4);
+      if (mixerDrumRef.current) {
+        mixerDrumRef.current.rotation.y += mixerSpinRef.current * dt * 9;
+      }
+    } else if (mixerDrumRef.current) {
+      mixerDrumRef.current.rotation.y += dt * 0.6;
+    }
+
+    if (helmetHopRef.current > 0) {
+      helmetHopRef.current = Math.max(0, helmetHopRef.current - dt * 1.7);
+      if (helmetRef.current) {
+        helmetRef.current.position.y = 0.62 + Math.sin(helmetHopRef.current * Math.PI) * 0.18;
+        helmetRef.current.rotation.y += dt * 5;
+      }
+    } else if (helmetRef.current) {
+      helmetRef.current.position.y = 0.62;
+    }
+  });
+
+  const handleMixerClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    mixerSpinRef.current = 3.2;
+    onTriggerAudio('world_construction_mixer', [position[0] - 0.55, 0.08, position[2] - 1.15]);
+  };
+
+  const handleBricksClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    setBrickTiers((prev) => (prev >= 3 ? 1 : prev + 1));
+    onTriggerAudio('world_construction_bricks', [position[0] + 0.35, 0.08, position[2] - 1.05]);
+  };
+
+  const handleHelmetClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    helmetHopRef.current = 1;
+    workerWaveRef.current = 2.0;
+    onTriggerAudio('world_construction_helmet', [position[0] + 0.95, 0.08, position[2] - 1.18]);
+  };
+
+  return (
+    <group name="Shop_Interactive_ConstructionSite" position={position} rotation={[0, rotationY, 0]}>
+      {/* Poured Concrete Foundation Slab */}
+      <RoundedBox args={[2.55, 0.14, 1.9]} radius={0.03} smoothness={2} position={[0, 0.07, 0]} receiveShadow>
+        <meshStandardMaterial color="#cbd5e1" roughness={0.92} />
+      </RoundedBox>
+
+      {/* Timber Framing & Wooden Scaffolding Structure */}
+      {[
+        [-1.08, 1.02, -0.75],
+        [1.08, 1.02, -0.75],
+        [-1.08, 1.02, 0.75],
+        [1.08, 1.02, 0.75],
+      ].map(([px, py, pz], idx) => (
+        <mesh key={idx} position={[px, py, pz]} castShadow>
+          <boxGeometry args={[0.11, 1.9, 0.11]} />
+          <meshStandardMaterial color="#b47b4e" roughness={0.88} />
+        </mesh>
+      ))}
+      {/* Top Wooden Framing Beams & Plank Deck */}
+      <mesh position={[0, 1.92, -0.75]} castShadow>
+        <boxGeometry args={[2.28, 0.1, 0.1]} />
+        <meshStandardMaterial color="#a16207" roughness={0.86} />
+      </mesh>
+      <mesh position={[0, 1.92, 0.75]} castShadow>
+        <boxGeometry args={[2.28, 0.1, 0.1]} />
+        <meshStandardMaterial color="#a16207" roughness={0.86} />
+      </mesh>
+      <mesh position={[-1.08, 1.92, 0]} castShadow>
+        <boxGeometry args={[0.1, 0.1, 1.62]} />
+        <meshStandardMaterial color="#a16207" roughness={0.86} />
+      </mesh>
+      <mesh position={[1.08, 1.92, 0]} castShadow>
+        <boxGeometry args={[0.1, 0.1, 1.62]} />
+        <meshStandardMaterial color="#a16207" roughness={0.86} />
+      </mesh>
+      {/* Mid-level wooden scaffold walkway */}
+      <RoundedBox args={[2.24, 0.08, 0.52]} radius={0.015} smoothness={2} position={[0, 1.12, 0.48]} castShadow>
+        <meshStandardMaterial color="#c28b5b" roughness={0.88} />
+      </RoundedBox>
+      {/* Warm Amber Construction Work Beacon on top corner */}
+      <mesh position={[-1.08, 2.08, -0.75]}>
+        <sphereGeometry args={[0.09, 12, 12]} />
+        <meshStandardMaterial color="#fde047" emissive="#f59e0b" emissiveIntensity={glow} />
+      </mesh>
+
+      {/* Two Orange & White Safety Cones along front curb */}
+      {[-1.18, 0.56].map((cx, idx) => (
+        <group key={idx} position={[cx, 0, -1.26]}>
+          <mesh position={[0, 0.02, 0]}>
+            <boxGeometry args={[0.24, 0.04, 0.24]} />
+            <meshStandardMaterial color="#ea580c" roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.17, 0]} castShadow>
+            <coneGeometry args={[0.095, 0.28, 12]} />
+            <meshStandardMaterial color="#f97316" roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 0.18, 0]}>
+            <cylinderGeometry args={[0.045, 0.06, 0.06, 12]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* INTERACTIVE 1: Yellow Concrete Mixer with Spinning Drum */}
+      <group
+        position={[-0.62, 0.14, -0.58]}
+        onClick={handleMixerClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Mixer axle + 2 wheels */}
+        <mesh position={[-0.24, 0.1, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.11, 0.11, 0.06, 14]} />
+          <meshStandardMaterial color="#18181b" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.24, 0.1, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.11, 0.11, 0.06, 14]} />
+          <meshStandardMaterial color="#18181b" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.24, 0]} castShadow>
+          <boxGeometry args={[0.42, 0.22, 0.28]} />
+          <meshStandardMaterial color="#334155" roughness={0.6} />
+        </mesh>
+        {/* Tilted Spinning Yellow Drum */}
+        <group position={[0, 0.44, -0.02]} rotation={[-0.45, 0, 0]}>
+          <group ref={mixerDrumRef}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.18, 0.25, 0.42, 16]} />
+              <meshStandardMaterial color="#facc15" roughness={0.45} metalness={0.2} />
+            </mesh>
+            {/* Dark stripe band to make rotation clearly visible */}
+            <mesh position={[0, 0, 0]}>
+              <boxGeometry args={[0.52, 0.06, 0.06]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.5} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+
+      {/* INTERACTIVE 2: Growing Red Brick Wall on Wooden Pallet */}
+      <group
+        position={[0.35, 0.14, -0.35]}
+        onClick={handleBricksClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Wooden pallet */}
+        <RoundedBox args={[0.96, 0.08, 0.48]} radius={0.015} smoothness={2} position={[0, 0.04, 0]} castShadow>
+          <meshStandardMaterial color="#92400e" roughness={0.9} />
+        </RoundedBox>
+        {/* Dynamic stacked tiers of terracotta red bricks (1 -> 2 -> 3 tiers on click!) */}
+        {Array.from({ length: brickTiers }, (_, tier) => (
+          <group key={tier} position={[0, 0.16 + tier * 0.17, 0]}>
+            {[-0.28, 0, 0.28].map((bx, bIdx) => (
+              <RoundedBox
+                key={bIdx}
+                args={[0.25, 0.14, 0.26]}
+                radius={0.015}
+                smoothness={2}
+                position={[bx + (tier % 2 === 1 ? 0.05 : -0.05), 0, 0]}
+                castShadow
+              >
+                <meshStandardMaterial color={bIdx === 1 ? '#b91c1c' : '#c2410c'} roughness={0.86} />
+              </RoundedBox>
+            ))}
+          </group>
+        ))}
+      </group>
+
+      {/* INTERACTIVE 3: Tool Barrel with Bouncing Hard Hat + Construction Worker NPC */}
+      <group
+        position={[0.98, 0, -1.16]}
+        onClick={handleHelmetClick}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setPointer(true);
+        }}
+        onPointerOut={() => setPointer(false)}
+      >
+        {/* Blue industrial tool barrel */}
+        <mesh position={[-0.22, 0.28, 0]} castShadow>
+          <cylinderGeometry args={[0.17, 0.17, 0.56, 16]} />
+          <meshStandardMaterial color="#1d4ed8" roughness={0.5} metalness={0.25} />
+        </mesh>
+        {/* Bouncing Yellow Hard Hat on top of barrel */}
+        <group ref={helmetRef} position={[-0.22, 0.62, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.13, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
+            <meshStandardMaterial color="#facc15" roughness={0.35} />
+          </mesh>
+          <mesh position={[0, -0.01, 0.02]}>
+            <cylinderGeometry args={[0.15, 0.155, 0.02, 16]} />
+            <meshStandardMaterial color="#eab308" roughness={0.38} />
+          </mesh>
+        </group>
+
+        {/* Construction Worker NPC facing street (-z) */}
+        <group position={[0.18, 0, -0.04]} rotation={[0, Math.PI, 0]}>
+          <ConstructionWorkerNpc waveTimerRef={workerWaveRef} />
+        </group>
+      </group>
+    </group>
+  );
+}

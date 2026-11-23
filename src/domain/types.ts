@@ -218,7 +218,16 @@ export type SpeechKey =
   | 'world_clothes_hat'
   | 'world_tech_laptop'
   | 'world_tech_phone'
-  | 'world_tech_wifi';
+  | 'world_tech_wifi'
+  | 'world_construction_mixer'
+  | 'world_construction_bricks'
+  | 'world_construction_helmet'
+  | 'job_barista'
+  | 'job_baker'
+  | 'job_mechanic'
+  | 'job_shopkeeper'
+  | 'job_technician'
+  | 'job_builder';
 
 export interface CounterDemoBeat {
   prop: PropName;

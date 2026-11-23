@@ -4,7 +4,7 @@ interface TopNavProps {
   activeView: ActiveView;
   starCount: number;
   immersionSeconds: number;
-  onSelectView: (view: 'map' | 'constellation') => void;
+  onSelectView: (view: 'map' | 'badges') => void;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -30,7 +30,7 @@ export function TopNav({
       <div className="pill-toggle">
         <button
           type="button"
-          className={activeView !== 'constellation' ? 'active' : ''}
+          className={activeView !== 'badges' ? 'active' : ''}
           aria-label="Map"
           onClick={() => onSelectView('map')}
         >
@@ -38,11 +38,11 @@ export function TopNav({
         </button>
         <button
           type="button"
-          className={activeView === 'constellation' ? 'active' : ''}
-          aria-label="Constellation"
-          onClick={() => onSelectView('constellation')}
+          className={activeView === 'badges' ? 'active' : ''}
+          aria-label="Badges"
+          onClick={() => onSelectView('badges')}
         >
-          ✨
+          🏆
           {starCount > 0 && <span className="star-badge">{starCount}</span>}
         </button>
       </div>

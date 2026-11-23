@@ -52,7 +52,7 @@ describe('TopNav', () => {
 
     const litMarkup = renderToStaticMarkup(
       createElement(TopNav, {
-        activeView: 'constellation',
+        activeView: 'badges',
         starCount: 6,
         immersionSeconds: 600,
         onSelectView: vi.fn(),
@@ -61,7 +61,7 @@ describe('TopNav', () => {
 
     expect(litMarkup).toContain('10:00');
     expect(litMarkup).toContain('<span class="star-badge">6</span>');
-    expect(litMarkup).toMatch(/class="active"[^>]*aria-label="Constellation"/);
+    expect(litMarkup).toMatch(/class="active"[^>]*aria-label="Badges"/);
     expect(visibleText(litMarkup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
     expect(litMarkup).not.toMatch(FORBIDDEN_PORTUGUESE_PATTERN);
   });
@@ -108,15 +108,15 @@ describe('LessonHud', () => {
     expect(visibleText(mapMarkup)).not.toMatch(/[a-zA-ZÀ-ÿ]/);
     expect(mapMarkup).not.toMatch(FORBIDDEN_PORTUGUESE_PATTERN);
 
-    const constMarkup = renderToStaticMarkup(
+    const badgesMarkup = renderToStaticMarkup(
       createElement(LessonHud, {
-        activeView: 'constellation',
+        activeView: 'badges',
         phase: 'farewell_constellation',
         awaitingInput: false,
         ...baseProps,
       }),
     );
-    expect(constMarkup).toBe('');
+    expect(badgesMarkup).toBe('');
   });
 
   it('renders hold-to-pour conic ring and help button during action_pour awaitingInput', () => {

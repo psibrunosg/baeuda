@@ -8,13 +8,13 @@ import {
   type LessonEvent,
   type LessonPhase,
 } from './domain/lessonEngine';
+import { countEarnedBadges, evaluateNeighborhoodBadges } from './domain/badgesAndGames';
 import { evaluateCefrProgress } from './domain/cefrEngine';
 import {
   applyCafeCycleOutcome,
   applyLesson2Outcome,
   applyLesson3Outcome,
   createInitialProfile,
-  promoteConceptToVoice,
   recordStreetDiscovery,
 } from './domain/learnerMemory';
 import { resolveWorldAtmosphere, type GuidanceContext } from './domain/immersion';
@@ -26,10 +26,10 @@ import type { AssetMode } from './scene/contracts';
 import { ExperienceCanvas, type ActiveView } from './scene/ExperienceCanvas';
 import type { MarketStage } from './scene/MarketScene';
 import type { PlazaStage } from './scene/PlazaScene';
+import { BadgesHub } from './ui/BadgesHub';
 import { DebugAudioBar } from './ui/DebugAudioBar';
 import { GuidancePill } from './ui/GuidancePill';
 import { LessonHud } from './ui/LessonHud';
-import { SensoryCard } from './ui/SensoryCard';
 import { TopNav } from './ui/TopNav';
 
 const POUR_DURATION_SEC = 1.4;
@@ -152,7 +152,7 @@ export default function App() {
         } else if (effect.type === 'commit_profile') {
           profileRef.current = effect.profile;
           setProfile(effect.profile);
-          setActiveView('constellation');
+          setActiveView('badges');
         }
       }
     },
@@ -300,7 +300,7 @@ export default function App() {
       );
       profileRef.current = next;
       setProfile(next);
-      setActiveView('constellation');
+      setActiveView('badges');
     },
     [],
   );
@@ -360,16 +360,6 @@ export default function App() {
     [beginVoiceCapture, dispatch],
   );
 
-  const handleQuickEcho = useCallback(
-    (conceptId: ConceptId) =>
-      beginVoiceCapture(() => {
-        const nowIso = new Date().toISOString();
-        setProfile((prev) => promoteConceptToVoice(prev, conceptId, nowIso));
-        audioPlayer.play(CONCEPT_AUDIO_KEY[conceptId]);
-      }),
-    [audioPlayer, beginVoiceCapture],
-  );
-
   const handleEnterMarket = useCallback(() => {
     audioPlayer.stop();
     stopVoice();
@@ -383,7 +373,7 @@ export default function App() {
     const next = applyLesson2Outcome(profileRef.current, new Date().toISOString());
     profileRef.current = next;
     setProfile(next);
-    setActiveView('constellation');
+    setActiveView('badges');
   }, []);
 
   const handleEnterPlaza = useCallback(() => {
@@ -399,7 +389,7 @@ export default function App() {
     const next = applyLesson3Outcome(profileRef.current, new Date().toISOString());
     profileRef.current = next;
     setProfile(next);
-    setActiveView('constellation');
+    setActiveView('badges');
   }, []);
 
   const handleStartNextLesson = useCallback(() => {
@@ -448,7 +438,7 @@ export default function App() {
   );
 
   const handleSelectView = useCallback(
-    (view: 'map' | 'constellation') => {
+    (view: 'map' | 'badges') => {
       audioPlayer.stop();
       stopVoice();
       resetPourState();
@@ -502,7 +492,7 @@ export default function App() {
   }, [dispatch, stopVoice]);
 
   const starCount = Object.keys(profile.constellation).length;
-  const selectedNode = selectedConcept ? (profile.constellation[selectedConcept] ?? null) : null;
+  const badgeCount = countEarnedBadges(evaluateNeighborhoodBadges(profile));
   const cefrProgress = evaluateCefrProgress(profile);
   const { timeOfDay, weather } = resolveWorldAtmosphere(profile.completedLessonIds);
   const cefrBadge =
@@ -511,7 +501,7 @@ export default function App() {
       : cefrProgress.levelLabel;
 
   const guidanceContext: GuidanceContext =
-    activeView === 'constellation'
+    activeView === 'badges'
       ? 'constellation'
       : activeView === 'cafe_cycle'
         ? activeCafeCycle
@@ -583,19 +573,17 @@ export default function App() {
 
       <TopNav
         activeView={activeView}
-        starCount={starCount}
+        starCount={badgeCount}
         immersionSeconds={profile.immersionSeconds}
         onSelectView={handleSelectView}
       />
 
-      {!(activeView === 'constellation' && selectedNode) && (
+      {activeView !== 'badges' && (
         <GuidancePill
           context={guidanceContext}
           starCount={starCount}
           cefrBadge={cefrBadge}
-          darkSurface={
-            activeView === 'constellation' || (activeView === 'map' && timeOfDay === 'night')
-          }
+          darkSurface={activeView === 'map' && timeOfDay === 'night'}
         />
       )}
 
@@ -617,23 +605,20 @@ export default function App() {
         onHoldPourEnd={handlePourEnd}
       />
 
-      {activeView === 'constellation' && (
-        <SensoryCard
-          node={selectedNode}
-          isListening={isListening}
-          onReplayAudio={(id) => {
+      {activeView === 'badges' && (
+        <BadgesHub
+          profile={profile}
+          cefrBadge={cefrBadge}
+          onPlayAudio={(key) => {
             stopVoice();
-            audioPlayer.play(CONCEPT_AUDIO_KEY[id]);
+            audioPlayer.play(key);
           }}
-          onSelectConcept={(id) => {
-            stopVoice();
-            setSelectedConcept(id);
+          onCompleteGame={(gameKey) => {
+            setProfile((prev) => recordStreetDiscovery(prev, gameKey));
           }}
-          onGoToCafe={handleEnterCafe}
-          onQuickEcho={handleQuickEcho}
           onClose={() => {
             stopVoice();
-            setSelectedConcept(null);
+            setActiveView('map');
           }}
         />
       )}
@@ -648,10 +633,6 @@ export default function App() {
           if (activeView === 'lesson' && lesson.phase === 'micro_echo') {
             stopVoice();
             dispatch({ type: 'VOICE_DETECTED' });
-          } else if (activeView === 'constellation' && selectedConcept) {
-            stopVoice();
-            const nowIso = new Date().toISOString();
-            setProfile((prev) => promoteConceptToVoice(prev, selectedConcept, nowIso));
           }
         }}
         onResetProfile={handleReset}

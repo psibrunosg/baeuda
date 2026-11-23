@@ -18,13 +18,12 @@ import type { SpeechClockRef } from '../services/audioPlayer';
 import { CAMERA_ANCHORS, type AssetMode } from './contracts';
 import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
-import { Constellation3D } from './Constellation3D';
 import { LeoBarista } from './LeoBarista';
 import { MarketScene, type MarketStage } from './MarketScene';
 import { NeighborhoodMap } from './NeighborhoodMap';
 import { PlazaScene, type PlazaStage } from './PlazaScene';
 
-export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'constellation';
+export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'badges';
 
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
@@ -137,8 +136,8 @@ function CameraRig({
 }
 
 export function ExperienceCanvas(props: ExperienceCanvasProps) {
-  const isConstellation = props.activeView === 'constellation';
-  const isMap = props.activeView === 'map';
+  const isBadges = props.activeView === 'badges';
+  const isMap = props.activeView === 'map' || isBadges;
   const isLesson = props.activeView === 'lesson';
   const isCafeCycle = props.activeView === 'cafe_cycle';
   const isMarket = props.activeView === 'market';
@@ -146,27 +145,23 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
   const isNightMap = isMap && props.timeOfDay === 'night';
   const isRainyMap = isMap && props.weather === 'rainy';
 
-  const effectiveAnchor: CameraAnchorId = isConstellation
-    ? 'cam_constelacao'
-    : isMap
-      ? 'cam_mapa'
-      : isCafeCycle
-        ? 'cam_balcao'
-        : isMarket
-          ? 'cam_mercado'
-          : isPlaza
-            ? 'cam_praca'
-            : props.cameraAnchor;
+  const effectiveAnchor: CameraAnchorId = isMap
+    ? 'cam_mapa'
+    : isCafeCycle
+      ? 'cam_balcao'
+      : isMarket
+        ? 'cam_mercado'
+        : isPlaza
+          ? 'cam_praca'
+          : props.cameraAnchor;
 
-  const bgColor = isConstellation
-    ? '#0a1024'
-    : isNightMap
-      ? isRainyMap
-        ? '#141d33'
-        : '#1b2642'
-      : isRainyMap
-        ? '#9eb4c8'
-        : '#f3e5cf';
+  const bgColor = isNightMap
+    ? isRainyMap
+      ? '#141d33'
+      : '#1b2642'
+    : isRainyMap
+      ? '#9eb4c8'
+      : '#f3e5cf';
 
   return (
     <Canvas
@@ -176,10 +171,10 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
     >
       <color attach="background" args={[bgColor]} />
-      <fog attach="fog" args={[bgColor, isConstellation ? 14 : 11.5, isConstellation ? 34 : 28]} />
+      <fog attach="fog" args={[bgColor, 11.5, 28]} />
 
       {/* Studio & warm café IBL reflections (no external HDR download required) */}
-      <Environment resolution={256} frames={1} environmentIntensity={isConstellation ? 0.55 : 0.72}>
+      <Environment resolution={256} frames={1} environmentIntensity={0.72}>
         <Lightformer
           form="rect"
           intensity={2.4}
@@ -216,16 +211,16 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       {/* Warm sky-to-wood bounce lighting */}
       <hemisphereLight
         args={[
-          isConstellation || isNightMap ? '#93c5fd' : '#fff6e6',
-          isConstellation || isNightMap ? '#1e1b4b' : '#8b5e3c',
-          isConstellation ? 0.5 : isNightMap ? 0.45 : 0.85,
+          isNightMap ? '#93c5fd' : '#fff6e6',
+          isNightMap ? '#1e1b4b' : '#8b5e3c',
+          isNightMap ? 0.45 : 0.85,
         ]}
       />
 
       {/* Key sunlight / moonlight / overcast rain light */}
       <directionalLight
         position={[4.2, 6.4, 4.6]}
-        intensity={isConstellation ? 0.8 : isNightMap ? 0.52 : isRainyMap ? 0.88 : 1.55}
+        intensity={isNightMap ? 0.52 : isRainyMap ? 0.88 : 1.55}
         color={isNightMap ? '#bfd7ff' : isRainyMap ? '#dbeafe' : '#ffe9c7'}
         castShadow
         shadow-mapSize-width={2048}
@@ -244,8 +239,8 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
       {/* Subtle cool rim light separating characters & glazed ceramics from the warm wall */}
       <directionalLight
         position={[-4.5, 3.2, -3.2]}
-        intensity={isConstellation ? 0.65 : 0.42}
-        color={isConstellation ? '#c4b5fd' : '#dbeafe'}
+        intensity={0.42}
+        color="#dbeafe"
       />
 
       {/* Warm overhead café pendant fill light (kept mounted to prevent shader recompilation hitch) */}
@@ -257,7 +252,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         color="#ffd08a"
       />
 
-      <CameraRig anchorId={effectiveAnchor} orbitEnabled={isMap || isConstellation} />
+      <CameraRig anchorId={effectiveAnchor} orbitEnabled={props.activeView === 'map'} />
 
       <NeighborhoodMap
         cafeStatus={props.cafeStatus}
@@ -316,14 +311,6 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
         speechRef={props.speechRef}
         visible={isLesson || isCafeCycle}
-      />
-
-      <Constellation3D
-        nodes={props.constellationNodes}
-        selectedConcept={props.selectedConcept}
-        launchingOrbs={props.orbsLaunching}
-        visible={isConstellation}
-        onSelectConcept={props.onSelectConcept}
       />
     </Canvas>
   );

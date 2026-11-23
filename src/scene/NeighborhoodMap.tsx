@@ -16,6 +16,7 @@ import { StreetMicroEvents } from './StreetMicroEvents';
 import {
   InteractiveBakery,
   InteractiveClothingStore,
+  InteractiveConstructionSite,
   InteractiveTechShop,
   InteractiveTireShop,
 } from './CityShops';
@@ -548,6 +549,19 @@ export function NeighborhoodMap({
       <InteractiveTechShop
         position={[7.25, 0.06, -0.55]}
         rotationY={-0.18}
+        isNight={timeOfDay === 'night'}
+        onTriggerAudio={(key, ringPos) => {
+          onExploreObject?.(key);
+          if (exploreRingRef.current) {
+            exploreRingRef.current.position.set(ringPos[0], ringPos[1], ringPos[2]);
+            exploreRingRef.current.visible = true;
+            exploreTimerRef.current = 0.9;
+          }
+        }}
+      />
+      <InteractiveConstructionSite
+        position={[7.45, 0.06, 4.35]}
+        rotationY={-0.22}
         isNight={timeOfDay === 'night'}
         onTriggerAudio={(key, ringPos) => {
           onExploreObject?.(key);
