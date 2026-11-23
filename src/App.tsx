@@ -9,6 +9,7 @@ import {
   type LessonPhase,
 } from './domain/lessonEngine';
 import { countEarnedBadges, evaluateNeighborhoodBadges } from './domain/badgesAndGames';
+import { CURIOSITY_CATALOG } from './domain/curiosityCatalog';
 import { evaluateCefrProgress } from './domain/cefrEngine';
 import {
   applyCafeCycleOutcome,
@@ -27,6 +28,7 @@ import { ExperienceCanvas, type ActiveView, type CameraMode } from './scene/Expe
 import type { MarketStage } from './scene/MarketScene';
 import type { PlazaStage } from './scene/PlazaScene';
 import { BadgesHub } from './ui/BadgesHub';
+import { CuriosityModal } from './ui/CuriosityModal';
 import { DebugAudioBar } from './ui/DebugAudioBar';
 import { GuidancePill } from './ui/GuidancePill';
 import { LessonHud } from './ui/LessonHud';
@@ -40,6 +42,7 @@ export default function App() {
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
   const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
+  const [activeCuriosityId, setActiveCuriosityId] = useState<string | null>(null);
   const [activeCafeCycle, setActiveCafeCycle] =
     useState<Exclude<CafeCycleId, 'cafe_c1_drinks'>>('cafe_c2_food');
   const [marketStage, setMarketStage] = useState<MarketStage>('explore');
@@ -566,6 +569,13 @@ export default function App() {
         onPlazaStageChange={setPlazaStage}
         onCompletePlaza={handleCompletePlaza}
         onExploreObject={handleExploreObject}
+        onInspectCuriosity={(id) => {
+          const item = CURIOSITY_CATALOG[id];
+          if (!item) return;
+          stopVoice();
+          setActiveCuriosityId(id);
+          audioPlayer.play(item.speechKey);
+        }}
         onMapBlockedBump={handleMapBlockedBump}
         onPropTap={handlePropTap}
         onPourStart={handlePourStart}
@@ -590,7 +600,7 @@ export default function App() {
         }
       />
 
-      {activeView !== 'badges' && (
+      {activeView !== 'badges' && !activeCuriosityId && (
         <GuidancePill
           context={guidanceContext}
           starCount={starCount}
@@ -616,6 +626,20 @@ export default function App() {
         onHoldPourStart={handlePourStart}
         onHoldPourEnd={handlePourEnd}
       />
+
+      {activeView === 'map' && activeCuriosityId && CURIOSITY_CATALOG[activeCuriosityId] && (
+        <CuriosityModal
+          item={CURIOSITY_CATALOG[activeCuriosityId]}
+          onPlayAudio={(key) => {
+            stopVoice();
+            audioPlayer.play(key);
+          }}
+          onSolved={(item) => {
+            setProfile((prev) => recordStreetDiscovery(prev, item.discoveryKey));
+          }}
+          onClose={() => setActiveCuriosityId(null)}
+        />
+      )}
 
       {activeView === 'badges' && (
         <BadgesHub

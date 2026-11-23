@@ -761,6 +761,41 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.45, viseme: 'viseme_oo' },
     { at: 1.75, viseme: null },
   ]),
+  fruit_banana: line('fruit_banana', 'Banana! Sweet yellow banana!', 1850, [
+    { at: 0.0, viseme: 'viseme_mbp' },
+    { at: 0.45, viseme: 'viseme_aa' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_aa' },
+    { at: 1.75, viseme: null },
+  ]),
+  fruit_orange: line('fruit_orange', 'Orange! Juicy fresh orange!', 1850, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.45, viseme: 'viseme_oo' },
+    { at: 0.95, viseme: 'viseme_fv' },
+    { at: 1.4, viseme: 'viseme_oo' },
+    { at: 1.75, viseme: null },
+  ]),
+  fruit_strawberry: line('fruit_strawberry', 'Strawberry! Sweet red strawberry!', 1950, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.5, viseme: 'viseme_ee' },
+    { at: 1.05, viseme: 'viseme_mbp' },
+    { at: 1.55, viseme: 'viseme_ee' },
+    { at: 1.85, viseme: null },
+  ]),
+  fruit_grapes: line('fruit_grapes', 'Grapes! Purple sweet grapes!', 1850, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.45, viseme: 'viseme_mbp' },
+    { at: 0.95, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: 'viseme_mbp' },
+    { at: 1.75, viseme: null },
+  ]),
+  fruit_watermelon: line('fruit_watermelon', 'Watermelon! Big green watermelon!', 2050, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.5, viseme: 'viseme_mbp' },
+    { at: 1.05, viseme: 'viseme_ee' },
+    { at: 1.55, viseme: 'viseme_oo' },
+    { at: 1.95, viseme: null },
+  ]),
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {

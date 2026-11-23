@@ -227,7 +227,12 @@ export type SpeechKey =
   | 'job_mechanic'
   | 'job_shopkeeper'
   | 'job_technician'
-  | 'job_builder';
+  | 'job_builder'
+  | 'fruit_banana'
+  | 'fruit_orange'
+  | 'fruit_strawberry'
+  | 'fruit_grapes'
+  | 'fruit_watermelon';
 
 export interface CounterDemoBeat {
   prop: PropName;

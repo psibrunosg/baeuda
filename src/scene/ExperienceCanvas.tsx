@@ -60,6 +60,7 @@ export interface ExperienceCanvasProps {
   onPlazaStageChange?: (stage: PlazaStage) => void;
   onCompletePlaza?: () => void;
   onExploreObject?: (key: SpeechKey) => void;
+  onInspectCuriosity?: (curiosityId: string) => void;
   onMapBlockedBump?: () => void;
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
@@ -315,6 +316,7 @@ export function ExperienceCanvas(props: ExperienceCanvasProps) {
         onEnterMarket={props.onEnterMarket}
         onEnterPlaza={props.onEnterPlaza}
         onExploreObject={props.onExploreObject}
+        onInspectCuriosity={props.onInspectCuriosity}
         onMapBlockedBump={props.onMapBlockedBump}
       />
 

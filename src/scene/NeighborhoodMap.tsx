@@ -48,6 +48,7 @@ interface NeighborhoodMapProps {
   onEnterMarket?: () => void;
   onEnterPlaza?: () => void;
   onExploreObject?: (key: SpeechKey) => void;
+  onInspectCuriosity?: (curiosityId: string) => void;
   onMapBlockedBump?: () => void;
 }
 
@@ -197,6 +198,7 @@ export function NeighborhoodMap({
   onEnterMarket,
   onEnterPlaza,
   onExploreObject,
+  onInspectCuriosity,
   onMapBlockedBump,
 }: NeighborhoodMapProps) {
   const pulseRingRef = useRef<THREE.Mesh>(null);
@@ -860,11 +862,14 @@ export function NeighborhoodMap({
           </mesh>
         </group>
 
-        {/* Unique Detailed Mini Leo Greeter outside the café door */}
+        {/* Unique Detailed Mini Leo Greeter outside the café door (click to learn Barista profession!) */}
         <group
-          name="prop_cafe_door"
+          name="npc_barista_leo"
           position={[1.18, 0.01, 1.38]}
-          onClick={handleDoorClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            onInspectCuriosity?.('job_barista');
+          }}
           onPointerOver={handleDoorPointerOver}
           onPointerOut={handleDoorPointerOut}
         >
@@ -1172,28 +1177,69 @@ export function NeighborhoodMap({
             </RoundedBox>
           ))}
         </group>
-        {/* Produce display crates (apples, oranges, baguettes) */}
-        <RoundedBox args={[0.56, 0.34, 0.42]} radius={0.02} smoothness={2} position={[-0.55, 0.2, 0.85]}>
-          <meshStandardMaterial
-            color={marketLocked ? '#cbd5e1' : '#b47b4e'}
-            transparent={marketLocked}
-            opacity={marketLocked ? 0.45 : 1}
-          />
-        </RoundedBox>
+        {/* 6 Rich Clickable 3D Fruit Crates (Apple, Banana, Orange, Strawberry, Grapes, Watermelon) */}
+        {[
+          { id: 'fruit_apple', pos: [-0.82, 0.78, 0.16] as [number, number, number], color: '#ef4444', kind: 'apple' },
+          { id: 'fruit_banana', pos: [-0.28, 0.78, 0.16] as [number, number, number], color: '#facc15', kind: 'banana' },
+          { id: 'fruit_orange', pos: [0.26, 0.78, 0.16] as [number, number, number], color: '#f97316', kind: 'orange' },
+          { id: 'fruit_strawberry', pos: [0.8, 0.78, 0.16] as [number, number, number], color: '#e11d48', kind: 'strawberry' },
+          { id: 'fruit_grapes', pos: [-0.68, 0.2, 0.85] as [number, number, number], color: '#7e22ce', kind: 'grapes' },
+          { id: 'fruit_watermelon', pos: [-0.05, 0.2, 0.85] as [number, number, number], color: '#15803d', kind: 'watermelon' },
+        ].map((crate) => (
+          <group
+            key={crate.id}
+            position={crate.pos}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInspectCuriosity?.(crate.id);
+            }}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              document.body.style.cursor = 'pointer';
+            }}
+            onPointerOut={handleDoorPointerOut}
+          >
+            <RoundedBox args={[0.46, 0.2, 0.36]} radius={0.02} smoothness={2} castShadow={!marketLocked}>
+              <meshStandardMaterial
+                color={marketLocked ? '#cbd5e1' : '#b47b4e'}
+                transparent={marketLocked}
+                opacity={marketLocked ? 0.55 : 1}
+                roughness={0.86}
+              />
+            </RoundedBox>
+            {crate.kind === 'watermelon' ? (
+              <mesh position={[0, 0.15, 0]} scale={[1.3, 0.85, 0.9]} castShadow={!marketLocked}>
+                <sphereGeometry args={[0.13, 12, 12]} />
+                <meshStandardMaterial color="#15803d" roughness={0.55} />
+              </mesh>
+            ) : crate.kind === 'banana' ? (
+              <>
+                {[-0.08, 0.08].map((bx, i) => (
+                  <mesh key={i} position={[bx, 0.14, 0]} rotation={[0.4, 0.2, Math.PI * 0.18]} castShadow={!marketLocked}>
+                    <torusGeometry args={[0.075, 0.028, 8, 12, Math.PI]} />
+                    <meshStandardMaterial color="#facc15" roughness={0.5} />
+                  </mesh>
+                ))}
+              </>
+            ) : (
+              <>
+                {[
+                  [-0.1, 0.13, -0.05],
+                  [0.02, 0.14, 0.04],
+                  [0.12, 0.13, -0.03],
+                  [-0.04, 0.15, 0.06],
+                ].map(([fx, fy, fz], i) => (
+                  <mesh key={i} position={[fx, fy, fz]} castShadow={!marketLocked}>
+                    <sphereGeometry args={[crate.kind === 'grapes' ? 0.048 : 0.068, 10, 10]} />
+                    <meshStandardMaterial color={crate.color} roughness={0.48} />
+                  </mesh>
+                ))}
+              </>
+            )}
+          </group>
+        ))}
         {!marketLocked && (
           <>
-            <mesh position={[-0.65, 0.42, 0.84]}>
-              <sphereGeometry args={[0.085, 10, 10]} />
-              <meshStandardMaterial color="#f97316" roughness={0.6} />
-            </mesh>
-            <mesh position={[-0.48, 0.42, 0.86]}>
-              <sphereGeometry args={[0.085, 10, 10]} />
-              <meshStandardMaterial color="#ef4444" roughness={0.5} />
-            </mesh>
-            <mesh position={[-0.56, 0.44, 0.72]}>
-              <sphereGeometry args={[0.08, 10, 10]} />
-              <meshStandardMaterial color="#22c55e" roughness={0.6} />
-            </mesh>
             {/* Hanging warm market lantern */}
             <mesh position={[0, 1.42, 0.65]}>
               <sphereGeometry args={[0.09, 12, 12]} />

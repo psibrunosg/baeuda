@@ -681,3 +681,115 @@ body,
   font-weight: 700;
   cursor: pointer;
 }
+
+
+/* Curiosity Type / Speak Learning Card */
+.curiosity-card {
+  position: absolute;
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%);
+  z-index: 24;
+  width: min(410px, 92vw);
+  border-radius: 20px;
+  padding: 12px 14px;
+  background: rgba(255, 250, 242, 0.96);
+  color: var(--ink-dark);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.curiosity-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.curiosity-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.curiosity-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.curiosity-question {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.curiosity-feedback {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.curiosity-feedback.ok {
+  color: #16a34a;
+}
+
+.curiosity-feedback.hint {
+  color: #ea580c;
+}
+
+.curiosity-icon-btn {
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff7ed;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.curiosity-form {
+  display: flex;
+  gap: 6px;
+}
+
+.curiosity-input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid rgba(15, 23, 42, 0.14);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #ffffff;
+  color: var(--ink-dark);
+}
+
+.curiosity-input:focus {
+  outline: none;
+  border-color: #ea580c;
+}
+
+.curiosity-mic-btn,
+.curiosity-submit-btn {
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.curiosity-mic-btn {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.curiosity-mic-btn.listening {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.curiosity-submit-btn {
+  background: #ea580c;
+  color: #ffffff;
+}
