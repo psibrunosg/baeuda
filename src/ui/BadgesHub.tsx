@@ -189,7 +189,7 @@ export function BadgesHub({
               className={tab === 'badges' ? 'active' : ''}
               onClick={() => setTab('badges')}
             >
-              🏆 Badges
+              Badges
             </button>
             <button
               type="button"
@@ -198,7 +198,7 @@ export function BadgesHub({
               className={tab === 'connect' ? 'active' : ''}
               onClick={() => setTab('connect')}
             >
-              🔗 Connect
+              Connect
             </button>
             <button
               type="button"
@@ -207,40 +207,8 @@ export function BadgesHub({
               className={tab === 'memory' ? 'active' : ''}
               onClick={() => setTab('memory')}
             >
-              🃏 Memory
+              Memory
             </button>
-            {onOpenDialogues && (
-              <button
-                type="button"
-                onClick={onOpenDialogues}
-              >
-                💬 Talk
-              </button>
-            )}
-            {onOpenPractice && (
-              <button
-                type="button"
-                onClick={onOpenPractice}
-              >
-                ⚡ Practice
-              </button>
-            )}
-            {onOpenQuests && (
-              <button
-                type="button"
-                onClick={onOpenQuests}
-              >
-                🎯 Quests
-              </button>
-            )}
-            {onOpenStories && (
-              <button
-                type="button"
-                onClick={onOpenStories}
-              >
-                📖 Stories
-              </button>
-            )}
           </div>
           <div className="badges-hub-meta">
             <span className="cefr-pill-tag">{cefrBadge}</span>
@@ -249,6 +217,31 @@ export function BadgesHub({
             </button>
           </div>
         </header>
+
+        {(onOpenPractice || onOpenQuests || onOpenStories || onOpenDialogues) && (
+          <div className="hub-quick-strip" aria-label="Learning Modes">
+            {onOpenPractice && (
+              <button type="button" className="hub-quick-pill primary" onClick={onOpenPractice}>
+                ⚡ Practice
+              </button>
+            )}
+            {onOpenQuests && (
+              <button type="button" className="hub-quick-pill" onClick={onOpenQuests}>
+                🎯 Quests
+              </button>
+            )}
+            {onOpenStories && (
+              <button type="button" className="hub-quick-pill" onClick={onOpenStories}>
+                📖 Stories
+              </button>
+            )}
+            {onOpenDialogues && (
+              <button type="button" className="hub-quick-pill" onClick={onOpenDialogues}>
+                💬 Talk
+              </button>
+            )}
+          </div>
+        )}
 
         {tab !== 'badges' && (
           <div className="deck-selector">

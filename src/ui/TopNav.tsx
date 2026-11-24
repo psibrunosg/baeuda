@@ -36,29 +36,31 @@ export function TopNav({
 
   return (
     <nav className="top-nav" aria-label="Navigation">
-      <div className="clock-pill" aria-label="Immersion time">
-        <span aria-hidden="true">⏱</span>
-        <span>{formatClock(immersionSeconds)}</span>
-      </div>
-
-      {typeof streakCount === 'number' && streakCount > 0 && (
-        <div className="clock-pill streak-pill" aria-label="Daily streak">
-          <span aria-hidden="true">🔥</span>
-          <span>{streakCount}</span>
+      <div className="hud-status-cluster">
+        <div className="hud-stat-item" aria-label="Immersion time">
+          <span aria-hidden="true">⏱</span>
+          <span>{formatClock(immersionSeconds)}</span>
         </div>
-      )}
 
-      {typeof coins === 'number' && onOpenWardrobe && (
-        <button
-          type="button"
-          className="coin-pill-btn"
-          aria-label="Avatar wardrobe and coins"
-          onClick={onOpenWardrobe}
-        >
-          <CoinIcon size={16} />
-          <span>{coins}</span>
-        </button>
-      )}
+        {typeof streakCount === 'number' && streakCount > 0 && (
+          <div className="hud-stat-item streak" aria-label="Daily streak">
+            <span aria-hidden="true">🔥</span>
+            <span>{streakCount}</span>
+          </div>
+        )}
+
+        {typeof coins === 'number' && onOpenWardrobe && (
+          <button
+            type="button"
+            className="hud-coin-trigger"
+            aria-label="Avatar wardrobe and coins"
+            onClick={onOpenWardrobe}
+          >
+            <CoinIcon size={15} />
+            <span>{coins}</span>
+          </button>
+        )}
+      </div>
 
       {activeView === 'map' && onCycleCameraMode && (
         <button
