@@ -2192,3 +2192,194 @@ textarea {
   border: var(--b-1) solid var(--hairline);
   box-shadow: var(--shadow-chrome);
 }
+
+/* ==========================================================================
+   STUDIO-GRADE POLISH: MOTION, TOP-LEFT QUEST, CUSTOM SCROLLBARS & A11Y
+   ========================================================================== */
+
+@keyframes scrimFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastPop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Smooth Modal & Overlay Entrances */
+.badges-hub-backdrop {
+  background: rgba(24, 24, 27, 0.42);
+  backdrop-filter: blur(10px);
+  animation: scrimFade 160ms ease-out;
+}
+
+.badges-hub-panel {
+  animation: modalRise 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(28, 25, 23, 0.18) transparent;
+}
+
+.badges-hub-panel::-webkit-scrollbar,
+.story-feed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.badges-hub-panel::-webkit-scrollbar-thumb,
+.story-feed::-webkit-scrollbar-thumb {
+  background: rgba(28, 25, 23, 0.18);
+  border-radius: 999px;
+}
+
+.curiosity-card {
+  border-radius: var(--r-1);
+  border: var(--b-1) solid var(--hairline);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-modal);
+  animation: modalRise 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reward-toast {
+  animation: toastPop 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  border: var(--b-1) solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Clear the Street Floor: move active Quest pill to the open Top-Left corner */
+.quest-pill {
+  top: 16px;
+  left: 16px;
+  bottom: auto;
+  max-width: min(268px, 46vw);
+  border-radius: var(--r-2);
+  padding: 8px 12px;
+  background: var(--surface-glass);
+  border: var(--b-1) solid var(--hairline);
+  box-shadow: var(--shadow-chrome);
+  backdrop-filter: blur(12px);
+}
+
+.quest-pill.ready {
+  border-width: 1.5px;
+  border-color: rgba(22, 163, 74, 0.55);
+  background: rgba(240, 253, 244, 0.94);
+}
+
+.inventory-bar {
+  border: var(--b-1) solid var(--hairline);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-chrome);
+  backdrop-filter: blur(12px);
+}
+
+/* Refine Primary Street Play Button & Guidance Pill */
+.play-btn {
+  width: 64px;
+  height: 64px;
+  font-size: 24px;
+  box-shadow: 0 10px 26px -6px rgba(234, 88, 12, 0.45), 0 2px 6px rgba(24, 24, 27, 0.12);
+}
+
+.play-btn:hover {
+  transform: translateY(-1px);
+  background: #dc4c08;
+}
+
+.guidance-pill {
+  bottom: 100px;
+  background: rgba(255, 253, 249, 0.84);
+  backdrop-filter: blur(14px);
+  letter-spacing: -0.005em;
+}
+
+/* Quiet Editorial Surfaces inside Practice / Stories / Minimap */
+.practice-blank-sentence {
+  background: var(--surface-subtle);
+  border-left: 3px solid var(--accent-amber);
+  color: var(--ink-dark);
+  border-radius: var(--r-3);
+}
+
+.story-question-box {
+  background: var(--surface-subtle);
+  border: var(--b-1) solid var(--hairline-strong);
+  border-radius: var(--r-2);
+}
+
+.practice-mistakes-banner {
+  border-width: var(--b-1);
+  border-color: rgba(234, 88, 12, 0.35);
+  background: #fff7ed;
+  border-radius: var(--r-2);
+}
+
+.badges-hub-header strong,
+.practice-panel h2 {
+  letter-spacing: -0.02em;
+  color: var(--ink-dark);
+}
+
+.badges-close-btn {
+  transition: background 0.14s ease, transform 0.12s ease;
+}
+
+.badges-close-btn:hover {
+  background: rgba(28, 25, 23, 0.14);
+}
+
+.minimap-road {
+  border-radius: var(--r-4);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+/* Universal Tactile Press & Accessible Focus Ring */
+button:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 2px;
+}
+
+.practice-primary-btn:active,
+.practice-secondary-btn:active,
+.practice-tile:active,
+.practice-option-card:active,
+.hub-quick-pill:active,
+.minimap-card:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 560px) {
+  .quest-pill {
+    top: 66px;
+    left: 12px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badges-hub-backdrop,
+  .badges-hub-panel,
+  .curiosity-card,
+  .reward-toast {
+    animation: none;
+  }
+}
