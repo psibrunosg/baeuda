@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LESSON1_CAFE_SCRIPT } from './content/lesson1Cafe';
 import {
   createLesson1State,
@@ -31,23 +31,32 @@ import {
 import { resolveWorldAtmosphere, type GuidanceContext } from './domain/immersion';
 import type { CafeCycleId, ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
-import { playRewardFanfare, playSuccessChime } from './services/soundEngine';
+import { playPourTick, playRewardFanfare, playShopBell, playSuccessChime } from './services/soundEngine';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
 import { startVoiceCapture, type VoiceCaptureHandle } from './services/voiceCapture';
 import type { AssetMode } from './scene/contracts';
 import { ExperienceCanvas, type ActiveView, type CameraMode } from './scene/ExperienceCanvas';
 import type { MarketStage } from './scene/MarketScene';
 import type { PlazaStage } from './scene/PlazaScene';
-import { AvatarCustomizerModal } from './ui/AvatarCustomizerModal';
-import { BadgesHub } from './ui/BadgesHub';
-import { CityMinimapModal } from './ui/CityMinimapModal';
 import { CuriosityModal } from './ui/CuriosityModal';
 import { DebugAudioBar } from './ui/DebugAudioBar';
 import { GuidancePill } from './ui/GuidancePill';
 import { InventoryQuestBar } from './ui/InventoryQuestBar';
 import { LessonHud } from './ui/LessonHud';
 import { TopNav } from './ui/TopNav';
-import { TravelDialogueModal } from './ui/TravelDialogueModal';
+
+const AvatarCustomizerModal = lazy(() =>
+  import('./ui/AvatarCustomizerModal').then((m) => ({ default: m.AvatarCustomizerModal })),
+);
+const BadgesHub = lazy(() =>
+  import('./ui/BadgesHub').then((m) => ({ default: m.BadgesHub })),
+);
+const CityMinimapModal = lazy(() =>
+  import('./ui/CityMinimapModal').then((m) => ({ default: m.CityMinimapModal })),
+);
+const TravelDialogueModal = lazy(() =>
+  import('./ui/TravelDialogueModal').then((m) => ({ default: m.TravelDialogueModal })),
+);
 
 const POUR_DURATION_SEC = 1.4;
 const HESITATION_MS = 5000;
@@ -352,6 +361,7 @@ export default function App() {
     }
     let rafId = 0;
     let last = performance.now();
+    let lastPourSfxAt = 0;
 
     const stopPour = () => {
       isPouringRef.current = false;
@@ -366,8 +376,13 @@ export default function App() {
         const next = Math.min(1, pourProgressRef.current + dt / POUR_DURATION_SEC);
         pourProgressRef.current = next;
         setPourProgressUi(next);
+        if (now - lastPourSfxAt >= 135) {
+          lastPourSfxAt = now;
+          playPourTick(next);
+        }
         if (next >= 1) {
           isPouringRef.current = false;
+          playSuccessChime();
           dispatch({ type: 'POUR_COMPLETED' });
           return;
         }
@@ -387,6 +402,7 @@ export default function App() {
     audioPlayer.stop();
     stopVoice();
     resetPourState();
+    playShopBell();
 
     const cefr = evaluateCefrProgress(profileRef.current);
     if (cefr.nextCafeCycle !== 'cafe_c1_drinks') {
@@ -540,6 +556,8 @@ export default function App() {
         world_bakery_bread: { id: 'bread', toast: '🎒 +1 🥖 Fresh bread in backpack!' },
         world_pharmacy_medicine: { id: 'medicine', toast: '🎒 +1 💊 Medicine in backpack!' },
         world_pet_food: { id: 'petfood', toast: '🎒 +1 🦴 Pet food in backpack!' },
+        world_barber_scissors: { id: 'scissors', toast: '🎒 +1 ✂️ Barber scissors in backpack!' },
+        world_post_package: { id: 'package', toast: '🎒 +1 📦 Package in backpack!' },
       };
       const pickup = itemMap[key];
       if (key.startsWith('world_') || pickup) {
@@ -572,6 +590,7 @@ export default function App() {
     audioPlayer.stop();
     stopVoice();
     resetPourState();
+    playShopBell();
     setMinimapOpen(false);
     setActiveCuriosityId(null);
     setActiveView('pizzeria');
@@ -584,7 +603,7 @@ export default function App() {
         'pizza',
       ),
     );
-    showRewardToast('🍕 Hot pizza made & added to backpack! +20 🪙 earned!');
+    showRewardToast('🍕 Hot pizza made & added to backpack! +20 coins earned!');
     setActiveView('map');
   }, [showRewardToast, updateProfile]);
 
@@ -592,6 +611,7 @@ export default function App() {
     audioPlayer.stop();
     stopVoice();
     resetPourState();
+    playShopBell();
     setMinimapOpen(false);
     setActiveCuriosityId(null);
     setActiveView('pharmacy');
@@ -599,9 +619,12 @@ export default function App() {
 
   const handleCompletePharmacy = useCallback(() => {
     updateProfile((prev) =>
-      updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pharmacy_counter'), 20)),
+      addInventoryItem(
+        updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pharmacy_counter'), 20)),
+        'medicine',
+      ),
     );
-    showRewardToast('💊 Patient cared for! +20 🪙 earned!');
+    showRewardToast('💊 Patient cared for & medicine packed! +20 coins earned!');
     setActiveView('map');
   }, [showRewardToast, updateProfile]);
 
@@ -677,6 +700,7 @@ export default function App() {
   const starCount = Object.keys(profile.constellation).length;
   const badgeCount = countEarnedBadges(evaluateNeighborhoodBadges(profile));
   const cefrProgress = evaluateCefrProgress(profile);
+  const activeQuest = getActiveQuest(completedQuestIds);
   const { timeOfDay, weather } = resolveWorldAtmosphere(profile.completedLessonIds);
   const cefrBadge =
     cefrProgress.level === 'pre_a1'
@@ -740,6 +764,7 @@ export default function App() {
         isPouringRef={isPouringRef}
         mysteryBoxVisible={lesson.mysteryBoxVisible}
         streetDiscoveries={profile.streetDiscoveries ?? []}
+        activeQuestPosition={activeQuest?.npcPosition ?? null}
         activeCafeCycle={activeCafeCycle}
         marketStage={marketStage}
         plazaStage={plazaStage}
@@ -799,23 +824,25 @@ export default function App() {
           />
         )}
 
-      <LessonHud
-        activeView={activeView}
-        phase={lesson.phase}
-        awaitingInput={lesson.awaitingInput}
-        pourProgress={pourProgressUi}
-        isListening={isListening}
-        voiceLevel={voiceLevel}
-        onStartCafe={handleStartNextLesson}
-        onRequestHelp={() => {
-          stopVoice();
-          dispatch({ type: 'HELP_REQUESTED' });
-        }}
-        onStartMic={handleStartMic}
-        onSilentWave={handleSilentWave}
-        onHoldPourStart={handlePourStart}
-        onHoldPourEnd={handlePourEnd}
-      />
+      {!activeCuriosityId && !wardrobeOpen && !minimapOpen && !travelDialogueOpen && (
+        <LessonHud
+          activeView={activeView}
+          phase={lesson.phase}
+          awaitingInput={lesson.awaitingInput}
+          pourProgress={pourProgressUi}
+          isListening={isListening}
+          voiceLevel={voiceLevel}
+          onStartCafe={handleStartNextLesson}
+          onRequestHelp={() => {
+            stopVoice();
+            dispatch({ type: 'HELP_REQUESTED' });
+          }}
+          onStartMic={handleStartMic}
+          onSilentWave={handleSilentWave}
+          onHoldPourStart={handlePourStart}
+          onHoldPourEnd={handlePourEnd}
+        />
+      )}
 
       {activeView === 'map' && activeCuriosityId && CURIOSITY_CATALOG[activeCuriosityId] && (
         <CuriosityModal
@@ -833,13 +860,13 @@ export default function App() {
                 const cid = item.collectible.itemId;
                 const label = `${item.collectible.icon} ${item.collectible.label}`;
                 if (!(next.inventoryIds ?? []).includes(cid)) {
-                  showRewardToast(`🎒 +1 ${label} & +5 🪙!`);
+                  showRewardToast(`🎒 +1 ${label} & +5 coins!`);
                   next = addInventoryItem(next, cid);
                 } else {
-                  showRewardToast('🪙 +5 coins earned!');
+                  showRewardToast('★ +5 coins earned!');
                 }
               } else {
-                showRewardToast('🪙 +5 coins earned!');
+                showRewardToast('★ +5 coins earned!');
               }
               return next;
             });
@@ -864,6 +891,14 @@ export default function App() {
               stopVoice();
               playRewardFanfare();
               audioPlayer.play(quest.doneSpeechKey);
+              if (quest.npcPosition) {
+                setTeleportRequest((prev) => ({
+                  x: quest.npcPosition!.x,
+                  z: quest.npcPosition!.z,
+                  yaw: quest.npcPosition!.yaw,
+                  seq: (prev?.seq ?? 0) + 1,
+                }));
+              }
               updateProfile((prev) =>
                 completeQuestInProfile(
                   updateDailyStreak(
@@ -873,7 +908,7 @@ export default function App() {
                   quest.targetItemId,
                 ),
               );
-              showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}! +15 🪙`);
+              showRewardToast(`🎉 ${quest.npcName} loved the ${quest.targetIcon}! +15 coins`);
             }}
             onInspectEmptyBag={() => showRewardToast('🎒 Tap shops & fruits to collect items!')}
           />
@@ -885,53 +920,106 @@ export default function App() {
         </div>
       )}
 
-      {activeView === 'map' && minimapOpen && (
-        <CityMinimapModal
-          onSelectLocation={(entry) => {
-            setTeleportRequest((prev) => ({
-              x: entry.x,
-              z: entry.z,
-              yaw: entry.yaw,
-              seq: (prev?.seq ?? 0) + 1,
-            }));
-            setMinimapOpen(false);
-          }}
-          onEnterPizzeria={handleEnterPizzeria}
-          onEnterPharmacy={handleEnterPharmacy}
-          onClose={() => setMinimapOpen(false)}
-        />
-      )}
+      <Suspense fallback={null}>
+        {activeView === 'map' && minimapOpen && (
+          <CityMinimapModal
+            onSelectLocation={(entry) => {
+              setTeleportRequest((prev) => ({
+                x: entry.x,
+                z: entry.z,
+                yaw: entry.yaw,
+                seq: (prev?.seq ?? 0) + 1,
+              }));
+              setMinimapOpen(false);
+            }}
+            onReplayCafeLesson1={() => {
+              audioPlayer.stop();
+              stopVoice();
+              resetPourState();
+              setMinimapOpen(false);
+              setActiveView('lesson');
+              dispatch({ type: 'ENTER_CAFE' });
+            }}
+            onEnterPizzeria={handleEnterPizzeria}
+            onEnterPharmacy={handleEnterPharmacy}
+            onClose={() => setMinimapOpen(false)}
+          />
+        )}
 
-      {activeView === 'badges' && (
-        <BadgesHub
-          profile={profile}
-          cefrBadge={cefrBadge}
-          onPlayAudio={(key) => {
-            stopVoice();
-            audioPlayer.play(key);
-          }}
-          onCompleteGame={(gameKey, reviewedConceptIds) => {
-            const nowIso = new Date().toISOString();
-            updateProfile((prev) => {
-              let next = updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10));
-              if (reviewedConceptIds && reviewedConceptIds.length > 0) {
-                next = applySrsReviewOutcome(next, reviewedConceptIds, nowIso);
+        {activeView === 'badges' && (
+          <BadgesHub
+            profile={profile}
+            cefrBadge={cefrBadge}
+            onPlayAudio={(key) => {
+              stopVoice();
+              audioPlayer.play(key);
+            }}
+            onCompleteGame={(gameKey, reviewedConceptIds) => {
+              const nowIso = new Date().toISOString();
+              updateProfile((prev) => {
+                let next = updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10));
+                if (reviewedConceptIds && reviewedConceptIds.length > 0) {
+                  next = applySrsReviewOutcome(next, reviewedConceptIds, nowIso);
+                }
+                return next;
+              });
+              showRewardToast('🏆 Mini-game complete! +10 coins');
+            }}
+            onOpenDialogues={() => {
+              stopVoice();
+              setActiveView('map');
+              setTravelDialogueOpen(true);
+            }}
+            onClose={() => {
+              stopVoice();
+              setActiveView('map');
+            }}
+          />
+        )}
+
+        {travelDialogueOpen && (
+          <TravelDialogueModal
+            completedDiscoveries={profile.streetDiscoveries ?? []}
+            onPlayAudio={(key) => {
+              stopVoice();
+              audioPlayer.play(key);
+            }}
+            onComplete={(scenarioId) => {
+              updateProfile((prev) =>
+                updateDailyStreak(
+                  awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
+                ),
+              );
+              showRewardToast(`🎉 ${scenarioId.toUpperCase()} mastered! +15 coins`);
+            }}
+            onClose={() => setTravelDialogueOpen(false)}
+          />
+        )}
+
+        {wardrobeOpen && (
+          <AvatarCustomizerModal
+            profile={profile}
+            onSelectItem={(item) => {
+              const result = purchaseOrEquipStyle(profileRef.current, item.id);
+              if (!result.insufficientCoins) {
+                profileRef.current = result.profile;
+                setProfile(result.profile);
+                if (result.purchased) {
+                  playRewardFanfare();
+                  showRewardToast(`✨ New style: ${item.label}!`);
+                } else {
+                  playSuccessChime();
+                }
               }
-              return next;
-            });
-            showRewardToast('🏆 Mini-game complete! +10 🪙');
-          }}
-          onOpenDialogues={() => {
-            stopVoice();
-            setActiveView('map');
-            setTravelDialogueOpen(true);
-          }}
-          onClose={() => {
-            stopVoice();
-            setActiveView('map');
-          }}
-        />
-      )}
+              return {
+                purchased: result.purchased,
+                insufficientCoins: result.insufficientCoins,
+              };
+            }}
+            onClose={() => setWardrobeOpen(false)}
+          />
+        )}
+      </Suspense>
 
       {activeView !== 'map' && activeView !== 'badges' && (
         <div className="interior-top-actions">
@@ -947,49 +1035,6 @@ export default function App() {
             ← Street
           </button>
         </div>
-      )}
-
-      {travelDialogueOpen && (
-        <TravelDialogueModal
-          completedDiscoveries={profile.streetDiscoveries ?? []}
-          onPlayAudio={(key) => {
-            stopVoice();
-            audioPlayer.play(key);
-          }}
-          onComplete={(scenarioId) => {
-            updateProfile((prev) =>
-              updateDailyStreak(
-                awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
-              ),
-            );
-            showRewardToast(`🎉 ${scenarioId.toUpperCase()} mastered! +15 🪙`);
-          }}
-          onClose={() => setTravelDialogueOpen(false)}
-        />
-      )}
-
-      {wardrobeOpen && (
-        <AvatarCustomizerModal
-          profile={profile}
-          onSelectItem={(item) => {
-            const result = purchaseOrEquipStyle(profileRef.current, item.id);
-            if (!result.insufficientCoins) {
-              profileRef.current = result.profile;
-              setProfile(result.profile);
-              if (result.purchased) {
-                playRewardFanfare();
-                showRewardToast(`✨ New style: ${item.label}!`);
-              } else {
-                playSuccessChime();
-              }
-            }
-            return {
-              purchased: result.purchased,
-              insufficientCoins: result.insufficientCoins,
-            };
-          }}
-          onClose={() => setWardrobeOpen(false)}
-        />
       )}
 
       {!isDevMode && subtitleVisible && audioStatus.phrase && !activeCuriosityId && (

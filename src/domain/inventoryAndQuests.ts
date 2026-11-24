@@ -36,6 +36,7 @@ export interface NpcQuest {
   targetIcon: string;
   askSpeechKey: SpeechKey;
   doneSpeechKey: SpeechKey;
+  npcPosition?: { x: number; z: number; yaw: number };
 }
 
 export const CITY_QUESTS: readonly NpcQuest[] = [
@@ -48,6 +49,7 @@ export const CITY_QUESTS: readonly NpcQuest[] = [
     targetIcon: '🥖',
     askSpeechKey: 'quest_leo_bread_ask',
     doneSpeechKey: 'quest_leo_bread_done',
+    npcPosition: { x: -0.35, z: 1.55, yaw: Math.PI },
   },
   {
     id: 'quest_mechanic_banana',
@@ -58,6 +60,7 @@ export const CITY_QUESTS: readonly NpcQuest[] = [
     targetIcon: '🍌',
     askSpeechKey: 'quest_mechanic_banana_ask',
     doneSpeechKey: 'quest_mechanic_banana_done',
+    npcPosition: { x: -2.4, z: 2.85, yaw: 0 },
   },
   {
     id: 'quest_vet_petfood',
@@ -68,6 +71,7 @@ export const CITY_QUESTS: readonly NpcQuest[] = [
     targetIcon: '🦴',
     askSpeechKey: 'world_pet_food',
     doneSpeechKey: 'world_pet_dog',
+    npcPosition: { x: 6.2, z: 1.55, yaw: Math.PI },
   },
   {
     id: 'quest_librarian_book',
@@ -78,6 +82,7 @@ export const CITY_QUESTS: readonly NpcQuest[] = [
     targetIcon: '📖',
     askSpeechKey: 'world_book_read',
     doneSpeechKey: 'job_librarian',
+    npcPosition: { x: -4.2, z: 2.85, yaw: 0 },
   },
   {
     id: 'quest_chef_pizza',
@@ -88,6 +93,40 @@ export const CITY_QUESTS: readonly NpcQuest[] = [
     targetIcon: '🍕',
     askSpeechKey: 'world_pizza_slice',
     doneSpeechKey: 'job_chef',
+    npcPosition: { x: 1.4, z: 2.85, yaw: 0 },
+  },
+  {
+    id: 'quest_pharmacist_medicine',
+    npcIcon: '💊',
+    npcName: 'Pharmacist',
+    prompt: 'Prepare medicine at the pharmacy counter!',
+    targetItemId: 'medicine',
+    targetIcon: '💊',
+    askSpeechKey: 'world_pharmacy_medicine',
+    doneSpeechKey: 'pharm_step_done',
+    npcPosition: { x: 4.1, z: 1.55, yaw: Math.PI },
+  },
+  {
+    id: 'quest_barber_scissors',
+    npcIcon: '💈',
+    npcName: 'Barber',
+    prompt: 'Bring me clean scissors from the barber shop!',
+    targetItemId: 'scissors',
+    targetIcon: '✂️',
+    askSpeechKey: 'world_barber_scissors',
+    doneSpeechKey: 'job_barber',
+    npcPosition: { x: 8.3, z: 1.55, yaw: Math.PI },
+  },
+  {
+    id: 'quest_postal_package',
+    npcIcon: '📮',
+    npcName: 'Postal Worker',
+    prompt: 'Bring me a package for the post office!',
+    targetItemId: 'package',
+    targetIcon: '📦',
+    askSpeechKey: 'world_post_package',
+    doneSpeechKey: 'job_postal',
+    npcPosition: { x: 5.2, z: 2.85, yaw: 0 },
   },
 ];
 

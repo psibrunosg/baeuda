@@ -1,4 +1,5 @@
 import type { ActiveView, CameraMode } from '../scene/ExperienceCanvas';
+import { CoinIcon } from './CoinIcon';
 
 interface TopNavProps {
   activeView: ActiveView;
@@ -54,7 +55,7 @@ export function TopNav({
           aria-label="Avatar wardrobe and coins"
           onClick={onOpenWardrobe}
         >
-          <span aria-hidden="true">🪙</span>
+          <CoinIcon size={16} />
           <span>{coins}</span>
         </button>
       )}

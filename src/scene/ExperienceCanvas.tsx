@@ -50,6 +50,7 @@ export interface ExperienceCanvasProps {
   isPouringRef: MutableRefObject<boolean>;
   mysteryBoxVisible: boolean;
   streetDiscoveries?: readonly string[];
+  activeQuestPosition?: { x: number; z: number; yaw: number } | null;
   activeCafeCycle?: Exclude<CafeCycleId, 'cafe_c1_drinks'>;
   marketStage?: MarketStage;
   plazaStage?: PlazaStage;
@@ -86,7 +87,7 @@ function CameraRig({
   cameraMode: CameraMode;
   avatarPoseRef: MutableRefObject<AvatarPose>;
 }) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const desiredPosRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].position));
   const desiredTargetRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].target));
@@ -94,14 +95,24 @@ function CameraRig({
   const isTransitioningRef = useRef(true);
 
   useLayoutEffect(() => {
+    const aspect = size.width / Math.max(1, size.height);
+    if (camera instanceof THREE.PerspectiveCamera) {
+      const responsiveFov = aspect < 1 ? Math.min(62, Math.round(42 / Math.pow(aspect, 0.52))) : 42;
+      if (camera.fov !== responsiveFov) {
+        camera.fov = responsiveFov;
+        camera.updateProjectionMatrix();
+      }
+    }
     const pose = CAMERA_ANCHORS[anchorId];
-    desiredPosRef.current.set(pose.position[0], pose.position[1], pose.position[2]);
+    // Pull interior counter cameras back gently on portrait screens so outer counter props never crop
+    const portraitZPullback = !isMapView && aspect < 1 ? (1 - aspect) * 1.45 : 0;
+    desiredPosRef.current.set(pose.position[0], pose.position[1], pose.position[2] + portraitZPullback);
     desiredTargetRef.current.set(pose.target[0], pose.target[1], pose.target[2]);
     isTransitioningRef.current = true;
     if (controlsRef.current) {
       controlsRef.current.enabled = false;
     }
-  }, [anchorId, orbitEnabled, cameraMode]);
+  }, [anchorId, camera, isMapView, orbitEnabled, cameraMode, size.height, size.width]);
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -369,57 +380,69 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         avatarPoseRef={avatarPoseRef}
       />
 
-      <NeighborhoodMap
-        cafeStatus={props.cafeStatus}
-        locations={props.locations}
-        streetDiscoveries={props.streetDiscoveries}
-        timeOfDay={props.timeOfDay}
-        weather={props.weather}
-        visible={isMap}
-        hideAvatar={props.activeView === 'map' && cameraMode === 'first_person'}
-        avatarStyle={props.avatarStyle}
-        avatarPoseRef={avatarPoseRef}
-        teleportRequest={props.teleportRequest}
-        onEnterCafe={props.onEnterCafe}
-        onEnterMarket={props.onEnterMarket}
-        onEnterPlaza={props.onEnterPlaza}
-        onEnterPizzeria={props.onEnterPizzeria}
-        onEnterPharmacy={props.onEnterPharmacy}
-        onExploreObject={props.onExploreObject}
-        onInspectCuriosity={props.onInspectCuriosity}
-        onMapBlockedBump={props.onMapBlockedBump}
-      />
+      {isMap && (
+        <NeighborhoodMap
+          cafeStatus={props.cafeStatus}
+          locations={props.locations}
+          streetDiscoveries={props.streetDiscoveries}
+          activeQuestPosition={props.activeQuestPosition}
+          timeOfDay={props.timeOfDay}
+          weather={props.weather}
+          visible={isMap}
+          hideAvatar={props.activeView === 'map' && cameraMode === 'first_person'}
+          avatarStyle={props.avatarStyle}
+          avatarPoseRef={avatarPoseRef}
+          teleportRequest={props.teleportRequest}
+          onEnterCafe={props.onEnterCafe}
+          onEnterMarket={props.onEnterMarket}
+          onEnterPlaza={props.onEnterPlaza}
+          onEnterPizzeria={props.onEnterPizzeria}
+          onEnterPharmacy={props.onEnterPharmacy}
+          onExploreObject={props.onExploreObject}
+          onInspectCuriosity={props.onInspectCuriosity}
+          onMapBlockedBump={props.onMapBlockedBump}
+        />
+      )}
 
-      <MarketScene
-        visible={isMarket}
-        stage={props.marketStage ?? 'explore'}
-        onStageChange={props.onMarketStageChange ?? (() => {})}
-        onPlayAudio={props.onExploreObject ?? (() => {})}
-        onComplete={props.onCompleteMarket ?? (() => {})}
-      />
+      {isMarket && (
+        <MarketScene
+          visible={isMarket}
+          stage={props.marketStage ?? 'explore'}
+          onStageChange={props.onMarketStageChange ?? (() => {})}
+          onPlayAudio={props.onExploreObject ?? (() => {})}
+          onComplete={props.onCompleteMarket ?? (() => {})}
+        />
+      )}
 
-      <PlazaScene
-        visible={isPlaza}
-        stage={props.plazaStage ?? 'explore'}
-        onStageChange={props.onPlazaStageChange ?? (() => {})}
-        onPlayAudio={props.onExploreObject ?? (() => {})}
-        onComplete={props.onCompletePlaza ?? (() => {})}
-      />
+      {isPlaza && (
+        <PlazaScene
+          visible={isPlaza}
+          stage={props.plazaStage ?? 'explore'}
+          onStageChange={props.onPlazaStageChange ?? (() => {})}
+          onPlayAudio={props.onExploreObject ?? (() => {})}
+          onComplete={props.onCompletePlaza ?? (() => {})}
+        />
+      )}
 
-      <PizzeriaScene
-        visible={isPizzeria}
-        onPlayAudio={props.onExploreObject ?? (() => {})}
-        onComplete={props.onCompletePizzeria ?? (() => {})}
-      />
+      {isPizzeria && (
+        <PizzeriaScene
+          visible={isPizzeria}
+          onPlayAudio={props.onExploreObject ?? (() => {})}
+          onComplete={props.onCompletePizzeria ?? (() => {})}
+        />
+      )}
 
-      <PharmacyScene
-        visible={isPharmacy}
-        onPlayAudio={props.onExploreObject ?? (() => {})}
-        onComplete={props.onCompletePharmacy ?? (() => {})}
-      />
+      {isPharmacy && (
+        <PharmacyScene
+          visible={isPharmacy}
+          onPlayAudio={props.onExploreObject ?? (() => {})}
+          onComplete={props.onCompletePharmacy ?? (() => {})}
+        />
+      )}
 
-      <CafeScene
-        assetMode={props.assetMode}
+      {isLesson && (
+        <CafeScene
+          assetMode={props.assetMode}
         phase={props.phase}
         highlightedProp={props.highlightedProp}
         hintMode={props.hintMode}
@@ -433,20 +456,25 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         onPourStart={props.onPourStart}
         onPourEnd={props.onPourEnd}
       />
+      )}
 
-      <CafeDynamicSession
-        visible={isCafeCycle}
-        cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
-        onPlayAudio={props.onExploreObject ?? (() => {})}
-        onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
-      />
+      {isCafeCycle && (
+        <CafeDynamicSession
+          visible={isCafeCycle}
+          cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
+          onPlayAudio={props.onExploreObject ?? (() => {})}
+          onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
+        />
+      )}
 
-      <LeoBarista
-        assetMode={props.assetMode}
-        animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
-        speechRef={props.speechRef}
-        visible={isLesson || isCafeCycle}
-      />
+      {(isLesson || isCafeCycle) && (
+        <LeoBarista
+          assetMode={props.assetMode}
+          animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
+          speechRef={props.speechRef}
+          visible={isLesson || isCafeCycle}
+        />
+      )}
     </Canvas>
   );
 });

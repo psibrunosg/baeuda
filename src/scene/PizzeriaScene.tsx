@@ -115,6 +115,7 @@ export const PizzeriaScene = memo(function PizzeriaScene({
   };
 
   const ringColor = (targetStep: number) => (hintVisible && step === targetStep ? '#fbbf24' : '#cbd5e1');
+  const ringOpacity = (targetStep: number) => (hintVisible && step === targetStep ? 0.95 : 0.25);
 
   return (
     <group name="Pizzeria_Interior_Scene">
@@ -172,22 +173,70 @@ export const PizzeriaScene = memo(function PizzeriaScene({
         </mesh>
       </group>
 
-      {/* Chef Character Behind the Counter */}
+      {/* Chef Character Behind the Counter (expressive face + arms) */}
       <group position={[0, 0.85, -0.68]}>
         <mesh position={[0, 0.34, 0]} castShadow>
           <capsuleGeometry args={[0.16, 0.26, 8, 12]} />
           <meshStandardMaterial color="#ffffff" roughness={0.82} />
         </mesh>
+        {/* Arms & hands */}
+        {[-0.2, 0.2].map((ax, i) => (
+          <group key={i} position={[ax, 0.36, 0.04]} rotation={[0.35, 0, i === 0 ? 0.18 : -0.18]}>
+            <mesh castShadow>
+              <capsuleGeometry args={[0.045, 0.16, 6, 10]} />
+              <meshStandardMaterial color="#ffffff" roughness={0.82} />
+            </mesh>
+            <mesh position={[0, -0.12, 0.02]} castShadow>
+              <sphereGeometry args={[0.042, 10, 10]} />
+              <meshStandardMaterial color="#f3c6a5" roughness={0.75} />
+            </mesh>
+          </group>
+        ))}
         {/* Red neckerchief */}
         <mesh position={[0, 0.5, 0.05]} rotation={[0.25, 0, 0]}>
           <torusGeometry args={[0.11, 0.025, 8, 16]} />
           <meshStandardMaterial color="#dc2626" roughness={0.7} />
         </mesh>
-        {/* Head */}
-        <mesh position={[0, 0.68, 0]} castShadow>
-          <sphereGeometry args={[0.145, 16, 16]} />
-          <meshStandardMaterial color="#f3c6a5" roughness={0.75} />
-        </mesh>
+        {/* Head + expressive face */}
+        <group position={[0, 0.68, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.145, 18, 18]} />
+            <meshStandardMaterial color="#f3c6a5" roughness={0.75} />
+          </mesh>
+          {/* Eyes with specular catchlight */}
+          {[-0.048, 0.048].map((ex, i) => (
+            <group key={i} position={[ex, 0.02, 0.128]}>
+              <mesh>
+                <sphereGeometry args={[0.019, 12, 12]} />
+                <meshStandardMaterial color="#1c1917" roughness={0.15} />
+              </mesh>
+              <mesh position={[0.006, 0.006, 0.015]}>
+                <sphereGeometry args={[0.006, 8, 8]} />
+                <meshBasicMaterial color="#ffffff" />
+              </mesh>
+            </group>
+          ))}
+          {/* Warm blush cheeks */}
+          {[-0.08, 0.08].map((cx, i) => (
+            <mesh key={`c-${i}`} position={[cx, -0.02, 0.118]}>
+              <sphereGeometry args={[0.022, 10, 10]} />
+              <meshStandardMaterial color="#f29489" transparent opacity={0.45} roughness={0.9} />
+            </mesh>
+          ))}
+          {/* Cute nose + Italian mustache + smile */}
+          <mesh position={[0, -0.008, 0.142]}>
+            <sphereGeometry args={[0.018, 10, 10]} />
+            <meshStandardMaterial color="#e8b288" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, -0.036, 0.136]} rotation={[0, 0, Math.PI / 2]}>
+            <capsuleGeometry args={[0.012, 0.055, 4, 8]} />
+            <meshStandardMaterial color="#4b2e1e" roughness={0.85} />
+          </mesh>
+          <mesh position={[0, -0.058, 0.13]} rotation={[0, 0, Math.PI / 2]}>
+            <capsuleGeometry args={[0.01, 0.028, 4, 8]} />
+            <meshStandardMaterial color="#991b1b" roughness={0.5} />
+          </mesh>
+        </group>
         {/* Tall Chef Toque Hat */}
         <mesh position={[0, 0.85, 0]} castShadow>
           <cylinderGeometry args={[0.13, 0.11, 0.14, 14]} />
@@ -290,7 +339,7 @@ export const PizzeriaScene = memo(function PizzeriaScene({
       >
         <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.21, 0.26, 24]} />
-          <meshBasicMaterial color={ringColor(0)} transparent opacity={step === 0 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(0)} transparent opacity={ringOpacity(0)} />
         </mesh>
         <mesh position={[0, 0.07, 0]} castShadow>
           <cylinderGeometry args={[0.2, 0.14, 0.12, 16]} />
@@ -314,7 +363,7 @@ export const PizzeriaScene = memo(function PizzeriaScene({
       >
         <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.19, 0.24, 24]} />
-          <meshBasicMaterial color={ringColor(1)} transparent opacity={step === 1 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(1)} transparent opacity={ringOpacity(1)} />
         </mesh>
         <mesh position={[0, 0.07, 0]} castShadow>
           <cylinderGeometry args={[0.18, 0.13, 0.12, 16]} />
@@ -338,7 +387,7 @@ export const PizzeriaScene = memo(function PizzeriaScene({
       >
         <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.19, 0.24, 24]} />
-          <meshBasicMaterial color={ringColor(2)} transparent opacity={step === 2 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(2)} transparent opacity={ringOpacity(2)} />
         </mesh>
         <mesh position={[0, 0.07, 0]} castShadow>
           <cylinderGeometry args={[0.18, 0.13, 0.12, 16]} />
@@ -362,7 +411,7 @@ export const PizzeriaScene = memo(function PizzeriaScene({
       >
         <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.21, 0.26, 24]} />
-          <meshBasicMaterial color={ringColor(3)} transparent opacity={step === 3 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(3)} transparent opacity={ringOpacity(3)} />
         </mesh>
         <mesh position={[0, 0.07, 0]} castShadow>
           <cylinderGeometry args={[0.2, 0.14, 0.12, 16]} />

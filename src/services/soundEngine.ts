@@ -67,3 +67,20 @@ export function playRewardFanfare() {
 export function playSoftErrorTone() {
   playTone(260, 0.16, 'sine', 0.09, 0);
 }
+
+/**
+ * Tactile rising-pitch liquid drop cue called periodically during hold-to-pour (`0..1`).
+ */
+export function playPourTick(progress: number) {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const freq = 320 + clamped * 380;
+  playTone(freq, 0.075, 'sine', 0.065, 0);
+}
+
+/**
+ * Warm brass shop-door bell chime when entering a neighborhood interior.
+ */
+export function playShopBell() {
+  playTone(1174.66, 0.16, 'sine', 0.075, 0);
+  playTone(1567.98, 0.24, 'sine', 0.065, 0.07);
+}

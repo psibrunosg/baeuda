@@ -52,6 +52,8 @@ export interface ConceptNode {
   originLocation: LocationId;
   neededHint: boolean;
   lastContactAt: string;
+  reviewCount?: number;
+  intervalHours?: number;
 }
 
 export type ConstellationEdgeKind = 'situational' | 'contrast' | 'narrative';

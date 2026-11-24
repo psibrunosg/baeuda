@@ -8,6 +8,7 @@ import {
   type AvatarSlot,
 } from '../domain/avatarShop';
 import type { LearnerProfile } from '../domain/types';
+import { CoinIcon } from './CoinIcon';
 
 interface AvatarCustomizerModalProps {
   profile: LearnerProfile;
@@ -41,7 +42,7 @@ export function AvatarCustomizerModal({
   const handleClick = (item: AvatarShopItem) => {
     const res = onSelectItem(item);
     if (res.insufficientCoins) {
-      setFeedback(`Need ${item.price} 🪙 — solve quizzes, mini-games or quests to earn more!`);
+      setFeedback(`Need ${item.price} coins — solve quizzes, mini-games or quests to earn more!`);
     } else if (res.purchased) {
       setFeedback(`✨ Unlocked & wearing ${item.label}!`);
     } else {
@@ -62,7 +63,9 @@ export function AvatarCustomizerModal({
           </div>
           <div className="avatar-wallet-badges">
             <span className="avatar-stat-chip" title="Daily Streak">🔥 {streakCount}d</span>
-            <span className="avatar-stat-chip coins" title="Coins">🪙 {coins}</span>
+            <span className="avatar-stat-chip coins" title="Coins">
+              <CoinIcon size={14} /> {coins}
+            </span>
             <button
               type="button"
               className="badges-close-btn"
@@ -107,7 +110,16 @@ export function AvatarCustomizerModal({
                         />
                         <span className="avatar-swatch-label">{item.label}</span>
                         <span className="avatar-swatch-price">
-                          {equipped ? '✓ On' : owned ? 'Wear' : `🪙 ${item.price}`}
+                          {equipped ? (
+                            '✓ On'
+                          ) : owned ? (
+                            'Wear'
+                          ) : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <CoinIcon size={13} />
+                              {item.price}
+                            </span>
+                          )}
                         </span>
                       </button>
                     );

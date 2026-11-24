@@ -414,15 +414,15 @@ function LeoGreybox({
             </mesh>
           </group>
 
-          {/* Rounded Eyebrows */}
-          <group position={[0, 0.078, 0.184]}>
+          {/* Rounded Eyebrows (horizontal capsules above each eye) */}
+          <group position={[0, 0.072, 0.184]}>
             <group ref={browRef}>
-              <mesh position={[-0.072, 0, 0]} rotation={[0, 0, 0.1]}>
-                <capsuleGeometry args={[0.009, 0.04, 4, 8]} />
+              <mesh position={[-0.072, 0, 0]} rotation={[0, 0, Math.PI / 2 + 0.12]}>
+                <capsuleGeometry args={[0.0085, 0.036, 4, 8]} />
                 <meshStandardMaterial color="#4b2e1e" roughness={0.9} />
               </mesh>
-              <mesh position={[0.072, 0, 0]} rotation={[0, 0, -0.1]}>
-                <capsuleGeometry args={[0.009, 0.04, 4, 8]} />
+              <mesh position={[0.072, 0, 0]} rotation={[0, 0, Math.PI / 2 - 0.12]}>
+                <capsuleGeometry args={[0.0085, 0.036, 4, 8]} />
                 <meshStandardMaterial color="#4b2e1e" roughness={0.9} />
               </mesh>
             </group>

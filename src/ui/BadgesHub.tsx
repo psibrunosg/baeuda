@@ -62,7 +62,10 @@ export function BadgesHub({
   const badges = useMemo(() => evaluateNeighborhoodBadges(profile), [profile]);
   const srsPairs = useMemo(() => buildSrsReviewPairs(profile, 6), [profile]);
   const srsConceptIds = useMemo(
-    () => srsPairs.map((pair) => pair.id.replace(/^srs_/, '') as ConceptId),
+    () =>
+      srsPairs
+        .filter((pair) => pair.id.startsWith('srs_') && !pair.id.startsWith('srs_city_'))
+        .map((pair) => pair.id.replace(/^srs_/, '') as ConceptId),
     [srsPairs],
   );
   const connectCols = useMemo(() => {

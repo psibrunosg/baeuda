@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getDialogueScenario,
   TRAVEL_DIALOGUE_SCENARIOS,
@@ -49,6 +49,18 @@ export function TravelDialogueModal({
   const scenario = getDialogueScenario(scenarioId);
   const turn = scenario.turns[turnIndex];
 
+  // Deterministically shuffle options per scenario + turn so distractors are not always in position 3
+  const displayOptions = useMemo(() => {
+    const arr = [...turn.options];
+    let seed = turnIndex * 31 + scenarioId.charCodeAt(0) * 17 + scenarioId.length * 7;
+    for (let i = arr.length - 1; i > 0; i--) {
+      seed = (seed * 16807) % 2147483647;
+      const j = seed % (i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [scenarioId, turn.options, turnIndex]);
+
   const selectScenario = (nextId: DialogueScenarioId) => {
     setScenarioId(nextId);
     setTurnIndex(0);
@@ -59,24 +71,41 @@ export function TravelDialogueModal({
     speakEnglish(nextScenario.turns[0].npcLine);
   };
 
-  const handleChoose = (opt: DialogueOption) => {
-    setLastReply(opt.reply);
-    speakEnglish(opt.reply);
-    if (opt.isCorrect === false) {
-      setLastReplyKind('hint');
-      playSoftErrorTone();
-      return;
-    }
-    setLastReplyKind('ok');
-    if (turnIndex + 1 >= scenario.turns.length) {
-      playRewardFanfare();
-      setDone(true);
-      onComplete(scenario.id);
-    } else {
-      playSuccessChime();
-      setTurnIndex((i) => i + 1);
-    }
-  };
+  const handleChoose = useCallback(
+    (opt: DialogueOption) => {
+      setLastReply(opt.reply);
+      speakEnglish(opt.reply);
+      if (opt.isCorrect === false) {
+        setLastReplyKind('hint');
+        playSoftErrorTone();
+        return;
+      }
+      setLastReplyKind('ok');
+      if (turnIndex + 1 >= scenario.turns.length) {
+        playRewardFanfare();
+        setDone(true);
+        onComplete(scenario.id);
+      } else {
+        playSuccessChime();
+        setTurnIndex((i) => i + 1);
+      }
+    },
+    [onComplete, scenario.id, scenario.turns.length, turnIndex],
+  );
+
+  // Keyboard shortcuts 1 / 2 / 3 to select dialogue options rapidly
+  useEffect(() => {
+    if (done) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const idx = Number(e.key) - 1;
+      if (idx >= 0 && idx < displayOptions.length) {
+        e.preventDefault();
+        handleChoose(displayOptions[idx]);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [done, handleChoose, displayOptions]);
 
   return (
     <section
@@ -134,14 +163,14 @@ export function TravelDialogueModal({
               </button>
             </div>
             <div className="travel-options">
-              {turn.options.map((opt) => (
+              {displayOptions.map((opt, idx) => (
                 <button
-                  key={opt.label}
+                  key={`${scenarioId}-${turnIndex}-${opt.label}`}
                   type="button"
                   className="travel-option-btn"
                   onClick={() => handleChoose(opt)}
                 >
-                  “{opt.label}”
+                  <strong>{idx + 1}.</strong> “{opt.label}”
                 </button>
               ))}
             </div>

@@ -256,6 +256,8 @@ export function promoteConceptToVoice(
   };
 }
 
+const SRS_INTERVAL_LADDER_HOURS = [4, 24, 72, 168, 336] as const;
+
 export function applySrsReviewOutcome(
   profile: LearnerProfile,
   reviewedConceptIds: readonly ConceptId[],
@@ -266,6 +268,11 @@ export function applySrsReviewOutcome(
   for (const conceptId of reviewedConceptIds) {
     const existing = nextConstellation[conceptId];
     const nextStage: AcquisitionStage = existing?.stage === 'voice' ? 'voice' : 'root';
+    const nextReviewCount = (existing?.reviewCount ?? 0) + 1;
+    const nextIntervalHours =
+      SRS_INTERVAL_LADDER_HOURS[
+        Math.min(nextReviewCount, SRS_INTERVAL_LADDER_HOURS.length - 1)
+      ];
     nextConstellation = upsertConceptNode(
       nextConstellation,
       conceptId,
@@ -274,6 +281,14 @@ export function applySrsReviewOutcome(
       existing?.originLocation ?? 'cafe',
       nowIso,
     );
+    const updatedNode = nextConstellation[conceptId];
+    if (updatedNode) {
+      nextConstellation[conceptId] = {
+        ...updatedNode,
+        reviewCount: nextReviewCount,
+        intervalHours: nextIntervalHours,
+      };
+    }
   }
   return {
     ...profile,

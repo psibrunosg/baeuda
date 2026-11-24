@@ -1,4 +1,5 @@
 import { CONCEPT_AUDIO_KEY } from '../content/audioManifest';
+import { CURIOSITY_CATALOG } from './curiosityCatalog';
 import type { ConceptId, ConceptNode, LearnerProfile } from './types';
 import type { EvaluationPair } from './badgesAndGames';
 
@@ -8,7 +9,7 @@ const CONCEPT_META: Record<ConceptId, { icon: string; label: string; hint: strin
   water: { icon: '💧', label: 'Water', hint: 'Clear drink' },
   hot: { icon: '🔥', label: 'Hot', hint: 'Steaming warm' },
   cold: { icon: '❄️', label: 'Cold', hint: 'Chilled ice' },
-  pour: { icon: '🫗', label: 'Pour', hint: 'Fill the cup' },
+  pour: { icon: '💧', label: 'Pour', hint: 'Fill the cup' },
   milk: { icon: '🥛', label: 'Milk', hint: 'Creamy white' },
   sugar: { icon: '🍬', label: 'Sugar', hint: 'Sweet crystal' },
   cake: { icon: '🧁', label: 'Cake', hint: 'Bakery treat' },
@@ -17,10 +18,10 @@ const CONCEPT_META: Record<ConceptId, { icon: string; label: string; hint: strin
   one: { icon: '1️⃣', label: 'One', hint: 'Single item' },
   two: { icon: '2️⃣', label: 'Two', hint: 'A pair' },
   full: { icon: '🥛', label: 'Full', hint: 'Filled up' },
-  empty: { icon: '🫙', label: 'Empty', hint: 'Nothing inside' },
+  empty: { icon: '⭕', label: 'Empty', hint: 'Nothing inside' },
   plate: { icon: '🍽️', label: 'Plate', hint: 'Dish for food' },
   next_to: { icon: '↔️', label: 'Next to', hint: 'Right beside' },
-  coin: { icon: '🪙', label: 'Coin', hint: 'Pay at counter' },
+  coin: { icon: '💰', label: 'Coin', hint: 'Pay at counter' },
   like: { icon: '❤️', label: 'Like', hint: 'Favorite' },
   apple: { icon: '🍎', label: 'Apple', hint: 'Crisp fruit' },
   bread: { icon: '🥖', label: 'Bread', hint: 'Baked loaf' },
@@ -41,12 +42,15 @@ export function computeReviewUrgency(node: ConceptNode, nowMs: number): number {
   const hintBonus = node.neededHint ? 25 : 0;
   const lastMs = Date.parse(node.lastContactAt);
   const ageHours = Number.isFinite(lastMs) ? Math.max(0, (nowMs - lastMs) / 3_600_000) : 24;
-  return stagePenalty + hintBonus + Math.min(48, ageHours);
+  const intervalHours = Math.max(4, node.intervalHours ?? 8);
+  const overdueScore = Math.min(60, (ageHours / intervalHours) * 16);
+  return stagePenalty + hintBonus + overdueScore;
 }
 
 /**
  * Selects up to `limit` most urgent concepts from the learner's profile for spaced repetition,
- * falling back to core Pre-A1 foundations if the learner has fewer than `limit` concepts yet.
+ * also mixing in discovered city shop/fruit vocabulary from `CURIOSITY_CATALOG` and falling back
+ * to core Pre-A1 foundations if needed.
  */
 export function buildSrsReviewPairs(
   profile: LearnerProfile,
@@ -58,23 +62,55 @@ export function buildSrsReviewPairs(
     (a, b) => computeReviewUrgency(b, nowMs) - computeReviewUrgency(a, nowMs),
   );
 
-  const selectedIds: ConceptId[] = sorted.slice(0, limit).map((n) => n.id);
-  const defaults: ConceptId[] = ['coffee', 'water', 'hot', 'cold', 'cup', 'bread'];
-  for (const fallbackId of defaults) {
-    if (selectedIds.length >= limit) break;
-    if (!selectedIds.includes(fallbackId)) {
-      selectedIds.push(fallbackId);
-    }
-  }
+  const pairs: EvaluationPair[] = [];
+  const usedLabels = new Set<string>();
 
-  return selectedIds.map((id) => {
-    const meta = CONCEPT_META[id];
-    return {
-      id: `srs_${id}`,
+  for (const node of sorted) {
+    if (pairs.length >= limit) break;
+    const meta = CONCEPT_META[node.id];
+    pairs.push({
+      id: `srs_${node.id}`,
       icon: meta.icon,
       label: meta.label,
       hint: meta.hint,
-      speechKey: CONCEPT_AUDIO_KEY[id],
-    };
-  });
+      speechKey: CONCEPT_AUDIO_KEY[node.id],
+    });
+    usedLabels.add(meta.label.toLowerCase());
+  }
+
+  // Mix in discovered city curiosity vocabulary (shops, fruits, everyday objects)
+  const discoveries = new Set(profile.streetDiscoveries ?? []);
+  if (pairs.length < limit && discoveries.size > 0) {
+    for (const item of Object.values(CURIOSITY_CATALOG)) {
+      if (pairs.length >= limit) break;
+      if (!discoveries.has(item.discoveryKey)) continue;
+      const lower = item.canonicalAnswer.toLowerCase();
+      if (usedLabels.has(lower)) continue;
+      pairs.push({
+        id: `srs_city_${item.id}`,
+        icon: item.icon,
+        label: item.canonicalAnswer.charAt(0).toUpperCase() + item.canonicalAnswer.slice(1),
+        hint: item.question,
+        speechKey: item.speechKey,
+      });
+      usedLabels.add(lower);
+    }
+  }
+
+  const defaults: ConceptId[] = ['coffee', 'water', 'hot', 'cold', 'cup', 'bread'];
+  for (const fallbackId of defaults) {
+    if (pairs.length >= limit) break;
+    const meta = CONCEPT_META[fallbackId];
+    if (usedLabels.has(meta.label.toLowerCase())) continue;
+    pairs.push({
+      id: `srs_${fallbackId}`,
+      icon: meta.icon,
+      label: meta.label,
+      hint: meta.hint,
+      speechKey: CONCEPT_AUDIO_KEY[fallbackId],
+    });
+    usedLabels.add(meta.label.toLowerCase());
+  }
+
+  return pairs;
 }

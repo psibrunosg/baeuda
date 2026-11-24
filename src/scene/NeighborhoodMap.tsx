@@ -49,6 +49,7 @@ interface NeighborhoodMapProps {
   cafeStatus: LocationStatus;
   locations?: Record<LocationId, LocationStatus>;
   streetDiscoveries?: readonly string[];
+  activeQuestPosition?: { x: number; z: number; yaw: number } | null;
   timeOfDay?: 'day' | 'night';
   weather?: 'sunny' | 'rainy';
   visible: boolean;
@@ -220,10 +221,36 @@ function DistrictBarrier({
   );
 }
 
+function QuestBeacon({ x, z }: { x: number; z: number }) {
+  const ref = useRef<THREE.Group>(null);
+  const mapVisibleRef = useMapVisibleRef();
+  useFrame((state) => {
+    if (!mapVisibleRef.current || !ref.current) return;
+    const t = state.clock.elapsedTime;
+    ref.current.position.y = 1.95 + Math.sin(t * 3.4) * 0.14;
+    ref.current.rotation.y = t * 1.8;
+  });
+  return (
+    <group ref={ref} position={[x, 1.95, z]}>
+      <mesh>
+        <octahedronGeometry args={[0.16, 0]} />
+        <meshStandardMaterial
+          color="#facc15"
+          emissive="#f59e0b"
+          emissiveIntensity={0.9}
+          roughness={0.25}
+          metalness={0.35}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 export const NeighborhoodMap = memo(function NeighborhoodMap({
   cafeStatus,
   locations,
   streetDiscoveries,
+  activeQuestPosition,
   timeOfDay = 'day',
   weather = 'sunny',
   visible,
@@ -275,6 +302,17 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
   const effectiveCafeStatus = locations?.cafe ?? cafeStatus;
   const marketLocked = (locations?.market ?? 'unexplored') === 'unexplored';
   const plazaLocked = (locations?.plaza ?? 'unexplored') === 'unexplored';
+
+  // Restore avatar pose when returning from an interior scene
+  useLayoutEffect(() => {
+    if (!avatarPoseRef || !avatarGroupRef.current) return;
+    avatarGroupRef.current.position.set(
+      avatarPoseRef.current.x,
+      avatarPoseRef.current.y,
+      avatarPoseRef.current.z,
+    );
+    avatarGroupRef.current.rotation.y = avatarPoseRef.current.yaw;
+  }, [avatarPoseRef]);
 
   useEffect(() => {
     if (!teleportRequest || !avatarGroupRef.current) return;
@@ -1473,6 +1511,11 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
           </>
         )}
       </group>
+
+      {/* Floating 3D golden beacon guiding the learner to the active quest NPC */}
+      {activeQuestPosition && (
+        <QuestBeacon x={activeQuestPosition.x} z={activeQuestPosition.z} />
+      )}
 
       {/* Soft Claybound-style drifting clouds above the city */}
       <StylizedCloud position={[-3.2, 3.25, -3.1]} scale={0.95} speed={0.22} phase={0.4} />

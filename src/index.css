@@ -1307,3 +1307,35 @@ textarea {
   color: #92400e;
   white-space: nowrap;
 }
+
+/* Playtest P1/P2 Polish: Compact HUD, elevated subtitles, 3x4 mobile Memory grid */
+.speech-subtitle-pill {
+  z-index: 32;
+}
+
+@media (max-width: 560px) {
+  .guidance-pill {
+    padding: 7px 12px;
+    font-size: 12px;
+    max-width: min(92vw, 380px);
+    gap: 6px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .memory-card {
+    height: 58px;
+  }
+
+  .badges-hub-header {
+    gap: 6px;
+  }
+
+  .badges-hub-tabs button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
