@@ -33,18 +33,70 @@ const CONCEPT_META: Record<ConceptId, { icon: string; label: string; hint: strin
   slow: { icon: '🐢', label: 'Slow', hint: 'Calm tempo' },
 };
 
+export const URGENT_REVIEW_THRESHOLD = 35;
+
+export interface RetentionStatus {
+  hasUrgentSrs: boolean;
+  urgentConceptIds: ConceptId[];
+  maxUrgency: number;
+  mistakeCount: number;
+  hasMistakes: boolean;
+  needsRetention: boolean;
+}
+
 /**
  * Computes SRS urgency score for a concept node:
  * higher score = more urgent to review (neededHint, lower stage, older lastContactAt).
+ * `'fluent'` concepts carry the lowest base urgency and a longer default interval,
+ * but still surface for long-term refresh after extended elapsed time.
  */
 export function computeReviewUrgency(node: ConceptNode, nowMs: number): number {
-  const stagePenalty = node.stage === 'seed' ? 40 : node.stage === 'root' ? 20 : 5;
+  const stagePenalty =
+    node.stage === 'seed'
+      ? 40
+      : node.stage === 'root'
+        ? 20
+        : node.stage === 'voice'
+          ? 5
+          : 0;
   const hintBonus = node.neededHint ? 25 : 0;
   const lastMs = Date.parse(node.lastContactAt);
   const ageHours = Number.isFinite(lastMs) ? Math.max(0, (nowMs - lastMs) / 3_600_000) : 24;
-  const intervalHours = Math.max(4, node.intervalHours ?? 8);
+  const defaultIntervalHours = node.stage === 'fluent' ? 168 : 8;
+  const intervalHours = Math.max(4, node.intervalHours ?? defaultIntervalHours);
   const overdueScore = Math.min(60, (ageHours / intervalHours) * 16);
   return stagePenalty + hintBonus + overdueScore;
+}
+
+/**
+ * Evaluates whether the learner currently has urgent SRS reviews or pending Mistakes Lab items.
+ */
+export function getRetentionStatus(
+  profile: LearnerProfile,
+  nowMs = Date.now(),
+  urgencyThreshold = URGENT_REVIEW_THRESHOLD,
+): RetentionStatus {
+  const nodes = Object.values(profile.constellation).filter((n): n is ConceptNode => Boolean(n));
+  const scored = nodes
+    .map((node) => ({ id: node.id, urgency: computeReviewUrgency(node, nowMs) }))
+    .sort((a, b) => b.urgency - a.urgency);
+
+  const urgentConceptIds = scored
+    .filter((entry) => entry.urgency >= urgencyThreshold)
+    .map((entry) => entry.id);
+  const maxUrgency = scored.length > 0 ? scored[0].urgency : 0;
+  const mistakeCount = (profile.mistakeExerciseIds ?? []).length;
+  const hasUrgentSrs = urgentConceptIds.length > 0;
+  const hasMistakes = mistakeCount > 0;
+
+  return {
+    hasUrgentSrs,
+    urgentConceptIds,
+    maxUrgency,
+    mistakeCount,
+    hasMistakes,
+    needsRetention: hasMistakes || hasUrgentSrs,
+  };
 }
 
 /**

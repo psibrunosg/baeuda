@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 import { MarketVendorNpc } from './StylizedCharacters';
+import { getWorldGeometries } from './worldGeometries';
 
 export type MarketStage = 'explore' | 'contrast' | 'basket';
 
@@ -23,27 +24,34 @@ function SculptedApple({
   scale?: number;
   highlighted?: boolean;
 }) {
+  const worldGeos = useMemo(() => getWorldGeometries(), []);
+
   return (
     <group scale={scale}>
-      <mesh position={[0, 0.085, 0]} scale={[1.05, 0.94, 1.05]} castShadow>
-        <sphereGeometry args={[0.085, 18, 16]} />
+      <mesh geometry={worldGeos.apple} castShadow receiveShadow>
         <meshPhysicalMaterial
           color="#dc2626"
           emissive={highlighted ? '#f97316' : '#000000'}
           emissiveIntensity={highlighted ? 0.35 : 0}
-          roughness={0.22}
-          clearcoat={0.75}
+          roughness={0.2}
+          clearcoat={0.82}
+          clearcoatRoughness={0.14}
         />
       </mesh>
       {/* Stem */}
-      <mesh position={[0, 0.175, 0]} rotation={[0, 0, 0.15]}>
-        <cylinderGeometry args={[0.008, 0.01, 0.045, 8]} />
+      <mesh position={[0.004, 0.168, 0]} rotation={[0, 0, -0.14]}>
+        <cylinderGeometry args={[0.007, 0.01, 0.048, 8]} />
         <meshStandardMaterial color="#5a3827" roughness={0.85} />
       </mesh>
-      {/* Leaf */}
-      <mesh position={[0.032, 0.18, 0]} rotation={[0.2, 0, -0.55]} scale={[1.3, 0.45, 0.65]}>
-        <sphereGeometry args={[0.028, 10, 10]} />
-        <meshStandardMaterial color="#22c55e" roughness={0.7} />
+      {/* Sculpted organic apple leaf */}
+      <mesh
+        geometry={worldGeos.organicLeaf}
+        position={[0.036, 0.182, 0]}
+        rotation={[0.25, 0.15, -0.42]}
+        scale={1.1}
+        castShadow
+      >
+        <meshStandardMaterial color="#22c55e" roughness={0.62} />
       </mesh>
     </group>
   );
@@ -53,22 +61,22 @@ function SculptedBreadLoaf({ highlighted = false }: { highlighted?: boolean }) {
   const textures = useMemo(() => getCafeTextures(), []);
   return (
     <group>
-      <mesh position={[0, 0.072, 0]} rotation={[0, 0.25, Math.PI / 2]} scale={[0.85, 1, 1.05]} castShadow>
-        <capsuleGeometry args={[0.075, 0.18, 10, 16]} />
+      <mesh position={[0, 0.072, 0]} rotation={[0, 0.25, Math.PI / 2]} scale={[0.85, 1, 1.08]} castShadow receiveShadow>
+        <capsuleGeometry args={[0.078, 0.18, 12, 18]} />
         <meshStandardMaterial
           color="#d98a36"
           emissive={highlighted ? '#f59e0b' : '#000000'}
           emissiveIntensity={highlighted ? 0.3 : 0}
           bumpMap={textures.clayBump}
-          bumpScale={0.008}
-          roughness={0.78}
+          bumpScale={0.012}
+          roughness={0.82}
         />
       </mesh>
-      {/* Crust score lines */}
-      {[-0.06, 0, 0.06].map((x, idx) => (
-        <mesh key={idx} position={[x, 0.135, 0]} rotation={[0, 0.45, 0]}>
-          <boxGeometry args={[0.018, 0.012, 0.095]} />
-          <meshStandardMaterial color="#fef3c7" roughness={0.9} />
+      {/* Soft curved artisan crust ears / flour-dusted score slashes */}
+      {[-0.062, 0, 0.062].map((x, idx) => (
+        <mesh key={idx} position={[x, 0.132, 0]} rotation={[0.12, 0.45, Math.PI / 2]} scale={[0.55, 1, 0.45]}>
+          <capsuleGeometry args={[0.013, 0.072, 6, 10]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.92} />
         </mesh>
       ))}
     </group>
@@ -244,8 +252,8 @@ export function MarketScene({
           >
             <meshStandardMaterial
               color={i % 2 === 0 ? '#d96b47' : '#fdf6ea'}
-              bumpMap={textures.clayBump}
-              bumpScale={0.006}
+              bumpMap={textures.awningBump}
+              bumpScale={0.009}
               roughness={0.86}
             />
           </RoundedBox>

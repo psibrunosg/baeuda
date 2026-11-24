@@ -1,10 +1,22 @@
-import type { SpeechKey } from './types';
+import type { SpeechKey, WorldMapId } from './types';
 
-export type CuriosityCategory = 'fruit' | 'cafe' | 'profession' | 'city';
+export type CuriosityCategory =
+  | 'fruit'
+  | 'cafe'
+  | 'profession'
+  | 'city'
+  | 'home'
+  | 'farm'
+  | 'mountain'
+  | 'cavern'
+  | 'beach'
+  | 'station'
+  | 'festival';
 
 export interface CuriosityItem {
   id: string;
   category: CuriosityCategory;
+  mapId?: WorldMapId;
   icon: string;
   question: string;
   canonicalAnswer: string;
@@ -302,6 +314,96 @@ export const CURIOSITY_CATALOG: Record<string, CuriosityItem> = {
     speechKey: 'world_post_package',
     discoveryKey: 'world_post_package',
     collectible: { itemId: 'package', icon: '📦', label: 'Package' },
+  },
+  // Home Interior (Leo's House)
+  home_sofa: {
+    id: 'home_sofa',
+    category: 'home',
+    mapId: 'interior_house_leo',
+    icon: '🛋️',
+    question: 'What do you sit on in the living room?',
+    canonicalAnswer: 'Sofa',
+    acceptedAnswers: ['sofa', 'a sofa', 'couch', 'a couch'],
+    speechKey: 'home_sofa',
+    discoveryKey: 'home_sofa',
+  },
+  home_fridge: {
+    id: 'home_fridge',
+    category: 'home',
+    mapId: 'interior_house_leo',
+    icon: '🧊',
+    question: 'What keeps food cold in the kitchen?',
+    canonicalAnswer: 'Fridge',
+    acceptedAnswers: ['fridge', 'a fridge', 'refrigerator'],
+    speechKey: 'home_fridge',
+    discoveryKey: 'home_fridge',
+  },
+  home_bed: {
+    id: 'home_bed',
+    category: 'home',
+    mapId: 'interior_house_leo',
+    icon: '🛏️',
+    question: 'Where do you sleep at night?',
+    canonicalAnswer: 'Bed',
+    acceptedAnswers: ['bed', 'a bed'],
+    speechKey: 'home_bed',
+    discoveryKey: 'home_bed',
+  },
+  home_kettle: {
+    id: 'home_kettle',
+    category: 'home',
+    mapId: 'interior_house_leo',
+    icon: '🫖',
+    question: 'What boils hot water in the kitchen?',
+    canonicalAnswer: 'Kettle',
+    acceptedAnswers: ['kettle', 'a kettle', 'teapot'],
+    speechKey: 'home_kettle',
+    discoveryKey: 'home_kettle',
+  },
+  // Sunny Farm Biome
+  farm_cow: {
+    id: 'farm_cow',
+    category: 'farm',
+    mapId: 'farm',
+    icon: '🐄',
+    question: 'Which farm animal gives milk?',
+    canonicalAnswer: 'Cow',
+    acceptedAnswers: ['cow', 'a cow', 'cows'],
+    speechKey: 'farm_cow',
+    discoveryKey: 'farm_cow',
+  },
+  farm_chicken: {
+    id: 'farm_chicken',
+    category: 'farm',
+    mapId: 'farm',
+    icon: '🐔',
+    question: 'Which farm bird lays eggs?',
+    canonicalAnswer: 'Chicken',
+    acceptedAnswers: ['chicken', 'a chicken', 'hen', 'chickens'],
+    speechKey: 'farm_chicken',
+    discoveryKey: 'farm_chicken',
+  },
+  farm_horse: {
+    id: 'farm_horse',
+    category: 'farm',
+    mapId: 'farm',
+    icon: '🐴',
+    question: 'Which tall animal runs fast on the farm?',
+    canonicalAnswer: 'Horse',
+    acceptedAnswers: ['horse', 'a horse', 'pony'],
+    speechKey: 'farm_horse',
+    discoveryKey: 'farm_horse',
+  },
+  farm_tractor: {
+    id: 'farm_tractor',
+    category: 'farm',
+    mapId: 'farm',
+    icon: '🚜',
+    question: 'What vehicle works in the farm field?',
+    canonicalAnswer: 'Tractor',
+    acceptedAnswers: ['tractor', 'a tractor', 'red tractor'],
+    speechKey: 'farm_tractor',
+    discoveryKey: 'farm_tractor',
   },
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { ContactShadows, RoundedBox } from '@react-three/drei';
+import { ContactShadows } from '@react-three/drei';
 import type * as THREE from 'three';
 import {
   CAFE_A1_SPIRAL_CONCEPTS,
@@ -10,6 +10,8 @@ import {
 import type { CafeCycleId, ConceptId, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
+import { CafeEnvironmentStatic } from './CafeScene';
+import { getWorldGeometries } from './worldGeometries';
 
 export interface CafeDynamicSessionProps {
   visible: boolean;
@@ -19,33 +21,54 @@ export interface CafeDynamicSessionProps {
 }
 
 function CakeSlice({ highlighted = false }: { highlighted?: boolean }) {
+  const cafeGeos = useMemo(() => getCafeGeometries(), []);
+  const worldGeos = useMemo(() => getWorldGeometries(), []);
+  const textures = useMemo(() => getCafeTextures(), []);
+
   return (
     <group>
-      {/* Ceramic plate */}
-      <mesh position={[0, 0.012, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.15, 0.12, 0.022, 22]} />
-        <meshStandardMaterial color="#fdf6ea" roughness={0.28} />
+      {/* Sculpted ceramic saucer plate */}
+      <mesh geometry={cafeGeos.saucer} scale={1.12} castShadow receiveShadow>
+        <meshPhysicalMaterial color="#fdf6ea" roughness={0.24} clearcoat={0.6} />
       </mesh>
-      {/* Sponge cake layers */}
-      <RoundedBox args={[0.16, 0.055, 0.14]} radius={0.01} smoothness={2} position={[0, 0.052, 0]} castShadow>
-        <meshStandardMaterial
-          color="#eab676"
-          emissive={highlighted ? '#f59e0b' : '#000000'}
-          emissiveIntensity={highlighted ? 0.3 : 0}
-          roughness={0.8}
-        />
-      </RoundedBox>
-      <RoundedBox args={[0.165, 0.022, 0.145]} radius={0.008} smoothness={2} position={[0, 0.09, 0]}>
-        <meshStandardMaterial color="#fffbeb" roughness={0.5} />
-      </RoundedBox>
-      <RoundedBox args={[0.16, 0.045, 0.14]} radius={0.01} smoothness={2} position={[0, 0.12, 0]} castShadow>
-        <meshStandardMaterial color="#7c3f24" roughness={0.65} />
-      </RoundedBox>
-      {/* Strawberry glaze top */}
-      <mesh position={[0, 0.158, 0]} castShadow>
-        <sphereGeometry args={[0.028, 12, 12]} />
-        <meshStandardMaterial color="#ef4444" roughness={0.25} />
-      </mesh>
+      {/* Sculpted triangular sponge cake wedge */}
+      <group position={[0, 0.018, 0]} rotation={[0, -0.42, 0]}>
+        <mesh geometry={worldGeos.cakeWedge} castShadow receiveShadow>
+          <meshStandardMaterial
+            color="#eab676"
+            emissive={highlighted ? '#f59e0b' : '#000000'}
+            emissiveIntensity={highlighted ? 0.3 : 0}
+            bumpMap={textures.clayBump}
+            bumpScale={0.006}
+            roughness={0.82}
+          />
+        </mesh>
+        {/* Cream filling band */}
+        <mesh geometry={worldGeos.cakeWedge} position={[0, 0.044, 0]} scale={[1.015, 0.18, 1.015]}>
+          <meshStandardMaterial color="#fffbeb" roughness={0.45} />
+        </mesh>
+        {/* Rich glossy chocolate ganache top layer */}
+        <mesh geometry={worldGeos.cakeWedge} position={[0, 0.092, 0]} scale={[1.02, 0.24, 1.02]} castShadow>
+          <meshPhysicalMaterial color="#5c2d16" roughness={0.28} clearcoat={0.65} />
+        </mesh>
+        {/* Whipped cream rosette + sculpted strawberry & mint leaf */}
+        <mesh position={[-0.032, 0.128, 0]} castShadow>
+          <sphereGeometry args={[0.022, 12, 12]} />
+          <meshStandardMaterial color="#fffdf7" roughness={0.55} />
+        </mesh>
+        <mesh position={[-0.032, 0.152, 0]} scale={[0.92, 1.15, 0.92]} castShadow>
+          <sphereGeometry args={[0.024, 12, 12]} />
+          <meshPhysicalMaterial color="#ef4444" roughness={0.2} clearcoat={0.85} />
+        </mesh>
+        <mesh
+          geometry={worldGeos.organicLeaf}
+          position={[-0.015, 0.156, 0.012]}
+          rotation={[0.25, 0.6, -0.3]}
+          scale={0.7}
+        >
+          <meshStandardMaterial color="#16a34a" roughness={0.6} />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -116,7 +139,6 @@ export function CafeDynamicSession({
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const busyRef = useRef(false);
   const geos = useMemo(() => getCafeGeometries(), []);
-  const textures = useMemo(() => getCafeTextures(), []);
 
   const clearTimers = () => {
     for (const id of timersRef.current) clearTimeout(id);
@@ -238,33 +260,8 @@ export function CafeDynamicSession({
         color="#3b1d0f"
       />
 
-      {/* Shared warm Café interior backdrop & fluted oak counter */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8.5, 8.5]} />
-        <meshStandardMaterial color="#ffffff" map={textures.floorPlankColor} bumpMap={textures.floorPlankBump} bumpScale={0.008} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 1.9, -1.65]} receiveShadow>
-        <boxGeometry args={[6.8, 3.8, 0.18]} />
-        <meshStandardMaterial color="#ffffff" map={textures.plasterColor} bumpMap={textures.plasterBump} bumpScale={0.012} roughness={0.92} />
-      </mesh>
-      <mesh position={[0, 1.18, -1.53]} receiveShadow>
-        <boxGeometry args={[6.8, 0.72, 0.04]} />
-        <meshStandardMaterial color="#ffffff" map={textures.tileColor} bumpMap={textures.tileBump} bumpScale={0.01} roughness={0.42} />
-      </mesh>
-      <mesh position={[0, 0.455, 0.05]} castShadow receiveShadow>
-        <boxGeometry args={[3.24, 0.91, 0.9]} />
-        <meshStandardMaterial color="#6f462c" bumpMap={textures.woodCounterBump} bumpScale={0.01} roughness={0.85} />
-      </mesh>
-      <RoundedBox args={[3.38, 0.075, 1.08]} radius={0.022} smoothness={4} position={[0, 0.935, 0.06]} castShadow receiveShadow>
-        <meshStandardMaterial
-          color="#ffffff"
-          map={textures.woodCounterColor}
-          bumpMap={textures.woodCounterBump}
-          bumpScale={0.009}
-          roughnessMap={textures.woodCounterRoughness}
-          roughness={0.62}
-        />
-      </RoundedBox>
+      {/* Full shared Café interior backdrop (espresso machine, pendant lamp, window, dust motes, fluted counter) */}
+      <CafeEnvironmentStatic showCloche={false} />
 
       {/* CYCLE 2: Food & Mixing (milk, sugar, cake, sweet, more) */}
       {cycleId === 'cafe_c2_food' && (

@@ -5,6 +5,7 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
+import { StylizedHumanoid } from './StylizedCharacters';
 
 export interface InteractiveShopProps {
   position: [number, number, number];
@@ -24,114 +25,18 @@ function setPointer(over: boolean) {
  * rosy cheeks, friendly wave when the bakery bell rings.
  */
 function BakerNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
-  const rightArmRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
-    if (waveTimerRef.current > 0) {
-      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
-    }
-    if (rightArmRef.current) {
-      const waving = waveTimerRef.current > 0;
-      const targetZ = waving ? -2.2 + Math.sin(t * 10) * 0.35 : -0.25 + Math.sin(t * 2) * 0.06;
-      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
-    }
-    if (headRef.current) {
-      headRef.current.rotation.z = Math.sin(t * 1.9) * 0.04;
-    }
-  });
-
   return (
-    <group>
-      {/* Shoes */}
-      <mesh position={[-0.055, 0.04, 0.015]} castShadow>
-        <sphereGeometry args={[0.044, 10, 10]} />
-        <meshStandardMaterial color="#422618" roughness={0.85} />
-      </mesh>
-      <mesh position={[0.055, 0.04, 0.015]} castShadow>
-        <sphereGeometry args={[0.044, 10, 10]} />
-        <meshStandardMaterial color="#422618" roughness={0.85} />
-      </mesh>
-      {/* White Double-Breasted Baker Jacket */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
-        <meshStandardMaterial color="#fffaf2" roughness={0.88} />
-      </mesh>
-      {/* Warm Terracotta Apron & Neckerchief */}
-      <RoundedBox args={[0.19, 0.2, 0.08]} radius={0.02} smoothness={2} position={[0, 0.24, 0.095]} castShadow>
-        <meshStandardMaterial color="#c86b45" roughness={0.9} />
-      </RoundedBox>
-      <mesh position={[0, 0.45, 0.02]} rotation={[0.15, 0, 0]}>
-        <torusGeometry args={[0.07, 0.018, 8, 16]} />
-        <meshStandardMaterial color="#b45309" roughness={0.85} />
-      </mesh>
-      {/* Left arm holding small wooden bread peel */}
-      <group position={[-0.15, 0.4, 0.02]} rotation={[0.35, 0, 0.2]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.88} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.038, 10, 10]} />
-          <meshStandardMaterial color="#f0bfa0" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Right arm (waves warmly) */}
-      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.88} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.038, 10, 10]} />
-          <meshStandardMaterial color="#f0bfa0" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Head + Tall White Baker Toque Hat */}
-      <group ref={headRef} position={[0, 0.64, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.135, 16, 16]} />
-          <meshStandardMaterial color="#f0bfa0" roughness={0.82} />
-        </mesh>
-        {/* Eyes */}
-        <mesh position={[-0.042, 0.01, 0.12]}>
-          <sphereGeometry args={[0.017, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        <mesh position={[0.042, 0.01, 0.12]}>
-          <sphereGeometry args={[0.017, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        {/* Rosy cheeks */}
-        <mesh position={[-0.075, -0.018, 0.105]}>
-          <sphereGeometry args={[0.022, 8, 8]} />
-          <meshStandardMaterial color="#f4978e" roughness={0.9} />
-        </mesh>
-        <mesh position={[0.075, -0.018, 0.105]}>
-          <sphereGeometry args={[0.022, 8, 8]} />
-          <meshStandardMaterial color="#f4978e" roughness={0.9} />
-        </mesh>
-        {/* Chef Toque Band & Puffy Crown */}
-        <mesh position={[0, 0.13, 0]} castShadow>
-          <cylinderGeometry args={[0.115, 0.11, 0.09, 16]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.88} />
-        </mesh>
-        <mesh position={[0, 0.21, 0]} castShadow>
-          <sphereGeometry args={[0.12, 14, 14]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.88} />
-        </mesh>
-        <mesh position={[-0.06, 0.19, 0.02]} castShadow>
-          <sphereGeometry args={[0.075, 10, 10]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.9} />
-        </mesh>
-        <mesh position={[0.06, 0.19, -0.02]} castShadow>
-          <sphereGeometry args={[0.075, 10, 10]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.9} />
-        </mesh>
-      </group>
-    </group>
+    <StylizedHumanoid
+      scale={0.9}
+      shirtColor="#fffaf2"
+      skinColor="#f0bfa0"
+      apronColor="#c86b45"
+      collarColor="#b45309"
+      hat="toque"
+      hatColor="#ffffff"
+      waveTimerRef={waveTimerRef}
+      blinkOffset={0.3}
+    />
   );
 }
 
@@ -279,7 +184,12 @@ export function InteractiveBakery({
             position={[-0.9 + i * 0.45, 0, 0]}
             castShadow
           >
-            <meshStandardMaterial color={i % 2 === 0 ? '#d96b47' : '#fdf6ea'} roughness={0.85} />
+            <meshStandardMaterial
+              color={i % 2 === 0 ? '#d96b47' : '#fdf6ea'}
+              bumpMap={textures.awningBump}
+              bumpScale={0.01}
+              roughness={0.86}
+            />
           </RoundedBox>
         ))}
       </group>
@@ -355,12 +265,24 @@ export function InteractiveBakery({
       >
         {/* Stone oven base */}
         <RoundedBox args={[0.64, 0.52, 0.64]} radius={0.03} smoothness={2} position={[0, 0.26, 0]} castShadow>
-          <meshStandardMaterial color="#b7a994" roughness={0.9} />
+          <meshStandardMaterial
+            color="#d6cab8"
+            map={textures.marbleColor}
+            bumpMap={textures.marbleBump}
+            bumpScale={0.012}
+            roughness={0.82}
+          />
         </RoundedBox>
         {/* Brick dome */}
         <mesh position={[0, 0.56, 0]} castShadow>
           <sphereGeometry args={[0.32, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-          <meshStandardMaterial color="#9c4a35" bumpMap={textures.terracottaBump} bumpScale={0.015} roughness={0.86} />
+          <meshStandardMaterial
+            color="#c2593a"
+            map={textures.brickColor}
+            bumpMap={textures.brickBump}
+            bumpScale={0.02}
+            roughness={0.86}
+          />
         </mesh>
         {/* Glowing Fire Mouth facing street (-z) */}
         <mesh position={[0, 0.64, -0.29]} rotation={[0, Math.PI, 0]}>
@@ -451,110 +373,23 @@ export function InteractiveBakery({
  * Unique Mechanic NPC: navy denim overalls, red oil rag, mechanic cap, friendly wrench-turn motion.
  */
 function MechanicNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
-  const rightArmRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
-    if (waveTimerRef.current > 0) {
-      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
-    }
-    if (rightArmRef.current) {
-      const working = waveTimerRef.current > 0;
-      const targetZ = working ? -2.0 + Math.sin(t * 11) * 0.42 : -0.3 + Math.sin(t * 2.2) * 0.06;
-      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
-    }
-    if (headRef.current) {
-      headRef.current.rotation.z = Math.sin(t * 1.7) * 0.04;
-    }
-  });
-
   return (
-    <group>
-      {/* Heavy work boots */}
-      <mesh position={[-0.055, 0.042, 0.015]} castShadow>
-        <sphereGeometry args={[0.046, 10, 10]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.88} />
-      </mesh>
-      <mesh position={[0.055, 0.042, 0.015]} castShadow>
-        <sphereGeometry args={[0.046, 10, 10]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.88} />
-      </mesh>
-      {/* Light gray tee + Navy Blue Overalls */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <capsuleGeometry args={[0.13, 0.22, 8, 12]} />
-        <meshStandardMaterial color="#1e3a8a" roughness={0.86} />
-      </mesh>
-      {/* Overall front bib + brass buckles */}
-      <RoundedBox args={[0.17, 0.2, 0.09]} radius={0.02} smoothness={2} position={[0, 0.28, 0.09]} castShadow>
-        <meshStandardMaterial color="#1d4ed8" roughness={0.88} />
-      </RoundedBox>
-      <mesh position={[-0.055, 0.36, 0.138]}>
-        <sphereGeometry args={[0.01, 8, 8]} />
-        <meshStandardMaterial color="#f59e0b" metalness={0.7} roughness={0.25} />
-      </mesh>
-      <mesh position={[0.055, 0.36, 0.138]}>
-        <sphereGeometry args={[0.01, 8, 8]} />
-        <meshStandardMaterial color="#f59e0b" metalness={0.7} roughness={0.25} />
-      </mesh>
-      {/* Red mechanic shop rag tucked in pocket */}
-      <mesh position={[0.09, 0.22, 0.12]} rotation={[0, 0, -0.3]}>
-        <boxGeometry args={[0.045, 0.09, 0.025]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.9} />
-      </mesh>
-      {/* Left arm */}
-      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.22]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#94a3b8" roughness={0.88} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.038, 10, 10]} />
-          <meshStandardMaterial color="#d8a27c" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Right arm holding silver wrench */}
-      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#94a3b8" roughness={0.88} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.038, 10, 10]} />
-          <meshStandardMaterial color="#d8a27c" roughness={0.82} />
-        </mesh>
-        {/* Silver wrench */}
-        <mesh position={[0.02, -0.22, 0.04]} rotation={[0.4, 0, 0.2]}>
+    <StylizedHumanoid
+      scale={0.9}
+      shirtColor="#94a3b8"
+      skinColor="#d8a27c"
+      apronColor="#1e3a8a"
+      hat="cap"
+      hatColor="#1e3a8a"
+      waveTimerRef={waveTimerRef}
+      blinkOffset={1.1}
+      rightHandProp={
+        <mesh position={[0.015, -0.05, 0.02]} rotation={[0.4, 0, 0.2]} castShadow>
           <boxGeometry args={[0.024, 0.14, 0.014]} />
           <meshStandardMaterial color="#cbd5e1" metalness={0.85} roughness={0.2} />
         </mesh>
-      </group>
-      {/* Head + Mechanic Cap */}
-      <group ref={headRef} position={[0, 0.64, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.135, 16, 16]} />
-          <meshStandardMaterial color="#d8a27c" roughness={0.82} />
-        </mesh>
-        <mesh position={[-0.042, 0.01, 0.12]}>
-          <sphereGeometry args={[0.017, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        <mesh position={[0.042, 0.01, 0.12]}>
-          <sphereGeometry args={[0.017, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        {/* Navy cap dome + visor */}
-        <mesh position={[0, 0.075, 0]} castShadow>
-          <sphereGeometry args={[0.138, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-          <meshStandardMaterial color="#1e3a8a" roughness={0.82} />
-        </mesh>
-        <mesh position={[0, 0.068, 0.11]} rotation={[0.15, 0, 0]} castShadow>
-          <boxGeometry args={[0.17, 0.022, 0.12]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.7} />
-        </mesh>
-      </group>
-    </group>
+      }
+    />
   );
 }
 
@@ -846,94 +681,18 @@ const OUTFIT_COLORS = ['#f43f5e', '#2563eb', '#10b981', '#eab308'] as const;
  * Unique Boutique Owner NPC: mint-green cardigan, cream scarf, dark bob hair, friendly wave.
  */
 function BoutiqueNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
-  const rightArmRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
-    if (waveTimerRef.current > 0) {
-      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
-    }
-    if (rightArmRef.current) {
-      const waving = waveTimerRef.current > 0;
-      const targetZ = waving ? -2.2 + Math.sin(t * 9.5) * 0.35 : -0.22 + Math.sin(t * 2.1) * 0.06;
-      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
-    }
-    if (headRef.current) {
-      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
-    }
-  });
-
   return (
-    <group>
-      {/* Shoes */}
-      <mesh position={[-0.05, 0.04, 0.015]} castShadow>
-        <sphereGeometry args={[0.042, 10, 10]} />
-        <meshStandardMaterial color="#7f1d1d" roughness={0.6} />
-      </mesh>
-      <mesh position={[0.05, 0.04, 0.015]} castShadow>
-        <sphereGeometry args={[0.042, 10, 10]} />
-        <meshStandardMaterial color="#7f1d1d" roughness={0.6} />
-      </mesh>
-      {/* Mint-Green Cardigan Dress Torso */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <capsuleGeometry args={[0.125, 0.22, 8, 12]} />
-        <meshStandardMaterial color="#34d399" roughness={0.85} />
-      </mesh>
-      {/* Cream Scarf */}
-      <mesh position={[0, 0.45, 0.02]} rotation={[0.15, 0, 0]}>
-        <torusGeometry args={[0.068, 0.018, 8, 16]} />
-        <meshStandardMaterial color="#fef3c7" roughness={0.88} />
-      </mesh>
-      {/* Left Arm */}
-      <group position={[-0.145, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.034, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#34d399" roughness={0.85} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.036, 10, 10]} />
-          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Right Arm (waves warmly) */}
-      <group ref={rightArmRef} position={[0.145, 0.41, 0]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.034, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#34d399" roughness={0.85} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.036, 10, 10]} />
-          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Head + Styled Bob Hair */}
-      <group ref={headRef} position={[0, 0.63, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.13, 16, 16]} />
-          <meshStandardMaterial color="#f2c4a2" roughness={0.82} />
-        </mesh>
-        <mesh position={[-0.04, 0.01, 0.115]}>
-          <sphereGeometry args={[0.016, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        <mesh position={[0.04, 0.01, 0.115]}>
-          <sphereGeometry args={[0.016, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        {/* Dark auburn bob hair cap */}
-        <mesh position={[0, 0.03, -0.025]} castShadow>
-          <sphereGeometry args={[0.142, 16, 14]} />
-          <meshStandardMaterial color="#4a2511" roughness={0.85} />
-        </mesh>
-        {/* Rose headband */}
-        <mesh position={[0, 0.1, 0.03]} rotation={[0.45, 0, 0]}>
-          <torusGeometry args={[0.115, 0.014, 8, 16, Math.PI]} />
-          <meshStandardMaterial color="#fb7185" roughness={0.5} />
-        </mesh>
-      </group>
-    </group>
+    <StylizedHumanoid
+      scale={0.9}
+      shirtColor="#34d399"
+      skinColor="#f2c4a2"
+      hairColor="#4a2511"
+      collarColor="#fef3c7"
+      hat="beret"
+      hatColor="#fb7185"
+      waveTimerRef={waveTimerRef}
+      blinkOffset={1.8}
+    />
   );
 }
 
@@ -1029,10 +788,10 @@ export function InteractiveClothingStore({
       </RoundedBox>
       {/* Stone Plinth & Sage-Teal Mansard Roof */}
       <RoundedBox args={[2.55, 0.2, 1.9]} radius={0.03} smoothness={2} position={[0, 0.1, 0]} receiveShadow>
-        <meshStandardMaterial color="#e7e5e4" roughness={0.9} />
+        <meshStandardMaterial color="#efeae3" map={textures.marbleColor} bumpMap={textures.marbleBump} bumpScale={0.008} roughness={0.8} />
       </RoundedBox>
       <RoundedBox args={[2.62, 0.24, 1.98]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
-        <meshStandardMaterial color="#2f6f62" roughness={0.82} />
+        <meshStandardMaterial color="#2f6f62" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.82} />
       </RoundedBox>
 
       {/* Iconic 3D Golden Coat Hanger Emblem Sign above Awning (zero text) */}
@@ -1066,7 +825,12 @@ export function InteractiveClothingStore({
             position={[-0.86 + i * 0.43, 0, 0]}
             castShadow
           >
-            <meshStandardMaterial color={i % 2 === 0 ? '#e11d48' : '#fff5f7'} roughness={0.85} />
+            <meshStandardMaterial
+              color={i % 2 === 0 ? '#e11d48' : '#fff5f7'}
+              bumpMap={textures.awningBump}
+              bumpScale={0.01}
+              roughness={0.86}
+            />
           </RoundedBox>
         ))}
       </group>
@@ -1239,94 +1003,17 @@ export function InteractiveClothingStore({
  * Unique Tech & Phone Shop Technician NPC: teal polo shirt, dark-rimmed glasses, ID lanyard, friendly wave.
  */
 function TechNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
-  const rightArmRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
-    if (waveTimerRef.current > 0) {
-      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
-    }
-    if (rightArmRef.current) {
-      const waving = waveTimerRef.current > 0;
-      const targetZ = waving ? -2.15 + Math.sin(t * 10) * 0.35 : -0.22 + Math.sin(t * 2) * 0.05;
-      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
-    }
-    if (headRef.current) {
-      headRef.current.rotation.z = Math.sin(t * 1.7) * 0.04;
-    }
-  });
-
   return (
-    <group>
-      {/* Sneakers */}
-      <mesh position={[-0.052, 0.04, 0.015]} castShadow>
-        <sphereGeometry args={[0.044, 10, 10]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.75} />
-      </mesh>
-      <mesh position={[0.052, 0.04, 0.015]} castShadow>
-        <sphereGeometry args={[0.044, 10, 10]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.75} />
-      </mesh>
-      {/* Teal Tech Polo Shirt */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <capsuleGeometry args={[0.128, 0.22, 8, 12]} />
-        <meshStandardMaterial color="#0284c7" roughness={0.82} />
-      </mesh>
-      {/* White ID Lanyard Badge */}
-      <mesh position={[0, 0.29, 0.132]}>
-        <boxGeometry args={[0.06, 0.08, 0.014]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.4} />
-      </mesh>
-      {/* Left Arm */}
-      <group position={[-0.148, 0.4, 0.01]} rotation={[0.15, 0, 0.2]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.82} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.037, 10, 10]} />
-          <meshStandardMaterial color="#f0c2a0" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Right Arm */}
-      <group ref={rightArmRef} position={[0.148, 0.41, 0]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.035, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.82} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.037, 10, 10]} />
-          <meshStandardMaterial color="#f0c2a0" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Head + Dark Glasses */}
-      <group ref={headRef} position={[0, 0.64, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.132, 16, 16]} />
-          <meshStandardMaterial color="#f0c2a0" roughness={0.82} />
-        </mesh>
-        {/* Glasses frames */}
-        <mesh position={[-0.044, 0.012, 0.126]}>
-          <torusGeometry args={[0.028, 0.007, 8, 14]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.35} />
-        </mesh>
-        <mesh position={[0.044, 0.012, 0.126]}>
-          <torusGeometry args={[0.028, 0.007, 8, 14]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.35} />
-        </mesh>
-        <mesh position={[0, 0.012, 0.128]}>
-          <boxGeometry args={[0.03, 0.008, 0.008]} />
-          <meshStandardMaterial color="#0f172a" />
-        </mesh>
-        {/* Neat dark hair */}
-        <mesh position={[0, 0.06, -0.015]} castShadow>
-          <sphereGeometry args={[0.136, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.85} />
-        </mesh>
-      </group>
-    </group>
+    <StylizedHumanoid
+      scale={0.9}
+      shirtColor="#0284c7"
+      skinColor="#f0c2a0"
+      hairColor="#1e293b"
+      glasses
+      glassesColor="#0f172a"
+      waveTimerRef={waveTimerRef}
+      blinkOffset={2.4}
+    />
   );
 }
 
@@ -1600,97 +1287,17 @@ export function InteractiveTechShop({
  * bright yellow hard hat, work boots, friendly wave.
  */
 function ConstructionWorkerNpc({ waveTimerRef }: { waveTimerRef: React.MutableRefObject<number> }) {
-  const rightArmRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    const dt = Math.min(delta, 0.05);
-    const t = state.clock.elapsedTime;
-    if (waveTimerRef.current > 0) {
-      waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
-    }
-    if (rightArmRef.current) {
-      const waving = waveTimerRef.current > 0;
-      const targetZ = waving ? -2.2 + Math.sin(t * 10) * 0.38 : -0.25 + Math.sin(t * 2.1) * 0.06;
-      rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetZ, dt * 8);
-    }
-    if (headRef.current) {
-      headRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
-    }
-  });
-
   return (
-    <group>
-      {/* Heavy tan work boots */}
-      <mesh position={[-0.055, 0.042, 0.015]} castShadow>
-        <sphereGeometry args={[0.046, 10, 10]} />
-        <meshStandardMaterial color="#78350f" roughness={0.88} />
-      </mesh>
-      <mesh position={[0.055, 0.042, 0.015]} castShadow>
-        <sphereGeometry args={[0.046, 10, 10]} />
-        <meshStandardMaterial color="#78350f" roughness={0.88} />
-      </mesh>
-      {/* High-Vis Safety Vest Torso */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <capsuleGeometry args={[0.132, 0.22, 8, 12]} />
-        <meshStandardMaterial color="#eab308" roughness={0.78} />
-      </mesh>
-      {/* Silver Reflective Vest Stripes */}
-      <mesh position={[0, 0.28, 0.128]}>
-        <boxGeometry args={[0.18, 0.03, 0.014]} />
-        <meshStandardMaterial color="#e2e8f0" emissive="#f8fafc" emissiveIntensity={0.35} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 0.22, 0.128]}>
-        <boxGeometry args={[0.18, 0.03, 0.014]} />
-        <meshStandardMaterial color="#e2e8f0" emissive="#f8fafc" emissiveIntensity={0.35} roughness={0.3} />
-      </mesh>
-      {/* Left Arm */}
-      <group position={[-0.15, 0.4, 0.01]} rotation={[0.15, 0, 0.22]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#334155" roughness={0.85} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.038, 10, 10]} />
-          <meshStandardMaterial color="#e2ab83" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Right Arm */}
-      <group ref={rightArmRef} position={[0.15, 0.41, 0]}>
-        <mesh position={[0, -0.08, 0]} castShadow>
-          <capsuleGeometry args={[0.036, 0.13, 6, 10]} />
-          <meshStandardMaterial color="#334155" roughness={0.85} />
-        </mesh>
-        <mesh position={[0, -0.17, 0]}>
-          <sphereGeometry args={[0.038, 10, 10]} />
-          <meshStandardMaterial color="#e2ab83" roughness={0.82} />
-        </mesh>
-      </group>
-      {/* Head + Bright Yellow Hard Hat */}
-      <group ref={headRef} position={[0, 0.64, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.134, 16, 16]} />
-          <meshStandardMaterial color="#e2ab83" roughness={0.82} />
-        </mesh>
-        <mesh position={[-0.042, 0.01, 0.12]}>
-          <sphereGeometry args={[0.017, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        <mesh position={[0.042, 0.01, 0.12]}>
-          <sphereGeometry args={[0.017, 10, 10]} />
-          <meshStandardMaterial color="#1c1917" roughness={0.15} />
-        </mesh>
-        {/* Hard hat dome + brim */}
-        <mesh position={[0, 0.078, 0]} castShadow>
-          <sphereGeometry args={[0.145, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
-          <meshStandardMaterial color="#facc15" roughness={0.35} />
-        </mesh>
-        <mesh position={[0, 0.068, 0.03]} castShadow>
-          <cylinderGeometry args={[0.165, 0.17, 0.022, 18]} />
-          <meshStandardMaterial color="#eab308" roughness={0.38} />
-        </mesh>
-      </group>
-    </group>
+    <StylizedHumanoid
+      scale={0.9}
+      shirtColor="#334155"
+      skinColor="#e2ab83"
+      apronColor="#eab308"
+      hat="hardhat"
+      hatColor="#facc15"
+      waveTimerRef={waveTimerRef}
+      blinkOffset={3.0}
+    />
   );
 }
 

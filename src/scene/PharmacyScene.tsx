@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { playRewardFanfare, playSoftErrorTone, playSuccessChime } from '../services/soundEngine';
 import { getCafeTextures } from './cafeTextures';
+import { StylizedHumanoid } from './StylizedCharacters';
+import { getWorldGeometries } from './worldGeometries';
 
 export interface PharmacySceneProps {
   visible: boolean;
@@ -26,10 +28,11 @@ export const PharmacyScene = memo(function PharmacyScene({
   const [hintVisible, setHintVisible] = useState(false);
   const crossRef = useRef<THREE.Group>(null);
   const trayGroupRef = useRef<THREE.Group>(null);
-  const pharmacistRef = useRef<THREE.Group>(null);
+  const pharmacistWaveRef = useRef(0);
   const completedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textures = useMemo(() => getCafeTextures(), []);
+  const worldGeos = useMemo(() => getWorldGeometries(), []);
 
   useEffect(() => {
     if (visible) {
@@ -70,10 +73,6 @@ export const PharmacyScene = memo(function PharmacyScene({
     if (crossRef.current) {
       crossRef.current.rotation.y = Math.sin(t * 1.1) * 0.25;
     }
-    if (pharmacistRef.current) {
-      pharmacistRef.current.position.y = 0.85 + Math.sin(t * 2.0) * 0.011;
-      pharmacistRef.current.rotation.z = Math.sin(t * 1.0) * 0.018;
-    }
     if (trayGroupRef.current) {
       if (step >= 3) {
         trayGroupRef.current.position.y = 0.9 + Math.sin(t * 4.2) * 0.016;
@@ -106,6 +105,7 @@ export const PharmacyScene = memo(function PharmacyScene({
     setStep(nextStep);
     onPlayAudio(audioKey);
     if (nextStep >= 3) {
+      pharmacistWaveRef.current = 2.2;
       playRewardFanfare();
       if (!completedRef.current) {
         completedRef.current = true;
@@ -120,10 +120,12 @@ export const PharmacyScene = memo(function PharmacyScene({
   };
 
   const ringColor = (targetStep: number) => (hintVisible && step === targetStep ? '#10b981' : '#cbd5e1');
+  const ringOpacity = (targetStep: number) => (hintVisible && step === targetStep ? 0.95 : 0.25);
 
   return (
     <group name="Pharmacy_Interior_Scene">
       <ContactShadows
+        key={step}
         frames={1}
         position={[0, 0.896, 0.16]}
         opacity={0.34}
@@ -179,75 +181,18 @@ export const PharmacyScene = memo(function PharmacyScene({
         </group>
       ))}
 
-      {/* Pharmacist NPC Behind Counter (expressive face, glasses, arms & breathing) */}
-      <group ref={pharmacistRef} position={[0, 0.85, -0.68]}>
-        <mesh position={[0, 0.34, 0]} castShadow>
-          <capsuleGeometry args={[0.16, 0.26, 8, 12]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.78} />
-        </mesh>
-        {/* Arms & hands */}
-        {[-0.2, 0.2].map((ax, i) => (
-          <group key={i} position={[ax, 0.36, 0.04]} rotation={[0.32, 0, i === 0 ? 0.18 : -0.18]}>
-            <mesh castShadow>
-              <capsuleGeometry args={[0.044, 0.16, 6, 10]} />
-              <meshStandardMaterial color="#ffffff" roughness={0.78} />
-            </mesh>
-            <mesh position={[0, -0.12, 0.02]} castShadow>
-              <sphereGeometry args={[0.04, 10, 10]} />
-              <meshStandardMaterial color="#e9b896" roughness={0.75} />
-            </mesh>
-          </group>
-        ))}
-        {/* Mint collar */}
-        <mesh position={[0, 0.5, 0.05]} rotation={[0.25, 0, 0]}>
-          <torusGeometry args={[0.11, 0.025, 8, 16]} />
-          <meshStandardMaterial color="#10b981" roughness={0.6} />
-        </mesh>
-        {/* Head + expressive face */}
-        <group position={[0, 0.68, 0]}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.145, 18, 18]} />
-            <meshStandardMaterial color="#e9b896" roughness={0.75} />
-          </mesh>
-          {/* Eyes with glossy catchlights + subtle glasses rims */}
-          {[-0.048, 0.048].map((ex, i) => (
-            <group key={i} position={[ex, 0.02, 0.128]}>
-              <mesh>
-                <sphereGeometry args={[0.018, 12, 12]} />
-                <meshStandardMaterial color="#1c1917" roughness={0.15} />
-              </mesh>
-              <mesh position={[0.005, 0.006, 0.014]}>
-                <sphereGeometry args={[0.006, 8, 8]} />
-                <meshBasicMaterial color="#ffffff" />
-              </mesh>
-              <mesh position={[0, 0, 0.014]}>
-                <torusGeometry args={[0.032, 0.004, 8, 18]} />
-                <meshStandardMaterial color="#0f766e" metalness={0.5} roughness={0.35} />
-              </mesh>
-            </group>
-          ))}
-          {/* Blush cheeks + cute nose + warm smile */}
-          {[-0.08, 0.08].map((cx, i) => (
-            <mesh key={`c-${i}`} position={[cx, -0.02, 0.118]}>
-              <sphereGeometry args={[0.022, 10, 10]} />
-              <meshStandardMaterial color="#f29489" transparent opacity={0.45} roughness={0.9} />
-            </mesh>
-          ))}
-          <mesh position={[0, -0.008, 0.142]}>
-            <sphereGeometry args={[0.017, 10, 10]} />
-            <meshStandardMaterial color="#d8a27c" roughness={0.8} />
-          </mesh>
-          <mesh position={[0, -0.048, 0.132]} rotation={[0, 0, Math.PI / 2]}>
-            <capsuleGeometry args={[0.01, 0.032, 4, 8]} />
-            <meshStandardMaterial color="#b91c1c" roughness={0.5} />
-          </mesh>
-        </group>
-        {/* Neat dark hair */}
-        <mesh position={[0, 0.74, -0.02]} castShadow>
-          <sphereGeometry args={[0.15, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-          <meshStandardMaterial color="#292524" roughness={0.85} />
-        </mesh>
-      </group>
+      {/* Unified StylizedHumanoid Pharmacist Behind Counter (glasses, blinking, celebration wave) */}
+      <StylizedHumanoid
+        position={[0, 0.85, -0.68]}
+        shirtColor="#ffffff"
+        skinColor="#e9b896"
+        hairColor="#292524"
+        collarColor="#10b981"
+        glasses
+        glassesColor="#0f766e"
+        waveTimerRef={pharmacistWaveRef}
+        blinkOffset={1.3}
+      />
 
       {/* Pharmacy Counter */}
       <RoundedBox args={[3.4, 0.86, 1.15]} radius={0.04} smoothness={3} position={[0, 0.43, 0.15]} castShadow receiveShadow>
@@ -262,53 +207,68 @@ export const PharmacyScene = memo(function PharmacyScene({
         <RoundedBox args={[0.88, 0.035, 0.52]} radius={0.015} smoothness={2} castShadow receiveShadow>
           <meshStandardMaterial color="#ffffff" roughness={0.45} />
         </RoundedBox>
-        {/* Collected 1: Thermometer */}
+        {/* Collected 1: Sculpted Digital Thermometer */}
         {step >= 1 && (
-          <group position={[-0.26, 0.05, 0]} rotation={[0, 0.2, Math.PI / 2]}>
+          <group position={[-0.26, 0.048, 0]} rotation={[0, 0.2, Math.PI / 2]}>
             <mesh castShadow>
-              <capsuleGeometry args={[0.026, 0.22, 8, 12]} />
-              <meshStandardMaterial color="#f8fafc" roughness={0.35} />
+              <capsuleGeometry args={[0.024, 0.2, 8, 12]} />
+              <meshPhysicalMaterial color="#f8fafc" roughness={0.22} clearcoat={0.7} />
+            </mesh>
+            {/* Stainless metallic sensor tip */}
+            <mesh position={[0, -0.135, 0]} castShadow>
+              <coneGeometry args={[0.014, 0.045, 12]} />
+              <meshStandardMaterial color="#e2e8f0" metalness={0.9} roughness={0.18} />
             </mesh>
             <mesh position={[0, 0.03, 0.024]}>
-              <boxGeometry args={[0.03, 0.09, 0.01]} />
+              <boxGeometry args={[0.028, 0.088, 0.008]} />
               <meshStandardMaterial color="#22c55e" emissive="#16a34a" emissiveIntensity={0.8} />
             </mesh>
           </group>
         )}
-        {/* Collected 2: Band-aid Box */}
+        {/* Collected 2: First-Aid Band-Aid Box (zero Z-fighting cross + handle) */}
         {step >= 2 && (
           <group position={[0.02, 0.08, 0]}>
             <RoundedBox args={[0.24, 0.13, 0.16]} radius={0.02} smoothness={2} castShadow>
-              <meshStandardMaterial color="#fef2f2" roughness={0.6} />
+              <meshPhysicalMaterial color="#fef2f2" roughness={0.42} clearcoat={0.35} />
             </RoundedBox>
             <mesh position={[0, 0.07, 0]}>
               <boxGeometry args={[0.09, 0.01, 0.03]} />
-              <meshStandardMaterial color="#dc2626" />
+              <meshStandardMaterial color="#dc2626" roughness={0.45} />
             </mesh>
-            <mesh position={[0, 0.07, 0]}>
+            <mesh position={[0, 0.0715, 0]}>
               <boxGeometry args={[0.03, 0.01, 0.09]} />
-              <meshStandardMaterial color="#dc2626" />
+              <meshStandardMaterial color="#dc2626" roughness={0.45} />
             </mesh>
           </group>
         )}
-        {/* Collected 3: Medicine Bottle */}
+        {/* Collected 3: Sculpted Amber Apothecary Medicine Bottle */}
         {step >= 3 && (
-          <group position={[0.28, 0.13, 0]}>
-            <mesh castShadow>
-              <cylinderGeometry args={[0.075, 0.075, 0.2, 16]} />
-              <meshStandardMaterial color="#f59e0b" roughness={0.4} />
+          <group position={[0.28, 0.018, 0]} scale={0.78}>
+            <mesh geometry={worldGeos.medicineBottle} castShadow>
+              <meshPhysicalMaterial
+                color="#d97706"
+                roughness={0.14}
+                clearcoat={0.92}
+                clearcoatRoughness={0.1}
+              />
             </mesh>
-            <mesh position={[0, 0.125, 0]} castShadow>
-              <cylinderGeometry args={[0.058, 0.058, 0.05, 14]} />
-              <meshStandardMaterial color="#ffffff" roughness={0.5} />
+            {/* Crisp paper prescription label */}
+            <mesh position={[0, 0.1, 0]}>
+              <cylinderGeometry args={[0.101, 0.101, 0.1, 20, 1, true]} />
+              <meshStandardMaterial color="#fffbeb" roughness={0.78} />
+            </mesh>
+            {/* Safety cap */}
+            <mesh position={[0, 0.278, 0]} castShadow>
+              <cylinderGeometry args={[0.062, 0.062, 0.048, 16]} />
+              <meshStandardMaterial color="#f8fafc" roughness={0.45} />
             </mesh>
           </group>
         )}
       </group>
 
-      {/* STATION 1: Digital Thermometer (left) */}
+      {/* STATION 1: Sculpted Digital Thermometer in Charging Dock (left) */}
       <group
-        position={[-1.08, 0.91, 0.1]}
+        position={[-1.08, 0.896, 0.1]}
         onClick={handleItemClick(0, 'pharm_step_thermo')}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -316,23 +276,41 @@ export const PharmacyScene = memo(function PharmacyScene({
         }}
         onPointerOut={() => setPointer(false)}
       >
-        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.2, 0.25, 24]} />
-          <meshBasicMaterial color={ringColor(0)} transparent opacity={step === 0 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(0)} transparent opacity={ringOpacity(0)} />
         </mesh>
-        <mesh position={[0, 0.16, 0]} rotation={[0, 0, -0.25]} castShadow>
-          <capsuleGeometry args={[0.045, 0.26, 8, 12]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.35} />
+        {/* Weighted dock stand */}
+        <mesh position={[0, 0.025, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.075, 0.092, 0.05, 18]} />
+          <meshStandardMaterial color="#0f766e" roughness={0.48} />
         </mesh>
-        <mesh position={[0.02, 0.18, 0.044]} rotation={[0, 0, -0.25]}>
-          <boxGeometry args={[0.05, 0.11, 0.012]} />
-          <meshStandardMaterial color="#38bdf8" emissive="#0284c7" emissiveIntensity={0.8} />
-        </mesh>
+        {/* Angled sculpted thermometer */}
+        <group position={[0, 0.17, 0]} rotation={[0, 0, -0.22]}>
+          <mesh castShadow>
+            <capsuleGeometry args={[0.042, 0.24, 8, 14]} />
+            <meshPhysicalMaterial color="#f8fafc" roughness={0.22} clearcoat={0.72} />
+          </mesh>
+          {/* Metallic probe tip */}
+          <mesh position={[0, -0.165, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.02, 0.06, 12]} />
+            <meshStandardMaterial color="#e2e8f0" metalness={0.9} roughness={0.16} />
+          </mesh>
+          {/* Recessed digital LCD screen */}
+          <mesh position={[0, 0.025, 0.041]}>
+            <boxGeometry args={[0.052, 0.115, 0.01]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.25} />
+          </mesh>
+          <mesh position={[0, 0.025, 0.047]}>
+            <planeGeometry args={[0.04, 0.095]} />
+            <meshStandardMaterial color="#38bdf8" emissive="#0284c7" emissiveIntensity={0.85} />
+          </mesh>
+        </group>
       </group>
 
       {/* STATION 2: First-Aid Band-Aid Box (center-back) */}
       <group
-        position={[0, 0.91, -0.22]}
+        position={[0, 0.896, -0.22]}
         onClick={handleItemClick(1, 'pharm_step_bandaid')}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -340,26 +318,32 @@ export const PharmacyScene = memo(function PharmacyScene({
         }}
         onPointerOut={() => setPointer(false)}
       >
-        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.22, 0.27, 24]} />
-          <meshBasicMaterial color={ringColor(1)} transparent opacity={step === 1 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(1)} transparent opacity={ringOpacity(1)} />
         </mesh>
-        <RoundedBox args={[0.34, 0.2, 0.22]} radius={0.025} smoothness={2} position={[0, 0.11, 0]} castShadow>
-          <meshStandardMaterial color="#ffffff" roughness={0.55} />
+        <RoundedBox args={[0.34, 0.2, 0.22]} radius={0.025} smoothness={3} position={[0, 0.1, 0]} castShadow receiveShadow>
+          <meshPhysicalMaterial color="#ffffff" roughness={0.4} clearcoat={0.4} />
         </RoundedBox>
-        <mesh position={[0, 0.12, 0.115]}>
-          <boxGeometry args={[0.14, 0.04, 0.01]} />
-          <meshStandardMaterial color="#dc2626" />
+        {/* Top carry handle */}
+        <mesh position={[0, 0.215, 0]} rotation={[0, 0, 0]} castShadow>
+          <torusGeometry args={[0.055, 0.012, 8, 16, Math.PI]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.5} />
         </mesh>
-        <mesh position={[0, 0.12, 0.115]}>
+        {/* Zero Z-fighting embossed red cross */}
+        <mesh position={[0, 0.105, 0.114]}>
+          <boxGeometry args={[0.14, 0.04, 0.01]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.45} />
+        </mesh>
+        <mesh position={[0, 0.105, 0.1155]}>
           <boxGeometry args={[0.04, 0.14, 0.01]} />
-          <meshStandardMaterial color="#dc2626" />
+          <meshStandardMaterial color="#dc2626" roughness={0.45} />
         </mesh>
       </group>
 
-      {/* STATION 3: Medicine Bottle (right) */}
+      {/* STATION 3: Sculpted Amber Medicine Bottle (right) */}
       <group
-        position={[1.08, 0.91, 0.1]}
+        position={[1.08, 0.896, 0.1]}
         onClick={handleItemClick(2, 'pharm_step_done')}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -367,18 +351,34 @@ export const PharmacyScene = memo(function PharmacyScene({
         }}
         onPointerOut={() => setPointer(false)}
       >
-        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.2, 0.25, 24]} />
-          <meshBasicMaterial color={ringColor(2)} transparent opacity={step === 2 ? 0.95 : 0.35} />
+          <meshBasicMaterial color={ringColor(2)} transparent opacity={ringOpacity(2)} />
         </mesh>
-        <mesh position={[0, 0.14, 0]} castShadow>
-          <cylinderGeometry args={[0.11, 0.11, 0.26, 16]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.4} />
-        </mesh>
-        <mesh position={[0, 0.3, 0]} castShadow>
-          <cylinderGeometry args={[0.085, 0.085, 0.07, 14]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.5} />
-        </mesh>
+        <group scale={1.15}>
+          <mesh geometry={worldGeos.medicineBottle} castShadow receiveShadow>
+            <meshPhysicalMaterial
+              color="#d97706"
+              roughness={0.12}
+              clearcoat={0.95}
+              clearcoatRoughness={0.08}
+            />
+          </mesh>
+          {/* Crisp prescription label wrap + green accent stripe */}
+          <mesh position={[0, 0.1, 0]}>
+            <cylinderGeometry args={[0.101, 0.101, 0.105, 22, 1, true]} />
+            <meshStandardMaterial color="#fffbeb" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.135, 0]}>
+            <cylinderGeometry args={[0.102, 0.102, 0.018, 22, 1, true]} />
+            <meshStandardMaterial color="#10b981" roughness={0.6} />
+          </mesh>
+          {/* Child-proof ribbed white safety cap */}
+          <mesh position={[0, 0.28, 0]} castShadow>
+            <cylinderGeometry args={[0.064, 0.064, 0.052, 18]} />
+            <meshStandardMaterial color="#f8fafc" bumpMap={textures.clayBump} bumpScale={0.004} roughness={0.42} />
+          </mesh>
+        </group>
       </group>
     </group>
   );

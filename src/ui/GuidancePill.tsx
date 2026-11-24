@@ -1,10 +1,19 @@
 import { getGuidanceCopy, type GuidanceContext } from '../domain/immersion';
+import type { NextStepRecommendation, SessionBucket } from '../domain/types';
+
+const BUCKET_LABELS: Record<SessionBucket, string> = {
+  spiral: 'Avanço',
+  retention: 'Revisão',
+  application: 'Aplicação',
+};
 
 interface GuidancePillProps {
   context: GuidanceContext;
   starCount: number;
   cefrBadge?: string;
   darkSurface?: boolean;
+  nextStep?: NextStepRecommendation;
+  onTriggerNextStep?: (step: NextStepRecommendation) => void;
 }
 
 /**
@@ -17,12 +26,17 @@ export function GuidancePill({
   starCount,
   cefrBadge,
   darkSurface = false,
+  nextStep,
+  onTriggerNextStep,
 }: GuidancePillProps) {
   const copy = getGuidanceCopy(context, starCount);
+  const showNextAction = Boolean(nextStep && onTriggerNextStep);
 
   return (
     <div
-      className={`guidance-pill ${darkSurface ? 'guidance-pill-dark' : ''}`}
+      className={`guidance-pill ${darkSurface ? 'guidance-pill-dark' : ''} ${
+        showNextAction ? 'guidance-pill-has-action' : ''
+      }`}
       data-immersion-tier={copy.tier}
       role="status"
       aria-live="polite"
@@ -47,6 +61,19 @@ export function GuidancePill({
           ),
         )}
       </span>
+      {nextStep && onTriggerNextStep && (
+        <button
+          type="button"
+          className={`guidance-next-btn bucket-${nextStep.bucket}`}
+          onClick={() => onTriggerNextStep(nextStep)}
+          title={nextStep.reason}
+          aria-label={`${BUCKET_LABELS[nextStep.bucket]}: ${nextStep.title}`}
+        >
+          <span className="guidance-next-bucket">{BUCKET_LABELS[nextStep.bucket]}</span>
+          <span className="guidance-next-title">{nextStep.title}</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      )}
     </div>
   );
 }

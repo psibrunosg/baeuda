@@ -63,6 +63,42 @@ export interface PbrTextureBundle {
   tileColor: THREE.CanvasTexture | null;
   tileBump: THREE.CanvasTexture | null;
   sunbeamAlpha: THREE.CanvasTexture | null;
+  brickColor: THREE.CanvasTexture | null;
+  brickBump: THREE.CanvasTexture | null;
+  marbleColor: THREE.CanvasTexture | null;
+  marbleBump: THREE.CanvasTexture | null;
+  awningBump: THREE.CanvasTexture | null;
+  darkWoodColor: THREE.CanvasTexture | null;
+  darkWoodBump: THREE.CanvasTexture | null;
+}
+
+/**
+ * Draws a radial gradient stamped seamlessly across toroidal tile boundaries (0..size).
+ */
+function fillSeamlessCircle(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  x: number,
+  y: number,
+  rad: number,
+  innerColor: string,
+  outerColor: string,
+) {
+  for (let ox = -1; ox <= 1; ox++) {
+    const cx = x + ox * size;
+    if (cx + rad < 0 || cx - rad > size) continue;
+    for (let oy = -1; oy <= 1; oy++) {
+      const cy = y + oy * size;
+      if (cy + rad < 0 || cy - rad > size) continue;
+      const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, rad);
+      grad.addColorStop(0, innerColor);
+      grad.addColorStop(1, outerColor);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 }
 
 function createWoodCounterMaps(): {
@@ -175,24 +211,30 @@ function createClayTactileMaps(): {
   r.fillStyle = '#c8c8c8';
   r.fillRect(0, 0, size, size);
 
-  // Soft broad hand-sculpted thumb depressions
+  // Soft broad hand-sculpted thumb depressions (seamless toroidal wrap)
   for (let i = 0; i < 140; i++) {
     const x = rand() * size;
     const y = rand() * size;
     const rad = 8 + rand() * 20;
     const bright = rand() > 0.5;
-    const grad = b.createRadialGradient(x, y, 1, x, y, rad);
-    grad.addColorStop(0, bright ? 'rgba(162,162,162,0.16)' : 'rgba(94,94,94,0.16)');
-    grad.addColorStop(1, 'rgba(128,128,128,0)');
-    b.fillStyle = grad;
-    b.beginPath();
-    b.arc(x, y, rad, 0, Math.PI * 2);
-    b.fill();
-
-    r.fillStyle = bright ? 'rgba(182,182,182,0.12)' : 'rgba(222,222,222,0.12)';
-    r.beginPath();
-    r.arc(x, y, rad * 0.9, 0, Math.PI * 2);
-    r.fill();
+    fillSeamlessCircle(
+      b,
+      size,
+      x,
+      y,
+      rad,
+      bright ? 'rgba(162,162,162,0.16)' : 'rgba(94,94,94,0.16)',
+      'rgba(128,128,128,0)',
+    );
+    fillSeamlessCircle(
+      r,
+      size,
+      x,
+      y,
+      rad * 0.9,
+      bright ? 'rgba(182,182,182,0.12)' : 'rgba(222,222,222,0.12)',
+      'rgba(200,200,200,0)',
+    );
   }
 
   // Fine artisanal ceramic/clay micro-speckle
@@ -228,25 +270,23 @@ function createPlasterWallMaps(): {
   b.fillStyle = '#808080';
   b.fillRect(0, 0, size, size);
 
-  // Soft lime-wash clouds
+  // Soft lime-wash clouds (seamless toroidal wrap)
   for (let i = 0; i < 160; i++) {
     const x = rand() * size;
     const y = rand() * size;
     const rad = 14 + rand() * 34;
     const warm = rand() > 0.5;
-    const grad = c.createRadialGradient(x, y, 2, x, y, rad);
-    grad.addColorStop(0, warm ? 'rgba(232, 206, 174, 0.15)' : 'rgba(255, 249, 238, 0.16)');
-    grad.addColorStop(1, 'rgba(244, 231, 212, 0)');
-    c.fillStyle = grad;
-    c.beginPath();
-    c.arc(x, y, rad, 0, Math.PI * 2);
-    c.fill();
-
+    fillSeamlessCircle(
+      c,
+      size,
+      x,
+      y,
+      rad,
+      warm ? 'rgba(232, 206, 174, 0.15)' : 'rgba(255, 249, 238, 0.16)',
+      'rgba(244, 231, 212, 0)',
+    );
     const bv = warm ? 112 : 146;
-    b.fillStyle = `rgba(${bv},${bv},${bv},0.16)`;
-    b.beginPath();
-    b.arc(x, y, rad * 0.65, 0, Math.PI * 2);
-    b.fill();
+    fillSeamlessCircle(b, size, x, y, rad * 0.65, `rgba(${bv},${bv},${bv},0.16)`, 'rgba(128,128,128,0)');
   }
 
   // Subtle horizontal ceramic tile backsplash hint in lower third
@@ -282,25 +322,23 @@ function createTerracottaMaps(): {
   b.fillStyle = '#808080';
   b.fillRect(0, 0, size, size);
 
-  // Subtle sun-baked stucco clouds (soft gradients, no harsh spots)
+  // Subtle sun-baked stucco clouds (seamless toroidal wrap)
   for (let i = 0; i < 140; i++) {
     const x = rand() * size;
     const y = rand() * size;
     const rad = 18 + rand() * 36;
     const warm = rand() > 0.45;
-    const grad = c.createRadialGradient(x, y, 2, x, y, rad);
-    grad.addColorStop(0, warm ? 'rgba(196, 86, 56, 0.09)' : 'rgba(248, 178, 144, 0.1)');
-    grad.addColorStop(1, 'rgba(217, 118, 88, 0)');
-    c.fillStyle = grad;
-    c.beginPath();
-    c.arc(x, y, rad, 0, Math.PI * 2);
-    c.fill();
-
+    fillSeamlessCircle(
+      c,
+      size,
+      x,
+      y,
+      rad,
+      warm ? 'rgba(196, 86, 56, 0.09)' : 'rgba(248, 178, 144, 0.1)',
+      'rgba(217, 118, 88, 0)',
+    );
     const bv = warm ? 114 : 142;
-    b.fillStyle = `rgba(${bv},${bv},${bv},0.12)`;
-    b.beginPath();
-    b.arc(x, y, rad * 0.6, 0, Math.PI * 2);
-    b.fill();
+    fillSeamlessCircle(b, size, x, y, rad * 0.6, `rgba(${bv},${bv},${bv},0.12)`, 'rgba(128,128,128,0)');
   }
 
   return {
@@ -574,6 +612,191 @@ function createSunbeamMap(): THREE.CanvasTexture | null {
   return tex;
 }
 
+/**
+ * Warm Tuscan running-bond brick masonry for Pizzeria oven, chimneys, and brick facades.
+ */
+function createBrickMaps(): {
+  color: THREE.CanvasTexture | null;
+  bump: THREE.CanvasTexture | null;
+} {
+  const size = 256;
+  const colorBuf = makeCanvas(size, size);
+  const bumpBuf = makeCanvas(size, size);
+  if (!colorBuf || !bumpBuf) return { color: null, bump: null };
+
+  const rand = mulberry32(909);
+  const { ctx: c } = colorBuf;
+  const { ctx: b } = bumpBuf;
+
+  // Warm sand mortar
+  c.fillStyle = '#c8baa6';
+  c.fillRect(0, 0, size, size);
+  b.fillStyle = '#383838';
+  b.fillRect(0, 0, size, size);
+
+  const rows = 8;
+  const cols = 4;
+  const rowH = size / rows;
+  const colW = size / cols;
+
+  for (let row = 0; row < rows; row++) {
+    const offset = (row % 2) * (colW * 0.5);
+    for (let col = -1; col <= cols; col++) {
+      const x = col * colW + offset + 2.5;
+      const y = row * rowH + 2.5;
+      const w = colW - 5;
+      const h = rowH - 5;
+      const shift = Math.round((rand() - 0.5) * 28);
+      c.fillStyle = `rgb(${182 + shift}, ${88 + Math.round(shift * 0.55)}, ${58 + Math.round(shift * 0.4)})`;
+      c.beginPath();
+      c.roundRect(x, y, w, h, 3);
+      c.fill();
+
+      const bv = 188 + Math.round((rand() - 0.5) * 26);
+      b.fillStyle = `rgb(${bv},${bv},${bv})`;
+      b.beginPath();
+      b.roundRect(x, y, w, h, 3);
+      b.fill();
+    }
+  }
+
+  return {
+    color: toTexture(colorBuf.canvas, { color: true, repeatX: 2, repeatY: 2 }),
+    bump: toTexture(bumpBuf.canvas, { color: false, repeatX: 2, repeatY: 2 }),
+  };
+}
+
+/**
+ * Carrara-inspired veined white marble for Pizzeria prep counter, stone benches, and fountain rims.
+ */
+function createMarbleMaps(): {
+  color: THREE.CanvasTexture | null;
+  bump: THREE.CanvasTexture | null;
+} {
+  const size = 256;
+  const colorBuf = makeCanvas(size, size);
+  const bumpBuf = makeCanvas(size, size);
+  if (!colorBuf || !bumpBuf) return { color: null, bump: null };
+
+  const rand = mulberry32(1010);
+  const { ctx: c } = colorBuf;
+  const { ctx: b } = bumpBuf;
+
+  c.fillStyle = '#f6f4ef';
+  c.fillRect(0, 0, size, size);
+  b.fillStyle = '#848484';
+  b.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 24; i++) {
+    const y0 = rand() * size;
+    const amp = 8 + rand() * 20;
+    const freq = ((1 + (i % 2)) * Math.PI * 2) / size;
+    const phase = rand() * Math.PI * 2;
+    c.strokeStyle = i % 3 === 0 ? 'rgba(148, 142, 134, 0.22)' : 'rgba(190, 184, 174, 0.16)';
+    c.lineWidth = 0.8 + rand() * 2.2;
+    c.beginPath();
+    for (let x = 0; x <= size; x += 8) {
+      const yy = (y0 + Math.sin(x * freq + phase) * amp + size) % size;
+      if (x === 0) c.moveTo(x, yy);
+      else c.lineTo(x, yy);
+    }
+    c.stroke();
+
+    b.strokeStyle = 'rgba(116,116,116,0.22)';
+    b.lineWidth = 1.2;
+    b.beginPath();
+    for (let x = 0; x <= size; x += 8) {
+      const yy = (y0 + Math.sin(x * freq + phase) * amp + size) % size;
+      if (x === 0) b.moveTo(x, yy);
+      else b.lineTo(x, yy);
+    }
+    b.stroke();
+  }
+
+  return {
+    color: toTexture(colorBuf.canvas, { color: true, repeatX: 2, repeatY: 1 }),
+    bump: toTexture(bumpBuf.canvas, { color: false, repeatX: 2, repeatY: 1 }),
+  };
+}
+
+/**
+ * Woven canvas fabric micro-bump for shop awnings, parasols, and fabric canopies.
+ */
+function createAwningFabricBump(): THREE.CanvasTexture | null {
+  const size = 128;
+  const buf = makeCanvas(size, size);
+  if (!buf) return null;
+
+  const { ctx: b } = buf;
+  b.fillStyle = '#808080';
+  b.fillRect(0, 0, size, size);
+
+  for (let y = 0; y < size; y += 4) {
+    b.fillStyle = y % 8 === 0 ? 'rgba(165,165,165,0.42)' : 'rgba(98,98,98,0.35)';
+    b.fillRect(0, y, size, 2);
+  }
+  for (let x = 0; x < size; x += 4) {
+    b.fillStyle = x % 8 === 0 ? 'rgba(155,155,155,0.38)' : 'rgba(105,105,105,0.32)';
+    b.fillRect(x, 0, 2, size);
+  }
+
+  return toTexture(buf.canvas, { color: false, repeatX: 4, repeatY: 4 });
+}
+
+/**
+ * Deep walnut timber grain for shop trim, bookshop shelves, doors, and benches.
+ */
+function createDarkWoodMaps(): {
+  color: THREE.CanvasTexture | null;
+  bump: THREE.CanvasTexture | null;
+} {
+  const size = 256;
+  const colorBuf = makeCanvas(size, size);
+  const bumpBuf = makeCanvas(size, size);
+  if (!colorBuf || !bumpBuf) return { color: null, bump: null };
+
+  const rand = mulberry32(1111);
+  const { ctx: c } = colorBuf;
+  const { ctx: b } = bumpBuf;
+
+  c.fillStyle = '#5c3a24';
+  c.fillRect(0, 0, size, size);
+  b.fillStyle = '#808080';
+  b.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 90; i++) {
+    const gy = rand() * size;
+    const dark = rand() > 0.42;
+    const amp = 1.2 + rand() * 2.5;
+    const freq = ((1 + (i % 2)) * Math.PI * 2) / size;
+    const phase = rand() * Math.PI * 2;
+    c.strokeStyle = dark ? 'rgba(42, 22, 12, 0.34)' : 'rgba(128, 86, 54, 0.24)';
+    c.lineWidth = 1 + rand() * 1.6;
+    c.beginPath();
+    for (let x = 0; x <= size; x += 8) {
+      const yy = gy + Math.sin(x * freq + phase) * amp;
+      if (x === 0) c.moveTo(x, yy);
+      else c.lineTo(x, yy);
+    }
+    c.stroke();
+
+    b.strokeStyle = dark ? 'rgba(92,92,92,0.4)' : 'rgba(160,160,160,0.3)';
+    b.lineWidth = 1.1;
+    b.beginPath();
+    for (let x = 0; x <= size; x += 8) {
+      const yy = gy + Math.sin(x * freq + phase) * amp;
+      if (x === 0) b.moveTo(x, yy);
+      else b.lineTo(x, yy);
+    }
+    b.stroke();
+  }
+
+  return {
+    color: toTexture(colorBuf.canvas, { color: true, repeatX: 2, repeatY: 2 }),
+    bump: toTexture(bumpBuf.canvas, { color: false, repeatX: 2, repeatY: 2 }),
+  };
+}
+
 let cachedTextures: PbrTextureBundle | null = null;
 
 export function getCafeTextures(): PbrTextureBundle {
@@ -586,6 +809,9 @@ export function getCafeTextures(): PbrTextureBundle {
     const crate = createWoodCrateMaps();
     const floor = createFloorPlankMaps();
     const tile = createTileBacksplashMaps();
+    const brick = createBrickMaps();
+    const marble = createMarbleMaps();
+    const darkWood = createDarkWoodMaps();
 
     cachedTextures = {
       woodCounterColor: wood.color,
@@ -607,6 +833,13 @@ export function getCafeTextures(): PbrTextureBundle {
       tileColor: tile.color,
       tileBump: tile.bump,
       sunbeamAlpha: createSunbeamMap(),
+      brickColor: brick.color,
+      brickBump: brick.bump,
+      marbleColor: marble.color,
+      marbleBump: marble.bump,
+      awningBump: createAwningFabricBump(),
+      darkWoodColor: darkWood.color,
+      darkWoodBump: darkWood.bump,
     };
   }
   return cachedTextures;

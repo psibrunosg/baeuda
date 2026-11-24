@@ -12,8 +12,12 @@ import type {
   CafeCycleId,
   ConceptId,
   DrinkChoice,
+  InteriorId,
   LearnerProfile,
+  LocationId,
   OralComfort,
+  PedagogicalEvidence,
+  SessionBucket,
 } from './types';
 
 export interface Lesson1Outcome {
@@ -257,6 +261,187 @@ export function promoteConceptToVoice(
 }
 
 const SRS_INTERVAL_LADDER_HOURS = [4, 24, 72, 168, 336] as const;
+const MAX_RECENT_SESSION_BUCKETS = 20;
+
+function inferSessionBucket(evidence: PedagogicalEvidence): SessionBucket {
+  if (evidence.bucket) return evidence.bucket;
+  if (evidence.mode === 'srs' || evidence.contextId.includes('mistake')) {
+    return 'retention';
+  }
+  if (evidence.mode === 'story' || evidence.mode === 'talk' || evidence.completedMilestoneId) {
+    return 'application';
+  }
+  return 'spiral';
+}
+
+function inferOriginLocation(
+  explicit: LocationId | undefined,
+  interiorId: InteriorId | undefined,
+): LocationId {
+  if (explicit) return explicit;
+  if (interiorId === 'market') return 'market';
+  if (interiorId === 'plaza') return 'plaza';
+  return 'cafe';
+}
+
+function appendUnique<T>(list: readonly T[] | undefined, item: T): T[] {
+  const prev = list ?? [];
+  return prev.includes(item) ? [...prev] : [...prev, item];
+}
+
+/**
+ * Unified pedagogical memory recorder across all Baeuda modes
+ * (`interior_3d` including Pizzeria/Pharmacy, `street`, `practice`, `story`, `talk`, `srs`).
+ *
+ * Updates concept constellation (`contextsSeen`, `lastMode`, `stage` up to `fluent`,
+ * `reviewCount`, `intervalHours`), completion records, continuity rhythm buckets,
+ * and CEFR-driven district unlocks.
+ */
+export function recordPedagogicalEvidence(
+  profile: LearnerProfile,
+  evidence: PedagogicalEvidence,
+): LearnerProfile {
+  const succeeded = evidence.succeeded ?? true;
+  const neededHint = evidence.neededHint ?? false;
+  const producedOutput = evidence.producedOutput ?? false;
+  const originLocation = inferOriginLocation(evidence.originLocation, evidence.interiorId);
+  const bucket = inferSessionBucket(evidence);
+
+  let nextConstellation = { ...profile.constellation };
+
+  for (const conceptId of evidence.concepts) {
+    const existing = nextConstellation[conceptId];
+    let targetStage: AcquisitionStage;
+    if (!succeeded) {
+      targetStage = existing?.stage ?? 'seed';
+    } else if (producedOutput || evidence.mode === 'talk') {
+      targetStage = 'voice';
+    } else if (neededHint || evidence.mode === 'street') {
+      targetStage = 'seed';
+    } else {
+      targetStage = 'root';
+    }
+
+    const nextReviewCount = succeeded
+      ? (existing?.reviewCount ?? 0) + 1
+      : existing?.reviewCount ?? 0;
+    const ladderInterval =
+      SRS_INTERVAL_LADDER_HOURS[
+        Math.min(nextReviewCount, SRS_INTERVAL_LADDER_HOURS.length - 1)
+      ];
+    const nextIntervalHours = succeeded ? ladderInterval : 4;
+
+    nextConstellation = upsertConceptNode(
+      nextConstellation,
+      conceptId,
+      targetStage,
+      neededHint || !succeeded,
+      originLocation,
+      evidence.nowIso,
+      {
+        contextId: evidence.contextId,
+        mode: evidence.mode,
+        succeeded,
+        reviewCount: nextReviewCount,
+        intervalHours: nextIntervalHours,
+      },
+    );
+
+    const updated = nextConstellation[conceptId];
+    if (updated && updated.stage === 'fluent' && (updated.intervalHours ?? 0) < 168) {
+      nextConstellation[conceptId] = {
+        ...updated,
+        intervalHours: 168,
+      };
+    }
+  }
+
+  let completedLessonIds = profile.completedLessonIds;
+  let completedPracticeUnitIds = profile.completedPracticeUnitIds;
+  let completedStoryIds = profile.completedStoryIds;
+  let completedDialogueIds = profile.completedDialogueIds;
+  let completedInteriors = profile.completedInteriors;
+  let completedMilestoneIds = profile.completedMilestoneIds;
+  let streetDiscoveries = profile.streetDiscoveries;
+  let locations = { ...profile.locations };
+
+  if (succeeded) {
+    if (evidence.interiorId) {
+      completedInteriors = appendUnique(completedInteriors, evidence.interiorId);
+      if (evidence.interiorId === 'cafe') {
+        locations.cafe = 'familiar';
+      } else if (evidence.interiorId === 'market') {
+        locations.market = 'familiar';
+        if (locations.plaza === 'unexplored') {
+          locations.plaza = 'discovered';
+        }
+      } else if (evidence.interiorId === 'plaza') {
+        locations.plaza = 'familiar';
+      } else if (evidence.interiorId === 'pizzeria') {
+        streetDiscoveries = appendUnique(streetDiscoveries, 'world_pizzeria_kitchen');
+      } else if (evidence.interiorId === 'pharmacy') {
+        streetDiscoveries = appendUnique(streetDiscoveries, 'world_pharmacy_counter');
+      }
+    }
+
+    if (evidence.completedActivityId) {
+      if (evidence.mode === 'practice' && !evidence.contextId.includes('mistake')) {
+        completedPracticeUnitIds = appendUnique(
+          completedPracticeUnitIds,
+          evidence.completedActivityId,
+        );
+      } else if (evidence.mode === 'story') {
+        completedStoryIds = appendUnique(completedStoryIds, evidence.completedActivityId);
+      } else if (evidence.mode === 'street') {
+        streetDiscoveries = appendUnique(streetDiscoveries, evidence.completedActivityId);
+      } else if (evidence.mode === 'interior_3d') {
+        completedLessonIds = appendUnique(completedLessonIds, evidence.completedActivityId);
+      }
+    }
+
+    if (evidence.completedDialogueId) {
+      completedDialogueIds = appendUnique(completedDialogueIds, evidence.completedDialogueId);
+    }
+
+    if (evidence.completedMilestoneId) {
+      completedMilestoneIds = appendUnique(completedMilestoneIds, evidence.completedMilestoneId);
+    }
+  }
+
+  const prevBuckets = profile.recentSessionBuckets ?? [];
+  const recentSessionBuckets = [...prevBuckets, bucket].slice(-MAX_RECENT_SESSION_BUCKETS);
+
+  const draft: LearnerProfile = {
+    ...profile,
+    oralComfort: succeeded && producedOutput ? 'vocal' : profile.oralComfort,
+    completedLessonIds,
+    ...(completedPracticeUnitIds !== undefined ? { completedPracticeUnitIds } : {}),
+    ...(completedStoryIds !== undefined ? { completedStoryIds } : {}),
+    ...(completedDialogueIds !== undefined ? { completedDialogueIds } : {}),
+    ...(completedInteriors !== undefined ? { completedInteriors } : {}),
+    ...(completedMilestoneIds !== undefined ? { completedMilestoneIds } : {}),
+    ...(streetDiscoveries !== undefined ? { streetDiscoveries } : {}),
+    recentSessionBuckets,
+    locations,
+    constellation: nextConstellation,
+  };
+
+  const progress = evaluateCefrProgress(draft);
+  return {
+    ...draft,
+    locations: {
+      ...draft.locations,
+      market:
+        progress.marketUnlocked && draft.locations.market === 'unexplored'
+          ? 'discovered'
+          : draft.locations.market,
+      plaza:
+        progress.plazaUnlocked && draft.locations.plaza === 'unexplored'
+          ? 'discovered'
+          : draft.locations.plaza,
+    },
+  };
+}
 
 export function applySrsReviewOutcome(
   profile: LearnerProfile,
@@ -267,7 +452,12 @@ export function applySrsReviewOutcome(
   let nextConstellation = { ...profile.constellation };
   for (const conceptId of reviewedConceptIds) {
     const existing = nextConstellation[conceptId];
-    const nextStage: AcquisitionStage = existing?.stage === 'voice' ? 'voice' : 'root';
+    const nextStage: AcquisitionStage =
+      existing?.stage === 'fluent'
+        ? 'fluent'
+        : existing?.stage === 'voice'
+          ? 'voice'
+          : 'root';
     const nextReviewCount = (existing?.reviewCount ?? 0) + 1;
     const nextIntervalHours =
       SRS_INTERVAL_LADDER_HOURS[
@@ -280,15 +470,13 @@ export function applySrsReviewOutcome(
       false,
       existing?.originLocation ?? 'cafe',
       nowIso,
-    );
-    const updatedNode = nextConstellation[conceptId];
-    if (updatedNode) {
-      nextConstellation[conceptId] = {
-        ...updatedNode,
+      {
+        mode: 'srs',
+        succeeded: true,
         reviewCount: nextReviewCount,
-        intervalHours: nextIntervalHours,
-      };
-    }
+        intervalHours: nextStage === 'fluent' ? Math.max(nextIntervalHours, 168) : nextIntervalHours,
+      },
+    );
   }
   return {
     ...profile,

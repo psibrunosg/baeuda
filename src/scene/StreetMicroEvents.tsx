@@ -276,10 +276,10 @@ function PatioUmbrellaEvent({
 export function StreetMicroEvents({ weather, onTriggerAudio }: StreetMicroEventsProps) {
   return (
     <group name="Street_Micro_Events">
-      <MailboxEvent position={[1.92, 0.06, 0.85]} onTriggerAudio={onTriggerAudio} />
-      <RolledAppleEvent position={[-2.55, 0.06, 0.72]} onTriggerAudio={onTriggerAudio} />
+      <MailboxEvent position={[1.92, 0.06, -2.2]} onTriggerAudio={onTriggerAudio} />
+      <RolledAppleEvent position={[-2.45, 0.06, -2.32]} onTriggerAudio={onTriggerAudio} />
       <PatioUmbrellaEvent
-        position={[-1.62, 0.06, 0.37]}
+        position={[-1.62, 0.06, -2.68]}
         weather={weather}
         onTriggerAudio={onTriggerAudio}
       />

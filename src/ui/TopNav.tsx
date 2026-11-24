@@ -22,7 +22,7 @@ function formatClock(totalSeconds: number): string {
 
 export function TopNav({
   activeView,
-  cameraMode = 'third_person',
+  cameraMode = 'fixed_2_5d',
   starCount,
   immersionSeconds,
   coins,
@@ -31,8 +31,7 @@ export function TopNav({
   onCycleCameraMode,
   onOpenWardrobe,
 }: TopNavProps) {
-  const cameraIcon =
-    cameraMode === 'first_person' ? '👁' : cameraMode === 'overview' ? '🛰' : '🚶';
+  const cameraIcon = cameraMode === 'overview' ? '🛰' : '🚶';
 
   return (
     <nav className="top-nav" aria-label="Navigation">

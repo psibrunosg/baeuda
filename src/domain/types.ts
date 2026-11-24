@@ -27,7 +27,9 @@ export type ConceptId =
   | 'fast'
   | 'slow';
 
-export type CefrLevel = 'pre_a1' | 'a1' | 'a2';
+export type CefrLevel = 'pre_a1' | 'a1' | 'a2' | 'b1';
+
+export type CefrLabel = 'Pre-A1' | 'A1' | 'A2' | 'B1';
 
 export type CafeCycleId =
   | 'cafe_c1_drinks'
@@ -36,13 +38,131 @@ export type CafeCycleId =
   | 'cafe_pre_a1_shift'
   | 'cafe_a1_spiral';
 
-export type AcquisitionStage = 'seed' | 'root' | 'voice';
+export type AcquisitionStage = 'seed' | 'root' | 'voice' | 'fluent';
 
 export type DrinkChoice = 'hot_coffee' | 'cold_water' | 'cold_coffee';
 
 export type OralComfort = 'unknown' | 'silent' | 'vocal';
 
 export type LocationId = 'cafe' | 'market' | 'plaza';
+
+export type InteriorId = 'cafe' | 'market' | 'plaza' | 'pizzeria' | 'pharmacy';
+
+export type PedagogicalMode =
+  | 'interior_3d'
+  | 'street'
+  | 'practice'
+  | 'story'
+  | 'talk'
+  | 'srs';
+
+export type SessionBucket = 'spiral' | 'retention' | 'application';
+
+export interface PedagogicalEvidence {
+  mode: PedagogicalMode;
+  /** Unique context identifier (e.g. 'cafe_c1_drinks', 'pizzeria', 'unit_1_cafe', 'story_missing_cake', 'talk_cafe', 'srs_review') */
+  contextId: string;
+  /** Concepts exercised during this interaction */
+  concepts: readonly ConceptId[];
+  /** Whether the learner succeeded (default: true) */
+  succeeded?: boolean;
+  /** Whether the learner needed a hint or recast (default: false) */
+  neededHint?: boolean;
+  /** Whether the learner produced active output (speaking, sentence building, dialogue reply) */
+  producedOutput?: boolean;
+  /** Optional session rhythm bucket; inferred from `mode` if omitted */
+  bucket?: SessionBucket;
+  /** Optional interior completed during this interaction */
+  interiorId?: InteriorId;
+  /** Optional activity/lesson ID to add to `completedLessonIds` */
+  completedActivityId?: string;
+  /** Optional dialogue scenario ID to add to `completedDialogueIds` */
+  completedDialogueId?: string;
+  /** Optional neighborhood milestone ID to add to `completedMilestoneIds` */
+  completedMilestoneId?: string;
+  /** Optional origin location fallback for newly created ConceptNodes */
+  originLocation?: LocationId;
+  /** ISO timestamp of the evidence */
+  nowIso: string;
+}
+
+export type NextStepActionTarget =
+  | { kind: 'enter_interior'; interiorId: InteriorId; cafeCycleId?: CafeCycleId }
+  | { kind: 'open_practice'; unitId?: string; mistakesOnly?: boolean }
+  | { kind: 'open_srs' }
+  | { kind: 'open_story'; storyId?: string }
+  | { kind: 'open_talk'; scenarioId?: string }
+  | { kind: 'explore_street'; minDiscoveries?: number };
+
+export interface NextStepRecommendation {
+  id: string;
+  bucket: SessionBucket;
+  title: string;
+  subtitle: string;
+  reason: string;
+  cefrLevel: CefrLevel;
+  target: NextStepActionTarget;
+  /** Deterministic urgency/priority score (0-100) */
+  priority: number;
+}
+
+export type CurriculumMilestoneId =
+  | 'pre_a1_graduation_shift'
+  | 'a1_market_fair_day'
+  | 'a2_festival_night'
+  | 'b1_neighborhood_assembly';
+
+export interface CurriculumMilestone {
+  id: CurriculumMilestoneId;
+  level: CefrLevel;
+  title: string;
+  englishTitle: string;
+  summary: string;
+  status: 'playable' | 'planned_phase_2' | 'planned_phase_3';
+  primaryMode: PedagogicalMode;
+  primaryInteriorId?: InteriorId;
+  /** Cycle, lesson, or milestone completion key */
+  completionKey: string;
+  readinessCriteria: {
+    minConceptsAtLeastRoot: number;
+    minConceptsAtLeastVoice?: number;
+    minConceptsFluent?: number;
+    requiredInteriors?: readonly InteriorId[];
+    requiredCafeCycles?: readonly CafeCycleId[];
+    minStreetDiscoveries?: number;
+  };
+}
+
+export interface CurriculumLevelSpec {
+  level: CefrLevel;
+  label: CefrLabel;
+  order: number;
+  cognitiveStage: string;
+  cognitiveStageEn: string;
+  communicativeActs: readonly string[];
+  focusOnForm: readonly string[];
+  interiors: readonly InteriorId[];
+  shops: readonly string[];
+  cafeCycles: readonly CafeCycleId[];
+  coreConcepts: readonly ConceptId[];
+  practiceUnitIds: readonly string[];
+  storyIds: readonly string[];
+  dialogueScenarioIds: readonly string[];
+  milestone: CurriculumMilestone;
+}
+
+export type BiomeMapId =
+  | 'town'
+  | 'farm'
+  | 'mountain'
+  | 'cavern'
+  | 'beach_island'
+  | 'station'
+  | 'festival';
+
+export type InteriorMapId = 'interior_house_leo';
+
+export type WorldMapId = BiomeMapId | InteriorMapId;
 
 export type LocationStatus = 'unexplored' | 'discovered' | 'familiar';
 
@@ -54,6 +174,10 @@ export interface ConceptNode {
   lastContactAt: string;
   reviewCount?: number;
   intervalHours?: number;
+  /** Distinct pedagogical contexts where this concept was successfully used */
+  contextsSeen?: string[];
+  /** Last pedagogical mode in which this concept was exercised */
+  lastMode?: PedagogicalMode;
 }
 
 export type ConstellationEdgeKind = 'situational' | 'contrast' | 'narrative';
@@ -100,7 +224,13 @@ export interface LearnerProfile {
   mistakeExerciseIds?: string[];
   completedPracticeUnitIds?: string[];
   completedStoryIds?: string[];
+  completedDialogueIds?: string[];
+  completedInteriors?: InteriorId[];
+  completedMilestoneIds?: string[];
+  recentSessionBuckets?: SessionBucket[];
   dailyQuests?: DailyQuestState;
+  currentMapId?: WorldMapId;
+  visitedMapIds?: WorldMapId[];
   locations: Record<LocationId, LocationStatus>;
   constellation: Partial<Record<ConceptId, ConceptNode>>;
 }
@@ -314,7 +444,28 @@ export type SpeechKey =
   | 'a2_go_straight'
   | 'a2_yesterday_went'
   | 'a2_bought_bread'
-  | 'a2_asked_help';
+  | 'a2_asked_help'
+  | HomeSpeechKey
+  | FarmSpeechKey;
+
+export type HomeSpeechKey =
+  | 'home_sofa'
+  | 'home_lamp_on'
+  | 'home_lamp_off'
+  | 'home_fridge'
+  | 'home_kettle'
+  | 'home_bed'
+  | 'home_bookshelf'
+  | 'home_wardrobe';
+
+export type FarmSpeechKey =
+  | 'farm_cow'
+  | 'farm_chicken'
+  | 'farm_horse'
+  | 'farm_water_crop'
+  | 'farm_harvest'
+  | 'farm_tractor'
+  | 'farm_barn';
 
 export interface CounterDemoBeat {
   prop: PropName;
