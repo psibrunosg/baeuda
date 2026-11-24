@@ -26,6 +26,7 @@ export const PharmacyScene = memo(function PharmacyScene({
   const [hintVisible, setHintVisible] = useState(false);
   const crossRef = useRef<THREE.Group>(null);
   const trayGroupRef = useRef<THREE.Group>(null);
+  const pharmacistRef = useRef<THREE.Group>(null);
   const completedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textures = useMemo(() => getCafeTextures(), []);
@@ -68,6 +69,10 @@ export const PharmacyScene = memo(function PharmacyScene({
     const t = state.clock.elapsedTime;
     if (crossRef.current) {
       crossRef.current.rotation.y = Math.sin(t * 1.1) * 0.25;
+    }
+    if (pharmacistRef.current) {
+      pharmacistRef.current.position.y = 0.85 + Math.sin(t * 2.0) * 0.011;
+      pharmacistRef.current.rotation.z = Math.sin(t * 1.0) * 0.018;
     }
     if (trayGroupRef.current) {
       if (step >= 3) {
@@ -127,34 +132,35 @@ export const PharmacyScene = memo(function PharmacyScene({
         far={0.8}
         color="#0f3f3c"
       />
-      {/* Clean Mint & White Clinical Floor & Back Wall */}
+      {/* Clean Mint & White Clinical Tiled Floor & Back Wall */}
       <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[10, 8]} />
         <meshStandardMaterial
           color="#e2e8f0"
-          bumpMap={textures.plasterBump}
-          bumpScale={0.006}
-          roughness={0.75}
+          map={textures.tileColor}
+          bumpMap={textures.tileBump}
+          bumpScale={0.008}
+          roughness={0.55}
         />
       </mesh>
       <mesh position={[0, 2.2, -1.75]} receiveShadow>
         <boxGeometry args={[9.5, 4.6, 0.2]} />
         <meshStandardMaterial
           color="#f0fdf4"
-          map={textures.plasterColor}
-          bumpMap={textures.plasterBump}
-          bumpScale={0.008}
-          roughness={0.82}
+          map={textures.tileColor}
+          bumpMap={textures.tileBump}
+          bumpScale={0.006}
+          roughness={0.72}
         />
       </mesh>
 
-      {/* Glowing Green Pharmacy Cross Wall Emblem */}
+      {/* Glowing Green Pharmacy Cross Wall Emblem (triggers selective Bloom) */}
       <group ref={crossRef} position={[0, 2.1, -1.55]}>
         <RoundedBox args={[0.7, 0.22, 0.08]} radius={0.03} smoothness={2}>
-          <meshStandardMaterial color="#10b981" emissive="#059669" emissiveIntensity={0.85} />
+          <meshStandardMaterial color="#34d399" emissive="#10b981" emissiveIntensity={1.4} toneMapped={false} />
         </RoundedBox>
         <RoundedBox args={[0.22, 0.7, 0.08]} radius={0.03} smoothness={2}>
-          <meshStandardMaterial color="#10b981" emissive="#059669" emissiveIntensity={0.85} />
+          <meshStandardMaterial color="#34d399" emissive="#10b981" emissiveIntensity={1.4} toneMapped={false} />
         </RoundedBox>
       </group>
 
@@ -173,8 +179,8 @@ export const PharmacyScene = memo(function PharmacyScene({
         </group>
       ))}
 
-      {/* Pharmacist NPC Behind Counter (expressive face, glasses & arms) */}
-      <group position={[0, 0.85, -0.68]}>
+      {/* Pharmacist NPC Behind Counter (expressive face, glasses, arms & breathing) */}
+      <group ref={pharmacistRef} position={[0, 0.85, -0.68]}>
         <mesh position={[0, 0.34, 0]} castShadow>
           <capsuleGeometry args={[0.16, 0.26, 8, 12]} />
           <meshStandardMaterial color="#ffffff" roughness={0.78} />

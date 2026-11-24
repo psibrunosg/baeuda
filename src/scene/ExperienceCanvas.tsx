@@ -1,6 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
 import type {
@@ -16,6 +17,7 @@ import type {
 } from '../domain/types';
 import type { SpeechClockRef } from '../services/audioPlayer';
 import { CAMERA_ANCHORS, type AssetMode } from './contracts';
+import { AtmosphericSky } from './AtmosphericSky';
 import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
 import { LeoBarista } from './LeoBarista';
@@ -301,7 +303,13 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
     >
       <color attach="background" args={[bgColor]} />
-      <fog attach="fog" args={[bgColor, 16, 36]} />
+      <fog attach="fog" args={[bgColor, 18, 42]} />
+
+      <AtmosphericSky
+        isNight={isNightOutdoor}
+        isRainy={isRainyOutdoor}
+        visible={isMap || isMarket || isPlaza}
+      />
 
       {/* Studio & warm café IBL reflections (no external HDR download required) */}
       <Environment resolution={256} frames={1} environmentIntensity={0.72}>
@@ -475,6 +483,16 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
           visible={isLesson || isCafeCycle}
         />
       )}
+
+      {/* Selective Bloom on emissive windows, oven fire, pharmacy cross, lamps & sun/moon */}
+      <EffectComposer multisampling={0}>
+        <Bloom
+          mipmapBlur
+          luminanceThreshold={1.08}
+          intensity={0.42}
+          radius={0.62}
+        />
+      </EffectComposer>
     </Canvas>
   );
 });

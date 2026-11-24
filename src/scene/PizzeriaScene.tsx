@@ -26,6 +26,8 @@ export const PizzeriaScene = memo(function PizzeriaScene({
   const [hintVisible, setHintVisible] = useState(false);
   const pizzaGroupRef = useRef<THREE.Group>(null);
   const ovenGlowRef = useRef<THREE.MeshStandardMaterial>(null);
+  const chefRef = useRef<THREE.Group>(null);
+  const steamGroupRef = useRef<THREE.Group>(null);
   const completedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textures = useMemo(() => getCafeTextures(), []);
@@ -75,7 +77,20 @@ export const PizzeriaScene = memo(function PizzeriaScene({
       }
     }
     if (ovenGlowRef.current) {
-      ovenGlowRef.current.emissiveIntensity = 1.1 + Math.sin(t * 6) * 0.28;
+      ovenGlowRef.current.emissiveIntensity = 1.45 + Math.sin(t * 6) * 0.35;
+    }
+    if (chefRef.current) {
+      chefRef.current.position.y = 0.85 + Math.sin(t * 2.2) * 0.012;
+      chefRef.current.rotation.z = Math.sin(t * 1.1) * 0.02;
+    }
+    if (steamGroupRef.current && step >= 4) {
+      steamGroupRef.current.children.forEach((child, idx) => {
+        const phase = (t * 0.75 + idx * 0.33) % 1;
+        child.position.y = 0.14 + phase * 0.42;
+        child.position.x = Math.sin(t * 2.2 + idx * 2.1) * 0.08;
+        const s = 0.55 + Math.sin(phase * Math.PI) * 0.65;
+        child.scale.setScalar(s);
+      });
     }
   });
 
@@ -150,31 +165,43 @@ export const PizzeriaScene = memo(function PizzeriaScene({
         />
       </mesh>
 
-      {/* Brick Pizza Oven Dome in Background */}
+      {/* Brick Pizza Oven Dome in Background (textured terracotta brick + bloom fire) */}
       <group position={[0, 1.05, -1.3]}>
         <RoundedBox args={[2.1, 1.5, 0.9]} radius={0.12} smoothness={3} castShadow receiveShadow>
-          <meshStandardMaterial color="#9a3412" roughness={0.86} />
+          <meshStandardMaterial
+            color="#c2593a"
+            map={textures.terracottaColor}
+            bumpMap={textures.terracottaBump}
+            bumpScale={0.02}
+            roughness={0.86}
+          />
         </RoundedBox>
         {/* Glowing Oven Arch */}
         <mesh position={[0, -0.08, 0.44]}>
           <boxGeometry args={[1.1, 0.68, 0.08]} />
           <meshStandardMaterial
             ref={ovenGlowRef}
-            color="#f97316"
-            emissive="#ea580c"
-            emissiveIntensity={1.2}
-            roughness={0.4}
+            color="#fb923c"
+            emissive="#f97316"
+            emissiveIntensity={1.5}
+            toneMapped={false}
+            roughness={0.35}
           />
         </mesh>
         {/* Chimney */}
         <mesh position={[0, 1.15, -0.1]} castShadow>
           <cylinderGeometry args={[0.26, 0.34, 1.0, 14]} />
-          <meshStandardMaterial color="#7c2d12" roughness={0.85} />
+          <meshStandardMaterial
+            color="#9a3412"
+            bumpMap={textures.terracottaBump}
+            bumpScale={0.015}
+            roughness={0.85}
+          />
         </mesh>
       </group>
 
-      {/* Chef Character Behind the Counter (expressive face + arms) */}
-      <group position={[0, 0.85, -0.68]}>
+      {/* Chef Character Behind the Counter (expressive face + arms + gentle breathing) */}
+      <group ref={chefRef} position={[0, 0.85, -0.68]}>
         <mesh position={[0, 0.34, 0]} castShadow>
           <capsuleGeometry args={[0.16, 0.26, 8, 12]} />
           <meshStandardMaterial color="#ffffff" roughness={0.82} />
@@ -250,11 +277,29 @@ export const PizzeriaScene = memo(function PizzeriaScene({
 
       {/* Wooden Marble Prep Counter */}
       <RoundedBox args={[3.4, 0.86, 1.15]} radius={0.04} smoothness={3} position={[0, 0.43, 0.15]} castShadow receiveShadow>
-        <meshStandardMaterial color="#78350f" roughness={0.82} />
+        <meshStandardMaterial
+          color="#a36238"
+          map={textures.woodCounterColor}
+          bumpMap={textures.woodCounterBump}
+          bumpScale={0.014}
+          roughness={0.8}
+        />
       </RoundedBox>
       <RoundedBox args={[3.5, 0.07, 1.24]} radius={0.02} smoothness={2} position={[0, 0.86, 0.15]} receiveShadow>
-        <meshStandardMaterial color="#f5f5f4" roughness={0.45} />
+        <meshStandardMaterial color="#fafaf9" bumpMap={textures.clayBump} bumpScale={0.004} roughness={0.32} />
       </RoundedBox>
+
+      {/* Rising Steam Puffs when hot pizza is complete */}
+      {step >= 4 && (
+        <group ref={steamGroupRef} position={[0, 0.96, 0.24]}>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} position={[0, 0.15 + i * 0.12, 0]}>
+              <sphereGeometry args={[0.065, 10, 10]} />
+              <meshStandardMaterial color="#fffbeb" transparent opacity={0.42} roughness={1} depthWrite={false} />
+            </mesh>
+          ))}
+        </group>
+      )}
 
       {/* Center Wooden Pizza Peel + Progressive 3D Pizza */}
       <group position={[0, 0.9, 0.24]}>
