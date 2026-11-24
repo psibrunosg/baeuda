@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, type MutableRefObject, type ReactNode } from 'react';
 import { useMapFrame as useFrame } from './mapVisibility';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
@@ -6,12 +6,26 @@ import type { AvatarStyle } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 
 /**
- * Shared expressive glossy eyes with white specular catchlights.
+ * Shared expressive glossy eyes with white specular catchlights and optional glasses rims.
  */
-function CharacterEyes({ z = 0.125, y = 0.015, spread = 0.044 }: { z?: number; y?: number; spread?: number }) {
+function CharacterEyes({
+  z = 0.125,
+  y = 0.015,
+  spread = 0.044,
+  glasses = false,
+  glassesColor = '#0f766e',
+  eyesRef,
+}: {
+  z?: number;
+  y?: number;
+  spread?: number;
+  glasses?: boolean;
+  glassesColor?: string;
+  eyesRef?: MutableRefObject<THREE.Group | null>;
+}) {
   return (
-    <>
-      <group position={[-spread, y, z]}>
+    <group ref={eyesRef} position={[0, y, 0]}>
+      <group position={[-spread, 0, z]}>
         <mesh>
           <sphereGeometry args={[0.019, 12, 12]} />
           <meshStandardMaterial color="#1c1917" roughness={0.12} metalness={0.05} />
@@ -20,8 +34,14 @@ function CharacterEyes({ z = 0.125, y = 0.015, spread = 0.044 }: { z?: number; y
           <sphereGeometry args={[0.006, 8, 8]} />
           <meshBasicMaterial color="#ffffff" />
         </mesh>
+        {glasses && (
+          <mesh position={[0, 0, 0.014]}>
+            <torusGeometry args={[0.032, 0.004, 8, 18]} />
+            <meshStandardMaterial color={glassesColor} metalness={0.55} roughness={0.32} />
+          </mesh>
+        )}
       </group>
-      <group position={[spread, y, z]}>
+      <group position={[spread, 0, z]}>
         <mesh>
           <sphereGeometry args={[0.019, 12, 12]} />
           <meshStandardMaterial color="#1c1917" roughness={0.12} metalness={0.05} />
@@ -30,8 +50,20 @@ function CharacterEyes({ z = 0.125, y = 0.015, spread = 0.044 }: { z?: number; y
           <sphereGeometry args={[0.006, 8, 8]} />
           <meshBasicMaterial color="#ffffff" />
         </mesh>
+        {glasses && (
+          <mesh position={[0, 0, 0.014]}>
+            <torusGeometry args={[0.032, 0.004, 8, 18]} />
+            <meshStandardMaterial color={glassesColor} metalness={0.55} roughness={0.32} />
+          </mesh>
+        )}
       </group>
-    </>
+      {glasses && (
+        <mesh position={[0, 0, z + 0.014]}>
+          <boxGeometry args={[spread * 0.72, 0.007, 0.006]} />
+          <meshStandardMaterial color={glassesColor} metalness={0.55} roughness={0.32} />
+        </mesh>
+      )}
+    </group>
   );
 }
 
@@ -177,7 +209,26 @@ export function LearnerAvatar({
   const leftArmRef = useRef<THREE.Group>(null);
   const rightArmRef = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Group>(null);
+  const eyesRef = useRef<THREE.Group | null>(null);
   const textures = useMemo(() => getCafeTextures(), []);
+
+  const hatVariant: 'beret' | 'sunhat' | 'cap' | 'beanie' =
+    hatColor.toLowerCase() === '#facc15'
+      ? 'sunhat'
+      : hatColor.toLowerCase() === '#1e3a8a'
+        ? 'cap'
+        : hatColor.toLowerCase() === '#34d399'
+          ? 'beanie'
+          : 'beret';
+
+  const hairVariant: 'crop' | 'bob' | 'quiff' | 'bun' =
+    hairColor.toLowerCase() === '#78350f'
+      ? 'bob'
+      : hairColor.toLowerCase() === '#eab308'
+        ? 'quiff'
+        : hairColor.toLowerCase() === '#b45309'
+          ? 'bun'
+          : 'crop';
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -206,6 +257,11 @@ export function LearnerAvatar({
     if (headRef.current) {
       const curiousTilt = bump * 0.24;
       headRef.current.rotation.z = THREE.MathUtils.damp(headRef.current.rotation.z, curiousTilt, 12, dt);
+    }
+    if (eyesRef.current) {
+      const blinkCycle = (t + 0.8) % 3.8;
+      const targetScaleY = blinkCycle > 3.66 ? 0.12 : 1;
+      eyesRef.current.scale.y = THREE.MathUtils.damp(eyesRef.current.scale.y, targetScaleY, 24, dt);
     }
   });
 
@@ -280,7 +336,7 @@ export function LearnerAvatar({
           <sphereGeometry args={[0.142, 18, 18]} />
           <meshStandardMaterial color="#eab890" bumpMap={textures.clayBump} bumpScale={0.004} roughness={0.82} />
         </mesh>
-        <CharacterEyes z={0.126} y={0.01} spread={0.044} />
+        <CharacterEyes z={0.126} y={0.01} spread={0.044} eyesRef={eyesRef} />
         <mesh position={[-0.078, -0.025, 0.108]}>
           <sphereGeometry args={[0.02, 8, 8]} />
           <meshStandardMaterial color="#f29489" transparent opacity={0.45} roughness={0.9} />
@@ -289,22 +345,106 @@ export function LearnerAvatar({
           <sphereGeometry args={[0.02, 8, 8]} />
           <meshStandardMaterial color="#f29489" transparent opacity={0.45} roughness={0.9} />
         </mesh>
-        {/* Hair (customizable at Barber Shop!) */}
+        {/* Hair with distinct 3D silhouettes per Barber style */}
         <mesh position={[0, 0.04, -0.01]} castShadow>
           <sphereGeometry args={[0.146, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
-          <meshStandardMaterial color={hairColor} roughness={0.9} />
+          <meshStandardMaterial color={hairColor} bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.9} />
         </mesh>
-        {/* Cozy Beret (customizable at Boutique!) */}
-        <group position={[0.02, 0.135, -0.01]} rotation={[0.08, 0, -0.22]}>
-          <mesh scale={[1.15, 0.55, 1.15]} castShadow>
-            <sphereGeometry args={[0.135, 16, 12]} />
-            <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.88} />
+        {hairVariant === 'bob' && (
+          <>
+            <mesh position={[-0.125, -0.02, -0.02]} castShadow>
+              <sphereGeometry args={[0.058, 10, 10]} />
+              <meshStandardMaterial color={hairColor} roughness={0.9} />
+            </mesh>
+            <mesh position={[0.125, -0.02, -0.02]} castShadow>
+              <sphereGeometry args={[0.058, 10, 10]} />
+              <meshStandardMaterial color={hairColor} roughness={0.9} />
+            </mesh>
+          </>
+        )}
+        {hairVariant === 'quiff' && (
+          <>
+            <mesh position={[0.02, 0.14, 0.09]} rotation={[0.35, -0.15, -0.25]} castShadow>
+              <capsuleGeometry args={[0.032, 0.052, 6, 10]} />
+              <meshStandardMaterial color={hairColor} roughness={0.86} />
+            </mesh>
+            <mesh position={[-0.035, 0.135, 0.088]} rotation={[0.32, 0.15, 0.2]} castShadow>
+              <capsuleGeometry args={[0.026, 0.04, 6, 10]} />
+              <meshStandardMaterial color={hairColor} roughness={0.86} />
+            </mesh>
+          </>
+        )}
+        {hairVariant === 'bun' && (
+          <mesh position={[0, 0.06, -0.155]} castShadow>
+            <sphereGeometry args={[0.068, 12, 12]} />
+            <meshStandardMaterial color={hairColor} bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.88} />
           </mesh>
-          <mesh position={[0, 0.085, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.035, 8]} />
-            <meshStandardMaterial color="#b93829" roughness={0.88} />
-          </mesh>
-        </group>
+        )}
+
+        {/* Boutique Headwear with 4 distinct 3D silhouettes */}
+        {hatVariant === 'beret' && (
+          <group position={[0.02, 0.135, -0.01]} rotation={[0.08, 0, -0.22]}>
+            <mesh scale={[1.15, 0.55, 1.15]} castShadow>
+              <sphereGeometry args={[0.135, 16, 12]} />
+              <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.88} />
+            </mesh>
+            <mesh position={[0, 0.085, 0]}>
+              <cylinderGeometry args={[0.012, 0.012, 0.035, 8]} />
+              <meshStandardMaterial color="#b93829" roughness={0.88} />
+            </mesh>
+          </group>
+        )}
+        {hatVariant === 'sunhat' && (
+          <group position={[0, 0.11, -0.005]} rotation={[-0.06, 0, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.23, 0.25, 0.024, 22]} />
+              <meshStandardMaterial color={hatColor} bumpMap={textures.awningBump} bumpScale={0.008} roughness={0.86} />
+            </mesh>
+            <mesh position={[0, 0.058, 0]} castShadow>
+              <cylinderGeometry args={[0.118, 0.138, 0.095, 18]} />
+              <meshStandardMaterial color={hatColor} bumpMap={textures.awningBump} bumpScale={0.008} roughness={0.86} />
+            </mesh>
+            <mesh position={[0, 0.024, 0]}>
+              <cylinderGeometry args={[0.138, 0.142, 0.026, 18]} />
+              <meshStandardMaterial color="#e05a47" roughness={0.78} />
+            </mesh>
+          </group>
+        )}
+        {hatVariant === 'cap' && (
+          <group position={[0, 0.105, 0]} rotation={[-0.08, 0, 0]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.148, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+              <meshStandardMaterial color={hatColor} bumpMap={textures.awningBump} bumpScale={0.006} roughness={0.82} />
+            </mesh>
+            {/* Curved front visor */}
+            <mesh position={[0, 0.006, 0.145]} rotation={[0.12, 0, 0]} scale={[1.1, 0.24, 0.95]} castShadow>
+              <cylinderGeometry args={[0.105, 0.11, 0.04, 16]} />
+              <meshStandardMaterial color={hatColor} roughness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.15, 0]}>
+              <sphereGeometry args={[0.018, 8, 8]} />
+              <meshStandardMaterial color="#f8fafc" roughness={0.7} />
+            </mesh>
+          </group>
+        )}
+        {hatVariant === 'beanie' && (
+          <group position={[0, 0.1, -0.01]} rotation={[-0.1, 0, 0]}>
+            <mesh scale={[1.02, 1.12, 1.02]} castShadow>
+              <sphereGeometry args={[0.146, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+              <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.92} />
+            </mesh>
+            {/* Ribbed cuff */}
+            <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.142, 0.024, 8, 22]} />
+              <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.92} />
+            </mesh>
+            {/* Fluffy pom-pom */}
+            <mesh position={[0, 0.185, -0.01]} castShadow>
+              <sphereGeometry args={[0.042, 12, 12]} />
+              <meshStandardMaterial color="#fdf6ea" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.95} />
+            </mesh>
+          </group>
+        )}
       </group>
     </group>
   );
@@ -459,6 +599,245 @@ export function CafeCatNpc({ happy = false }: { happy?: boolean }) {
         <capsuleGeometry args={[0.018, 0.14, 4, 8]} />
         <meshStandardMaterial color="#d9823b" roughness={0.88} />
       </mesh>
+    </group>
+  );
+}
+
+export type HumanoidHatPreset = 'none' | 'toque' | 'cap' | 'hardhat' | 'beret' | 'sunhat' | 'postal';
+
+export interface StylizedHumanoidProps {
+  shirtColor: string;
+  skinColor?: string;
+  hairColor?: string;
+  apronColor?: string;
+  collarColor?: string;
+  hat?: HumanoidHatPreset;
+  hatColor?: string;
+  glasses?: boolean;
+  glassesColor?: string;
+  mustacheColor?: string;
+  waveTimerRef?: MutableRefObject<number>;
+  blinkOffset?: number;
+  position?: [number, number, number];
+  scale?: number;
+  leftHandProp?: ReactNode;
+  rightHandProp?: ReactNode;
+}
+
+/**
+ * Unified parametric humanoid rig shared across interiors and street shop NPCs:
+ * includes tactile clay shading, natural idle breathing, desynchronized blinking,
+ * optional wave reaction, glasses, mustache, apron, collar, and 3D hat presets.
+ */
+export function StylizedHumanoid({
+  shirtColor,
+  skinColor = '#f3c6a5',
+  hairColor = '#292524',
+  apronColor,
+  collarColor,
+  hat = 'none',
+  hatColor = '#ffffff',
+  glasses = false,
+  glassesColor = '#0f766e',
+  mustacheColor,
+  waveTimerRef,
+  blinkOffset = 0,
+  position = [0, 0, 0],
+  scale = 1,
+  leftHandProp,
+  rightHandProp,
+}: StylizedHumanoidProps) {
+  const rootRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+  const rightArmRef = useRef<THREE.Group>(null);
+  const eyesRef = useRef<THREE.Group | null>(null);
+  const textures = useMemo(() => getCafeTextures(), []);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const t = state.clock.elapsedTime;
+
+    if (rootRef.current) {
+      rootRef.current.position.y = Math.sin(t * 2.1 + blinkOffset) * 0.011;
+      rootRef.current.rotation.z = Math.sin(t * 1.05 + blinkOffset) * 0.018;
+    }
+    if (headRef.current) {
+      headRef.current.rotation.y = Math.sin(t * 0.85 + blinkOffset) * 0.06;
+    }
+    if (eyesRef.current) {
+      const cycle = (t + blinkOffset) % 3.6;
+      const targetScaleY = cycle > 3.46 ? 0.1 : 1;
+      eyesRef.current.scale.y = THREE.MathUtils.damp(eyesRef.current.scale.y, targetScaleY, 24, dt);
+    }
+    if (rightArmRef.current) {
+      let targetZ = -0.18;
+      let targetX = 0.32;
+      if (waveTimerRef && waveTimerRef.current > 0) {
+        waveTimerRef.current = Math.max(0, waveTimerRef.current - dt);
+        targetX = -0.35;
+        targetZ = -2.25 + Math.sin(t * 9.5) * 0.35;
+      }
+      rightArmRef.current.rotation.x = THREE.MathUtils.damp(rightArmRef.current.rotation.x, targetX, 10, dt);
+      rightArmRef.current.rotation.z = THREE.MathUtils.damp(rightArmRef.current.rotation.z, targetZ, 10, dt);
+    }
+  });
+
+  return (
+    <group position={position} scale={scale}>
+      <group ref={rootRef}>
+        {/* Torso */}
+        <mesh position={[0, 0.34, 0]} castShadow>
+          <capsuleGeometry args={[0.155, 0.26, 8, 14]} />
+          <meshStandardMaterial color={shirtColor} bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.82} />
+        </mesh>
+
+        {/* Optional front apron */}
+        {apronColor && (
+          <RoundedBox args={[0.22, 0.28, 0.1]} radius={0.025} smoothness={3} position={[0, 0.3, 0.105]} castShadow>
+            <meshStandardMaterial color={apronColor} bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.9} />
+          </RoundedBox>
+        )}
+
+        {/* Optional collar / neckerchief */}
+        {collarColor && (
+          <mesh position={[0, 0.5, 0.045]} rotation={[0.24, 0, 0]}>
+            <torusGeometry args={[0.108, 0.024, 8, 16]} />
+            <meshStandardMaterial color={collarColor} roughness={0.68} />
+          </mesh>
+        )}
+
+        {/* Left Arm */}
+        <group position={[-0.195, 0.38, 0.04]} rotation={[0.32, 0, 0.18]}>
+          <mesh position={[0, -0.05, 0]} castShadow>
+            <capsuleGeometry args={[0.044, 0.15, 6, 10]} />
+            <meshStandardMaterial color={shirtColor} roughness={0.82} />
+          </mesh>
+          <mesh position={[0, -0.15, 0.015]} castShadow>
+            <sphereGeometry args={[0.041, 10, 10]} />
+            <meshStandardMaterial color={skinColor} roughness={0.78} />
+          </mesh>
+          {leftHandProp && <group position={[0, -0.16, 0.03]}>{leftHandProp}</group>}
+        </group>
+
+        {/* Right Arm (animated wave when waveTimerRef > 0) */}
+        <group ref={rightArmRef} position={[0.195, 0.38, 0.04]} rotation={[0.32, 0, -0.18]}>
+          <mesh position={[0, -0.05, 0]} castShadow>
+            <capsuleGeometry args={[0.044, 0.15, 6, 10]} />
+            <meshStandardMaterial color={shirtColor} roughness={0.82} />
+          </mesh>
+          <mesh position={[0, -0.15, 0.015]} castShadow>
+            <sphereGeometry args={[0.041, 10, 10]} />
+            <meshStandardMaterial color={skinColor} roughness={0.78} />
+          </mesh>
+          {rightHandProp && <group position={[0, -0.16, 0.03]}>{rightHandProp}</group>}
+        </group>
+
+        {/* Expressive Head */}
+        <group ref={headRef} position={[0, 0.68, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.145, 18, 18]} />
+            <meshStandardMaterial color={skinColor} bumpMap={textures.clayBump} bumpScale={0.004} roughness={0.78} />
+          </mesh>
+          <CharacterEyes
+            z={0.128}
+            y={0.018}
+            spread={0.046}
+            glasses={glasses}
+            glassesColor={glassesColor}
+            eyesRef={eyesRef}
+          />
+          {/* Blush cheeks */}
+          {[-0.08, 0.08].map((cx, i) => (
+            <mesh key={i} position={[cx, -0.02, 0.118]}>
+              <sphereGeometry args={[0.021, 8, 8]} />
+              <meshStandardMaterial color="#f29489" transparent opacity={0.44} roughness={0.9} />
+            </mesh>
+          ))}
+          {/* Cute nose */}
+          <mesh position={[0, -0.008, 0.142]}>
+            <sphereGeometry args={[0.017, 10, 10]} />
+            <meshStandardMaterial color={skinColor} roughness={0.82} />
+          </mesh>
+          {/* Optional Mustache */}
+          {mustacheColor && (
+            <mesh position={[0, -0.035, 0.136]} rotation={[0, 0, Math.PI / 2]}>
+              <capsuleGeometry args={[0.012, 0.054, 4, 8]} />
+              <meshStandardMaterial color={mustacheColor} roughness={0.85} />
+            </mesh>
+          )}
+          {/* Warm smile */}
+          <mesh position={[0, mustacheColor ? -0.056 : -0.048, 0.131]} rotation={[0, 0, Math.PI / 2]}>
+            <capsuleGeometry args={[0.0095, 0.03, 4, 8]} />
+            <meshStandardMaterial color="#991b1b" roughness={0.5} />
+          </mesh>
+
+          {/* Hair Cap */}
+          {hat !== 'toque' && (
+            <mesh position={[0, 0.048, -0.015]} castShadow>
+              <sphereGeometry args={[0.15, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56]} />
+              <meshStandardMaterial color={hairColor} bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.86} />
+            </mesh>
+          )}
+
+          {/* Hat Presets */}
+          {hat === 'toque' && (
+            <group position={[0, 0.14, 0]}>
+              <mesh castShadow>
+                <cylinderGeometry args={[0.132, 0.112, 0.14, 16]} />
+                <meshStandardMaterial color={hatColor} roughness={0.82} />
+              </mesh>
+              <mesh position={[0, 0.11, 0]} castShadow>
+                <sphereGeometry args={[0.156, 16, 14]} />
+                <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.82} />
+              </mesh>
+            </group>
+          )}
+          {hat === 'cap' && (
+            <group position={[0, 0.1, 0]} rotation={[-0.06, 0, 0]}>
+              <mesh castShadow>
+                <sphereGeometry args={[0.152, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+                <meshStandardMaterial color={hatColor} roughness={0.8} />
+              </mesh>
+              <mesh position={[0, 0.006, 0.145]} rotation={[0.12, 0, 0]} scale={[1.1, 0.24, 0.95]} castShadow>
+                <cylinderGeometry args={[0.105, 0.11, 0.04, 16]} />
+                <meshStandardMaterial color={hatColor} roughness={0.8} />
+              </mesh>
+            </group>
+          )}
+          {hat === 'hardhat' && (
+            <group position={[0, 0.105, 0]}>
+              <mesh castShadow>
+                <sphereGeometry args={[0.158, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+                <meshPhysicalMaterial color={hatColor} roughness={0.28} clearcoat={0.7} />
+              </mesh>
+              <mesh position={[0, -0.005, 0]}>
+                <cylinderGeometry args={[0.175, 0.18, 0.02, 18]} />
+                <meshPhysicalMaterial color={hatColor} roughness={0.28} clearcoat={0.7} />
+              </mesh>
+            </group>
+          )}
+          {hat === 'beret' && (
+            <group position={[0.02, 0.135, -0.01]} rotation={[0.08, 0, -0.22]}>
+              <mesh scale={[1.15, 0.55, 1.15]} castShadow>
+                <sphereGeometry args={[0.135, 16, 12]} />
+                <meshStandardMaterial color={hatColor} bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.88} />
+              </mesh>
+            </group>
+          )}
+          {hat === 'postal' && (
+            <group position={[0, 0.115, 0]}>
+              <mesh castShadow>
+                <cylinderGeometry args={[0.155, 0.135, 0.09, 16]} />
+                <meshStandardMaterial color={hatColor} roughness={0.75} />
+              </mesh>
+              <mesh position={[0, -0.032, 0.12]} rotation={[0.18, 0, 0]} scale={[1, 0.2, 0.8]}>
+                <cylinderGeometry args={[0.11, 0.11, 0.04, 14]} />
+                <meshStandardMaterial color="#0f172a" roughness={0.4} />
+              </mesh>
+            </group>
+          )}
+        </group>
+      </group>
     </group>
   );
 }

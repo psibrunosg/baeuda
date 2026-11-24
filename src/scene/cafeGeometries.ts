@@ -73,6 +73,11 @@ export function createCarafeGeometry(): THREE.LatheGeometry {
     new THREE.Vector2(0.078, 0.272),
     new THREE.Vector2(0.064, 0.238),
     new THREE.Vector2(0.06, 0.205),
+    new THREE.Vector2(0.092, 0.15),
+    new THREE.Vector2(0.112, 0.085),
+    new THREE.Vector2(0.106, 0.03),
+    new THREE.Vector2(0.086, 0.014),
+    new THREE.Vector2(0.0, 0.014),
   ];
   return ensureValidNormals(new THREE.LatheGeometry(points, 28)) as THREE.LatheGeometry;
 }
@@ -106,6 +111,12 @@ export function createWaterBottleGeometry(): THREE.LatheGeometry {
     new THREE.Vector2(0.048, 0.312),
     new THREE.Vector2(0.042, 0.315),
     new THREE.Vector2(0.034, 0.295),
+    new THREE.Vector2(0.036, 0.256),
+    new THREE.Vector2(0.066, 0.212),
+    new THREE.Vector2(0.075, 0.162),
+    new THREE.Vector2(0.074, 0.026),
+    new THREE.Vector2(0.066, 0.014),
+    new THREE.Vector2(0.0, 0.014),
   ];
   return ensureValidNormals(new THREE.LatheGeometry(points, 28)) as THREE.LatheGeometry;
 }

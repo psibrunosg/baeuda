@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
+import { lazy, memo, Suspense, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
@@ -14,6 +14,7 @@ import type {
   LocationStatus,
   PropName,
   SpeechKey,
+  WorldMapId,
 } from '../domain/types';
 import type { SpeechClockRef } from '../services/audioPlayer';
 import { CAMERA_ANCHORS, type AssetMode } from './contracts';
@@ -22,16 +23,26 @@ import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
 import { LeoBarista } from './LeoBarista';
 import { MarketScene, type MarketStage } from './MarketScene';
-import { NeighborhoodMap, type AvatarPose } from './NeighborhoodMap';
+import { NeighborhoodMap } from './NeighborhoodMap';
 import { PharmacyScene } from './PharmacyScene';
 import { PizzeriaScene } from './PizzeriaScene';
 import { PlazaScene, type PlazaStage } from './PlazaScene';
+import {
+  WORLD_MAP_REGISTRY,
+  type AvatarPose,
+  type ShadowFrustumSpec,
+} from './worldNavigation';
+
+const InteriorHouseLeo = lazy(() => import('./maps/InteriorHouseLeo'));
+const FarmBiomeMap = lazy(() => import('./maps/FarmBiomeMap'));
 
 export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'pizzeria' | 'pharmacy' | 'badges';
-export type CameraMode = 'third_person' | 'first_person' | 'overview';
+export type CameraMode = 'fixed_2_5d' | 'overview';
 
 export interface ExperienceCanvasProps {
   activeView: ActiveView;
+  currentMapId?: WorldMapId;
+  cameraSnapSeq?: number;
   cameraMode?: CameraMode;
   avatarStyle?: AvatarStyle;
   teleportRequest?: { x: number; z: number; yaw: number; seq: number } | null;
@@ -64,6 +75,8 @@ export interface ExperienceCanvasProps {
   onCompletePizzeria?: () => void;
   onEnterPharmacy?: () => void;
   onCompletePharmacy?: () => void;
+  onTravelToMap?: (target: WorldMapId, spawn?: AvatarPose) => void;
+  onOpenWardrobe?: () => void;
   onMarketStageChange?: (stage: MarketStage) => void;
   onCompleteMarket?: () => void;
   onPlazaStageChange?: (stage: PlazaStage) => void;
@@ -81,12 +94,18 @@ function CameraRig({
   orbitEnabled,
   isMapView,
   cameraMode,
+  cameraOffset,
+  cameraTargetOffset,
+  cameraSnapSeq,
   avatarPoseRef,
 }: {
   anchorId: CameraAnchorId;
   orbitEnabled: boolean;
   isMapView: boolean;
   cameraMode: CameraMode;
+  cameraOffset: readonly [number, number, number];
+  cameraTargetOffset: readonly [number, number, number];
+  cameraSnapSeq: number;
   avatarPoseRef: MutableRefObject<AvatarPose>;
 }) {
   const { camera, size } = useThree();
@@ -95,11 +114,14 @@ function CameraRig({
   const desiredTargetRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].target));
   const targetRef = useRef(new THREE.Vector3(...CAMERA_ANCHORS[anchorId].target));
   const isTransitioningRef = useRef(true);
+  const lastSnapSeqRef = useRef(cameraSnapSeq);
 
   useLayoutEffect(() => {
     const aspect = size.width / Math.max(1, size.height);
     if (camera instanceof THREE.PerspectiveCamera) {
-      const responsiveFov = aspect < 1 ? Math.min(62, Math.round(42 / Math.pow(aspect, 0.52))) : 42;
+      const is25dMap = isMapView && cameraMode === 'fixed_2_5d';
+      const baseFov = is25dMap ? 27 : 42;
+      const responsiveFov = aspect < 1 ? Math.min(is25dMap ? 42 : 62, Math.round(baseFov / Math.pow(aspect, 0.45))) : baseFov;
       if (camera.fov !== responsiveFov) {
         camera.fov = responsiveFov;
         camera.updateProjectionMatrix();
@@ -119,47 +141,32 @@ function CameraRig({
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
 
-    if (isMapView && cameraMode === 'third_person') {
+    if (isMapView && cameraMode === 'fixed_2_5d') {
       if (controlsRef.current) controlsRef.current.enabled = false;
       const p = avatarPoseRef.current;
-      // Bilateral street framing: when facing South or inspecting South-sidewalk shops,
-      // swing camera to the North side looking South so all 7 South shops stay clearly visible.
-      const facingSouth = Math.cos(p.yaw) > 0.35 && p.z > 1.85;
-      if (facingSouth) {
-        const safeCamZ = Math.max(p.z - 2.35, -0.45);
-        desiredPosRef.current.set(p.x, 2.65, safeCamZ);
-        desiredTargetRef.current.set(p.x, 0.9, p.z + 1.25);
+      // Fixed 3/4 oblique 2.5D camera driven by active WorldMapConfig
+      desiredPosRef.current.set(
+        p.x + cameraOffset[0],
+        cameraOffset[1],
+        p.z + cameraOffset[2],
+      );
+      desiredTargetRef.current.set(
+        p.x + cameraTargetOffset[0],
+        cameraTargetOffset[1],
+        p.z + cameraTargetOffset[2],
+      );
+      if (lastSnapSeqRef.current !== cameraSnapSeq) {
+        lastSnapSeqRef.current = cameraSnapSeq;
+        camera.position.copy(desiredPosRef.current);
+        targetRef.current.copy(desiredTargetRef.current);
       } else {
-        // Keep camera z strictly in front of south-side buildings (z <= 3.15) to prevent wall clipping
-        const safeCamZ = Math.min(p.z + 2.45, 3.15);
-        desiredPosRef.current.set(p.x, 2.75, safeCamZ);
-        desiredTargetRef.current.set(p.x, 0.82, p.z - 0.95);
+        camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 7, dt);
+        camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 7, dt);
+        camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 7, dt);
+        targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 8, dt);
+        targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 8, dt);
+        targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 8, dt);
       }
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 6.5, dt);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 6.5, dt);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 6.5, dt);
-      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 7.5, dt);
-      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 7.5, dt);
-      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 7.5, dt);
-      camera.lookAt(targetRef.current);
-      return;
-    }
-
-    if (isMapView && cameraMode === 'first_person') {
-      if (controlsRef.current) controlsRef.current.enabled = false;
-      const p = avatarPoseRef.current;
-      const eyeX = p.x + Math.sin(p.yaw) * 0.22;
-      const eyeZ = p.z + Math.cos(p.yaw) * 0.22;
-      const lookX = p.x + Math.sin(p.yaw) * 2.8;
-      const lookZ = p.z + Math.cos(p.yaw) * 2.8;
-      desiredPosRef.current.set(eyeX, 0.9, eyeZ);
-      desiredTargetRef.current.set(lookX, 0.84, lookZ);
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, desiredPosRef.current.x, 10, dt);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, desiredPosRef.current.y, 10, dt);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, desiredPosRef.current.z, 10, dt);
-      targetRef.current.x = THREE.MathUtils.damp(targetRef.current.x, desiredTargetRef.current.x, 12, dt);
-      targetRef.current.y = THREE.MathUtils.damp(targetRef.current.y, desiredTargetRef.current.y, 12, dt);
-      targetRef.current.z = THREE.MathUtils.damp(targetRef.current.z, desiredTargetRef.current.z, 12, dt);
       camera.lookAt(targetRef.current);
       return;
     }
@@ -201,34 +208,53 @@ function CameraRig({
       enableDamping
       dampingFactor={0.08}
       enablePan
-      minDistance={2.8}
-      maxDistance={15}
-      maxPolarAngle={Math.PI * 0.48}
+      minDistance={6}
+      maxDistance={42}
+      maxPolarAngle={Math.PI * 0.45}
     />
   );
 }
 
 function DynamicKeyLight({
   isMap,
+  isExteriorMap,
+  cameraMode,
+  avatarPoseRef,
+  shadowFrustum,
   isNight,
   isRainy,
 }: {
   isMap: boolean;
+  isExteriorMap: boolean;
+  cameraMode: CameraMode;
+  avatarPoseRef: MutableRefObject<AvatarPose>;
+  shadowFrustum: ShadowFrustumSpec;
   isNight: boolean;
   isRainy: boolean;
 }) {
   const lightRef = useRef<THREE.DirectionalLight>(null);
+  const followAvatar = isMap && isExteriorMap && cameraMode === 'fixed_2_5d';
 
   useEffect(() => {
     const light = lightRef.current;
     if (!light) return;
     const cam = light.shadow.camera;
-    if (isMap) {
-      cam.left = -13;
-      cam.right = 13;
-      cam.top = 10;
-      cam.bottom = -10;
-      cam.far = 28;
+    if (followAvatar) {
+      // Tight 19x19 frustum centered on the walking avatar (~4x sharper shadows in 2.5D mode)
+      cam.left = -9.5;
+      cam.right = 9.5;
+      cam.top = 9.5;
+      cam.bottom = -9.5;
+      cam.far = 36;
+    } else if (isMap) {
+      cam.left = shadowFrustum.left;
+      cam.right = shadowFrustum.right;
+      cam.top = shadowFrustum.top;
+      cam.bottom = shadowFrustum.bottom;
+      cam.far = shadowFrustum.far;
+      light.position.set(8.5, 14.0, 9.5);
+      light.target.position.set(0, 0, 0);
+      light.target.updateMatrixWorld();
     } else {
       // Tight frustum for counter scenes: ~5x sharper shadows without extra GPU cost
       cam.left = -2.6;
@@ -236,26 +262,41 @@ function DynamicKeyLight({
       cam.top = 2.6;
       cam.bottom = -1.5;
       cam.far = 12;
+      light.position.set(8.5, 14.0, 9.5);
+      light.target.position.set(0, 0, 0);
+      light.target.updateMatrixWorld();
     }
     cam.updateProjectionMatrix();
-  }, [isMap]);
+  }, [isMap, followAvatar, shadowFrustum]);
+
+  useFrame(() => {
+    const light = lightRef.current;
+    if (!light || !followAvatar) return;
+    // Snap to shadow texel grid (19 / 2048) to prevent shadow-edge shimmer while walking
+    const texel = 19 / 2048;
+    const sx = Math.round(avatarPoseRef.current.x / texel) * texel;
+    const sz = Math.round(avatarPoseRef.current.z / texel) * texel;
+    light.position.set(sx + 8.5, 14.0, sz + 9.5);
+    light.target.position.set(sx, 0, sz);
+    light.target.updateMatrixWorld();
+  });
 
   return (
     <directionalLight
       ref={lightRef}
-      position={[4.2, 6.4, 4.6]}
+      position={[8.5, 14.0, 9.5]}
       intensity={isNight ? 0.52 : isRainy ? 0.88 : 1.55}
       color={isNight ? '#bfd7ff' : isRainy ? '#dbeafe' : '#ffe9c7'}
       castShadow
       shadow-mapSize-width={2048}
       shadow-mapSize-height={2048}
-      shadow-camera-left={-13}
-      shadow-camera-right={13}
-      shadow-camera-top={10}
-      shadow-camera-bottom={-10}
+      shadow-camera-left={-22}
+      shadow-camera-right={22}
+      shadow-camera-top={18}
+      shadow-camera-bottom={-18}
       shadow-camera-near={0.5}
-      shadow-camera-far={28}
-      shadow-normalBias={0.025}
+      shadow-camera-far={48}
+      shadow-normalBias={0.03}
       shadow-bias={-0.0002}
       shadow-radius={3}
     />
@@ -263,8 +304,10 @@ function DynamicKeyLight({
 }
 
 export const ExperienceCanvas = memo(function ExperienceCanvas(props: ExperienceCanvasProps) {
-  const avatarPoseRef = useRef<AvatarPose>({ x: -0.35, y: 0.06, z: 1.98, yaw: Math.PI });
-  const cameraMode: CameraMode = props.cameraMode ?? 'third_person';
+  const currentMapId: WorldMapId = props.currentMapId ?? 'town';
+  const mapConfig = WORLD_MAP_REGISTRY[currentMapId] ?? WORLD_MAP_REGISTRY.town;
+  const avatarPoseRef = useRef<AvatarPose>({ ...mapConfig.defaultSpawn });
+  const cameraMode: CameraMode = props.cameraMode ?? 'fixed_2_5d';
   const isBadges = props.activeView === 'badges';
   const isMap = props.activeView === 'map' || isBadges;
   const isLesson = props.activeView === 'lesson';
@@ -273,7 +316,9 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
   const isPlaza = props.activeView === 'plaza';
   const isPizzeria = props.activeView === 'pizzeria';
   const isPharmacy = props.activeView === 'pharmacy';
-  const isOutdoor = isMap || isMarket || isPlaza;
+  const isExteriorMap = isMap && mapConfig.kind === 'exterior';
+  const isInteriorMap = isMap && mapConfig.kind === 'interior';
+  const isOutdoor = isExteriorMap || isMarket || isPlaza;
   const isNightOutdoor = isOutdoor && props.timeOfDay === 'night';
   const isRainyOutdoor = isOutdoor && props.weather === 'rainy';
 
@@ -287,13 +332,15 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
           ? 'cam_praca'
           : props.cameraAnchor;
 
-  const bgColor = isNightOutdoor
-    ? isRainyOutdoor
-      ? '#141d33'
-      : '#1b2642'
-    : isRainyOutdoor
-      ? '#9eb4c8'
-      : '#f3e5cf';
+  const bgColor = isInteriorMap && mapConfig.bgColor
+    ? mapConfig.bgColor
+    : isNightOutdoor
+      ? isRainyOutdoor
+        ? '#141d33'
+        : '#1b2642'
+      : isRainyOutdoor
+        ? '#9eb4c8'
+        : '#f3e5cf';
 
   return (
     <Canvas
@@ -303,43 +350,48 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
     >
       <color attach="background" args={[bgColor]} />
-      <fog attach="fog" args={[bgColor, 18, 42]} />
+      <fog attach="fog" args={[bgColor, 34, 72]} />
 
       <AtmosphericSky
         isNight={isNightOutdoor}
         isRainy={isRainyOutdoor}
-        visible={isMap || isMarket || isPlaza}
+        visible={isExteriorMap || isMarket || isPlaza}
       />
 
-      {/* Studio & warm café IBL reflections (no external HDR download required) */}
-      <Environment resolution={256} frames={1} environmentIntensity={0.72}>
+      {/* Adaptive Studio / Night / Rain IBL reflections (re-baked once on weather/time change) */}
+      <Environment
+        key={`${isNightOutdoor ? 'night' : 'day'}-${isRainyOutdoor ? 'rain' : 'clear'}`}
+        resolution={256}
+        frames={1}
+        environmentIntensity={isNightOutdoor ? 0.34 : isRainyOutdoor ? 0.56 : 0.72}
+      >
         <Lightformer
           form="rect"
-          intensity={2.4}
-          color="#fff4de"
+          intensity={isNightOutdoor ? 1.15 : isRainyOutdoor ? 1.65 : 2.4}
+          color={isNightOutdoor ? '#60a5fa' : isRainyOutdoor ? '#dbeafe' : '#fff4de'}
           position={[0, 5, 2]}
           rotation={[Math.PI / 2, 0, 0]}
           scale={[8, 6, 1]}
         />
         <Lightformer
           form="circle"
-          intensity={1.8}
-          color="#ffe0b2"
+          intensity={isNightOutdoor ? 0.9 : isRainyOutdoor ? 1.0 : 1.8}
+          color={isNightOutdoor ? '#93c5fd' : '#ffe0b2'}
           position={[4, 2.5, 3]}
           scale={3.5}
         />
         <Lightformer
           form="rect"
-          intensity={1.1}
-          color="#dbeafe"
+          intensity={isNightOutdoor ? 0.85 : 1.1}
+          color={isNightOutdoor ? '#3b82f6' : '#dbeafe'}
           position={[-5, 2.5, -2]}
           rotation={[0, Math.PI / 2, 0]}
           scale={[6, 4, 1]}
         />
         <Lightformer
           form="rect"
-          intensity={0.7}
-          color="#9c6644"
+          intensity={isNightOutdoor ? 0.35 : 0.7}
+          color={isNightOutdoor ? '#1e293b' : '#9c6644'}
           position={[0, -3, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
           scale={[10, 10, 1]}
@@ -355,8 +407,16 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         ]}
       />
 
-      {/* Key sunlight / moonlight / overcast rain light with dynamic shadow frustum */}
-      <DynamicKeyLight isMap={isMap} isNight={isNightOutdoor} isRainy={isRainyOutdoor} />
+      {/* Key sunlight / moonlight / overcast rain light with dynamic per-map / avatar-following shadow frustum */}
+      <DynamicKeyLight
+        isMap={isMap}
+        isExteriorMap={isExteriorMap}
+        cameraMode={cameraMode}
+        avatarPoseRef={avatarPoseRef}
+        shadowFrustum={mapConfig.shadowFrustum}
+        isNight={isNightOutdoor}
+        isRainy={isRainyOutdoor}
+      />
 
       {/* Subtle cool rim light separating characters & glazed ceramics from the warm wall */}
       <directionalLight
@@ -367,15 +427,17 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
 
       {/* Warm overhead pendant fill light (kept mounted to prevent shader recompilation hitch) */}
       <pointLight
-        position={[0, 2.02, 0.14]}
+        position={[0, 2.4, 0.14]}
         intensity={
           isLesson || isCafeCycle || isPizzeria || isPharmacy
             ? 2.8
-            : (isMarket || isPlaza) && isNightOutdoor
-              ? 2.2
-              : 0
+            : isInteriorMap
+              ? 3.2
+              : (isMarket || isPlaza) && isNightOutdoor
+                ? 2.2
+                : 0
         }
-        distance={6.5}
+        distance={10}
         decay={2}
         color="#ffd08a"
       />
@@ -385,10 +447,13 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         orbitEnabled={props.activeView === 'map' && cameraMode === 'overview'}
         isMapView={isMap}
         cameraMode={cameraMode}
+        cameraOffset={mapConfig.cameraOffset}
+        cameraTargetOffset={mapConfig.cameraTargetOffset}
+        cameraSnapSeq={props.cameraSnapSeq ?? 0}
         avatarPoseRef={avatarPoseRef}
       />
 
-      {isMap && (
+      {isMap && currentMapId === 'town' && (
         <NeighborhoodMap
           cafeStatus={props.cafeStatus}
           locations={props.locations}
@@ -397,7 +462,6 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
           timeOfDay={props.timeOfDay}
           weather={props.weather}
           visible={isMap}
-          hideAvatar={props.activeView === 'map' && cameraMode === 'first_person'}
           avatarStyle={props.avatarStyle}
           avatarPoseRef={avatarPoseRef}
           teleportRequest={props.teleportRequest}
@@ -406,10 +470,43 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
           onEnterPlaza={props.onEnterPlaza}
           onEnterPizzeria={props.onEnterPizzeria}
           onEnterPharmacy={props.onEnterPharmacy}
+          onTravelToMap={props.onTravelToMap}
           onExploreObject={props.onExploreObject}
           onInspectCuriosity={props.onInspectCuriosity}
           onMapBlockedBump={props.onMapBlockedBump}
         />
+      )}
+
+      {isMap && currentMapId === 'interior_house_leo' && (
+        <Suspense fallback={null}>
+          <InteriorHouseLeo
+            visible={isMap}
+            timeOfDay={props.timeOfDay}
+            avatarStyle={props.avatarStyle}
+            avatarPoseRef={avatarPoseRef}
+            teleportRequest={props.teleportRequest}
+            onExploreObject={props.onExploreObject}
+            onInspectCuriosity={props.onInspectCuriosity}
+            onOpenWardrobe={props.onOpenWardrobe}
+            onTravelToMap={props.onTravelToMap ?? (() => {})}
+          />
+        </Suspense>
+      )}
+
+      {isMap && currentMapId === 'farm' && (
+        <Suspense fallback={null}>
+          <FarmBiomeMap
+            visible={isMap}
+            timeOfDay={props.timeOfDay}
+            weather={props.weather}
+            avatarStyle={props.avatarStyle}
+            avatarPoseRef={avatarPoseRef}
+            teleportRequest={props.teleportRequest}
+            onExploreObject={props.onExploreObject}
+            onInspectCuriosity={props.onInspectCuriosity}
+            onTravelToMap={props.onTravelToMap ?? (() => {})}
+          />
+        </Suspense>
       )}
 
       {isMarket && (
@@ -484,8 +581,8 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         />
       )}
 
-      {/* Selective Bloom on emissive windows, oven fire, pharmacy cross, lamps & sun/moon */}
-      <EffectComposer multisampling={0}>
+      {/* Selective Bloom on emissive windows, oven fire, pharmacy cross, lamps & sun/moon + WebGL2 MSAA */}
+      <EffectComposer multisampling={4}>
         <Bloom
           mipmapBlur
           luminanceThreshold={1.08}

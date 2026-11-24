@@ -9,7 +9,7 @@ export interface CameraPose {
 }
 
 export const CAMERA_ANCHORS: Record<CameraAnchorId, CameraPose> = {
-  cam_mapa: { position: [4.6, 6.1, 9.1], target: [0, 0.75, 0.9] },
+  cam_mapa: { position: [0, 21.5, 22.5], target: [0, 0.2, 0.5] },
   cam_balcao: { position: [0, 1.64, 2.38], target: [0, 1.24, -0.35] },
   cam_contraste: { position: [0, 1.62, 2.26], target: [-0.08, 1.18, -0.15] },
   cam_despejo: { position: [0.14, 1.66, 1.82], target: [0.04, 1.1, 0.08] },

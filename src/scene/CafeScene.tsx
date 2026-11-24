@@ -518,6 +518,392 @@ function SculptedIcedGlass({
   );
 }
 
+/**
+ * Shared warm Café interior backdrop: plank floor, lime-wash wall, subway tiles,
+ * sunlit window + dust motes, shelf, espresso machine, pendant lamp, and fluted oak counter.
+ * Reused across Lesson 1 (CafeScene) and Cycles 2/3/Shift/A1 (CafeDynamicSession).
+ */
+export function CafeEnvironmentStatic({ showCloche = true }: { showCloche?: boolean }) {
+  const geos = useMemo(() => getCafeGeometries(), []);
+  const textures = useMemo(() => getCafeTextures(), []);
+
+  return (
+    <group name="ENV_Static">
+      {/* Plank wooden floor */}
+      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[8.5, 8.5]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          map={textures.floorPlankColor}
+          bumpMap={textures.floorPlankBump}
+          bumpScale={0.008}
+          roughness={0.85}
+        />
+      </mesh>
+
+      {/* Handmade lime-wash plaster back wall */}
+      <mesh position={[0, 1.9, -1.65]} receiveShadow>
+        <boxGeometry args={[6.8, 3.8, 0.18]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          map={textures.plasterColor}
+          bumpMap={textures.plasterBump}
+          bumpScale={0.012}
+          roughness={0.92}
+        />
+      </mesh>
+
+      {/* Warm ceramic subway-tile backsplash behind counter */}
+      <mesh position={[0, 1.18, -1.53]} receiveShadow>
+        <boxGeometry args={[6.8, 0.72, 0.04]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          map={textures.tileColor}
+          bumpMap={textures.tileBump}
+          bumpScale={0.01}
+          roughness={0.42}
+        />
+      </mesh>
+
+      {/* Warm wooden wainscoting lower back-wall trim */}
+      <mesh position={[0, 0.41, -1.52]} receiveShadow>
+        <boxGeometry args={[6.8, 0.82, 0.06]} />
+        <meshStandardMaterial
+          color="#8b5a3c"
+          bumpMap={textures.woodCounterBump}
+          bumpScale={0.008}
+          roughness={0.82}
+        />
+      </mesh>
+
+      {/* Sunlit Café Window on left back wall + soft morning sunbeam shaft */}
+      <group position={[-1.62, 1.86, -1.53]}>
+        <RoundedBox args={[1.05, 1.2, 0.08]} radius={0.02} smoothness={3}>
+          <meshStandardMaterial color="#6b4226" roughness={0.78} />
+        </RoundedBox>
+        <mesh position={[0, 0, 0.03]}>
+          <planeGeometry args={[0.9, 1.04]} />
+          <meshStandardMaterial
+            color="#fff6d6"
+            emissive="#fde68a"
+            emissiveIntensity={0.82}
+            roughness={0.2}
+          />
+        </mesh>
+        {/* Mullion cross bars */}
+        <mesh position={[0, 0, 0.045]}>
+          <boxGeometry args={[0.04, 1.06, 0.03]} />
+          <meshStandardMaterial color="#6b4226" roughness={0.78} />
+        </mesh>
+        <mesh position={[0, 0, 0.045]}>
+          <boxGeometry args={[0.92, 0.04, 0.03]} />
+          <meshStandardMaterial color="#6b4226" roughness={0.78} />
+        </mesh>
+        {/* Soft morning light shaft */}
+        {textures.sunbeamAlpha && (
+          <mesh position={[0.45, -0.35, 0.75]} rotation={[0.62, 0.28, -0.32]} renderOrder={4}>
+            <planeGeometry args={[1.15, 2.2]} />
+            <meshBasicMaterial
+              map={textures.sunbeamAlpha}
+              transparent
+              opacity={0.45}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        )}
+      </group>
+
+      {/* Floating golden dust motes drifting in the morning light */}
+      <SunlitDustMotes />
+
+      {/* Floating wooden wall shelf + bean jars + potted terracotta plant */}
+      <group position={[-0.78, 1.84, -1.4]}>
+        <RoundedBox args={[1.4, 0.075, 0.32]} radius={0.015} smoothness={3} castShadow receiveShadow>
+          <meshStandardMaterial
+            color="#9a633c"
+            map={textures.woodCounterColor}
+            bumpMap={textures.woodCounterBump}
+            bumpScale={0.006}
+            roughness={0.76}
+          />
+        </RoundedBox>
+        {/* Coffee bean glass jars */}
+        <group position={[-0.4, 0.04, 0]}>
+          <mesh position={[0, 0.09, 0]}>
+            <cylinderGeometry args={[0.064, 0.064, 0.16, 14]} />
+            <meshStandardMaterial color="#4a2511" bumpMap={textures.clayBump} bumpScale={0.01} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.11, 0]} castShadow>
+            <cylinderGeometry args={[0.075, 0.075, 0.22, 16]} />
+            <meshPhysicalMaterial
+              color="#fef3c7"
+              transparent
+              opacity={0.28}
+              roughness={0.06}
+              clearcoat={1}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh position={[0, 0.23, 0]}>
+            <cylinderGeometry args={[0.068, 0.068, 0.03, 16]} />
+            <meshStandardMaterial color="#c49563" roughness={0.88} />
+          </mesh>
+        </group>
+        <group position={[-0.14, 0.04, 0.02]}>
+          <mesh position={[0, 0.09, 0]} castShadow>
+            <cylinderGeometry args={[0.065, 0.065, 0.18, 16]} />
+            <meshStandardMaterial color="#e07a5f" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.45} />
+          </mesh>
+          <mesh position={[0, 0.19, 0]}>
+            <cylinderGeometry args={[0.068, 0.068, 0.024, 16]} />
+            <meshStandardMaterial color="#f5e6d3" roughness={0.4} />
+          </mesh>
+        </group>
+        {/* Cute potted terracotta plant */}
+        <group position={[0.38, 0.04, 0]}>
+          <mesh position={[0, 0.075, 0]} castShadow>
+            <cylinderGeometry args={[0.082, 0.058, 0.15, 16]} />
+            <meshStandardMaterial
+              color="#c96548"
+              bumpMap={textures.clayBump}
+              bumpScale={0.008}
+              roughness={0.85}
+            />
+          </mesh>
+          <mesh position={[0, 0.19, 0]} castShadow>
+            <sphereGeometry args={[0.078, 12, 12]} />
+            <meshStandardMaterial color="#4d7c5b" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.88} />
+          </mesh>
+          <mesh position={[-0.065, 0.16, 0.03]} castShadow>
+            <sphereGeometry args={[0.058, 10, 10]} />
+            <meshStandardMaterial color="#3d6b4b" roughness={0.88} />
+          </mesh>
+          <mesh position={[0.065, 0.17, -0.02]} castShadow>
+            <sphereGeometry args={[0.054, 10, 10]} />
+            <meshStandardMaterial color="#5a8f69" roughness={0.88} />
+          </mesh>
+          {/* Trailing ivy vine draping off shelf */}
+          <mesh position={[0.09, 0.02, 0.07]} castShadow>
+            <sphereGeometry args={[0.038, 8, 8]} />
+            <meshStandardMaterial color="#4d7c5b" roughness={0.88} />
+          </mesh>
+          <mesh position={[0.12, -0.06, 0.09]} castShadow>
+            <sphereGeometry args={[0.03, 8, 8]} />
+            <meshStandardMaterial color="#5a8f69" roughness={0.88} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* Framed geometric icon menu board (zero text, pure visual café craft) */}
+      <group position={[0.96, 1.9, -1.52]}>
+        <RoundedBox args={[0.92, 0.68, 0.05]} radius={0.015} smoothness={3} castShadow>
+          <meshStandardMaterial color="#7a4e32" roughness={0.78} />
+        </RoundedBox>
+        <mesh position={[0, 0, 0.028]}>
+          <planeGeometry args={[0.8, 0.56]} />
+          <meshStandardMaterial color="#27312f" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.95} />
+        </mesh>
+        {/* Minimalist chalk-style geometric cup & steam icon */}
+        <mesh position={[-0.18, -0.02, 0.032]}>
+          <cylinderGeometry args={[0.065, 0.052, 0.11, 14]} />
+          <meshBasicMaterial color="#fef3c7" />
+        </mesh>
+        <mesh position={[0.14, 0.06, 0.032]}>
+          <boxGeometry args={[0.26, 0.025, 0.005]} />
+          <meshBasicMaterial color="#fde68a" />
+        </mesh>
+        <mesh position={[0.14, -0.03, 0.032]}>
+          <boxGeometry args={[0.2, 0.022, 0.005]} />
+          <meshBasicMaterial color="#cbd5e1" />
+        </mesh>
+        <mesh position={[0.14, -0.12, 0.032]}>
+          <boxGeometry args={[0.24, 0.022, 0.005]} />
+          <meshBasicMaterial color="#93c5fd" />
+        </mesh>
+      </group>
+
+      {/* Overhead Mid-Century Copper Pendant Lamp */}
+      <group position={[0, 2.08, 0.12]}>
+        <mesh position={[0, 0.55, 0]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.9, 8]} />
+          <meshStandardMaterial color="#292524" roughness={0.7} />
+        </mesh>
+        <mesh geometry={geos.pendantShade} castShadow>
+          <meshStandardMaterial color="#c86f46" metalness={0.62} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0.06, 0]}>
+          <sphereGeometry args={[0.055, 14, 14]} />
+          <meshStandardMaterial
+            color="#fffbeb"
+            emissive="#fbbf24"
+            emissiveIntensity={1.6}
+            roughness={0.1}
+          />
+        </mesh>
+      </group>
+
+      {/* Detailed Retro Terracotta & Chrome Espresso Machine */}
+      <group position={[1.04, 0.97, -0.22]} rotation={[0, -0.34, 0]}>
+        {/* Brushed chrome base & drip tray */}
+        <RoundedBox args={[0.56, 0.07, 0.48]} radius={0.015} smoothness={3} position={[0, 0.035, 0.02]} castShadow>
+          <meshStandardMaterial color="#d4d4d8" metalness={0.82} roughness={0.22} />
+        </RoundedBox>
+        {/* Main enamel housing */}
+        <RoundedBox args={[0.54, 0.44, 0.4]} radius={0.04} smoothness={4} position={[0, 0.27, -0.02]} castShadow>
+          <meshPhysicalMaterial
+            color="#c9563c"
+            roughness={0.28}
+            metalness={0.18}
+            clearcoat={0.75}
+            clearcoatRoughness={0.2}
+          />
+        </RoundedBox>
+        {/* Chrome cup-warmer top plate + stacked mini cups */}
+        <RoundedBox args={[0.55, 0.035, 0.42]} radius={0.01} smoothness={2} position={[0, 0.5, -0.02]} castShadow>
+          <meshStandardMaterial color="#e4e4e7" metalness={0.86} roughness={0.18} />
+        </RoundedBox>
+        <mesh position={[-0.13, 0.55, -0.02]} castShadow>
+          <cylinderGeometry args={[0.045, 0.038, 0.075, 14]} />
+          <meshStandardMaterial color="#fff7ed" roughness={0.25} />
+        </mesh>
+        <mesh position={[0.02, 0.55, -0.04]} castShadow>
+          <cylinderGeometry args={[0.045, 0.038, 0.075, 14]} />
+          <meshStandardMaterial color="#fff7ed" roughness={0.25} />
+        </mesh>
+        {/* Pressure gauge dial */}
+        <mesh position={[0.13, 0.36, 0.185]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.044, 0.044, 0.02, 16]} />
+          <meshStandardMaterial color="#fefce8" roughness={0.25} />
+        </mesh>
+        <mesh position={[0.13, 0.36, 0.182]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.046, 0.008, 8, 20]} />
+          <meshStandardMaterial color="#a1a1aa" metalness={0.88} roughness={0.2} />
+        </mesh>
+        {/* Grouphead & portafilter with walnut handle */}
+        <mesh position={[-0.08, 0.26, 0.21]} castShadow>
+          <cylinderGeometry args={[0.055, 0.05, 0.08, 16]} />
+          <meshStandardMaterial color="#d4d4d8" metalness={0.88} roughness={0.18} />
+        </mesh>
+        <mesh position={[-0.08, 0.22, 0.32]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.014, 0.018, 0.15, 10]} />
+          <meshStandardMaterial color="#4a2b18" roughness={0.62} />
+        </mesh>
+        {/* Steam wand + stainless milk pitcher on drip tray + glowing power LED */}
+        <mesh position={[0.16, 0.19, 0.22]} rotation={[0.25, 0, -0.22]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.18, 8]} />
+          <meshStandardMaterial color="#e4e4e7" metalness={0.9} roughness={0.15} />
+        </mesh>
+        <mesh position={[-0.17, 0.115, 0.19]} castShadow>
+          <cylinderGeometry args={[0.036, 0.044, 0.095, 14]} />
+          <meshStandardMaterial color="#e4e4e7" metalness={0.88} roughness={0.18} />
+        </mesh>
+        <mesh position={[-0.17, 0.37, 0.185]}>
+          <sphereGeometry args={[0.011, 8, 8]} />
+          <meshStandardMaterial color="#4ade80" emissive="#22c55e" emissiveIntensity={1.6} />
+        </mesh>
+      </group>
+
+      {/* Decorative Glass Pastry Cloche Dome with Golden Croissant */}
+      {showCloche && (
+        <group position={[-0.98, 0.973, -0.26]}>
+          <mesh position={[0, 0.014, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.145, 0.13, 0.028, 22]} />
+            <meshStandardMaterial color="#8b5a3c" roughness={0.65} />
+          </mesh>
+          {/* Golden croissant */}
+          <mesh position={[0, 0.05, 0]} rotation={[0.2, 0.4, 0]} scale={[1.25, 0.72, 0.85]} castShadow>
+            <torusGeometry args={[0.042, 0.022, 8, 16, Math.PI * 1.4]} />
+            <meshStandardMaterial color="#d98a36" bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.72} />
+          </mesh>
+          {/* Clear glass cloche bell */}
+          <mesh position={[0, 0.028, 0]} renderOrder={3}>
+            <sphereGeometry args={[0.125, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+            <meshPhysicalMaterial
+              color="#fffdf9"
+              transparent
+              opacity={0.24}
+              roughness={0.04}
+              clearcoat={1}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh position={[0, 0.16, 0]}>
+            <sphereGeometry args={[0.018, 10, 10]} />
+            <meshPhysicalMaterial color="#fffdf9" transparent opacity={0.45} roughness={0.06} clearcoat={1} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Ceramic Barista Utensil Crock with Wooden Stirrers */}
+      <group position={[0.31, 0.973, -0.32]}>
+        <mesh position={[0, 0.065, 0]} castShadow>
+          <cylinderGeometry args={[0.048, 0.042, 0.13, 16]} />
+          <meshStandardMaterial color="#2a6f62" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.45} />
+        </mesh>
+        {[-0.012, 0.004, 0.016].map((sx, idx) => (
+          <mesh key={idx} position={[sx, 0.145, idx * 0.006]} rotation={[0.08 * (idx - 1), 0, -0.12 + idx * 0.11]}>
+            <cylinderGeometry args={[0.0045, 0.0045, 0.11, 6]} />
+            <meshStandardMaterial color="#d4a373" roughness={0.82} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Main Wooden Café Counter (0.95m height) with fluted front slats & beveled grained top */}
+      <mesh position={[0, 0.455, 0.05]} castShadow receiveShadow>
+        <boxGeometry args={[3.24, 0.91, 0.9]} />
+        <meshStandardMaterial
+          color="#6f462c"
+          bumpMap={textures.woodCounterBump}
+          bumpScale={0.01}
+          roughness={0.85}
+        />
+      </mesh>
+      {/* Front vertical decorative wood slats */}
+      {Array.from({ length: 13 }, (_, idx) => (
+        <mesh
+          key={idx}
+          position={[-1.44 + idx * 0.24, 0.455, 0.505]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[0.14, 0.84, 0.025]} />
+          <meshStandardMaterial
+            color="#7f5134"
+            bumpMap={textures.woodCounterBump}
+            bumpScale={0.008}
+            roughness={0.82}
+          />
+        </mesh>
+      ))}
+      {/* Brass kick-plate along counter base */}
+      <mesh position={[0, 0.04, 0.512]}>
+        <boxGeometry args={[3.26, 0.07, 0.02]} />
+        <meshStandardMaterial color="#b48a3e" metalness={0.78} roughness={0.3} />
+      </mesh>
+      {/* Beveled Oak Countertop with wood grain PBR maps */}
+      <RoundedBox
+        args={[3.38, 0.075, 1.08]}
+        radius={0.022}
+        smoothness={4}
+        position={[0, 0.935, 0.06]}
+        castShadow
+        receiveShadow
+      >
+        <meshStandardMaterial
+          color="#ffffff"
+          map={textures.woodCounterColor}
+          bumpMap={textures.woodCounterBump}
+          bumpScale={0.009}
+          roughnessMap={textures.woodCounterRoughness}
+          roughness={0.62}
+        />
+      </RoundedBox>
+    </group>
+  );
+}
+
 function CafeGreybox({
   phase,
   highlightedProp,
@@ -692,380 +1078,8 @@ function CafeGreybox({
         color="#3b1d0f"
       />
 
-      {/* ENV_Static: warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
-      <group name="ENV_Static">
-        {/* Plank wooden floor */}
-        <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[8.5, 8.5]} />
-          <meshStandardMaterial
-            color="#ffffff"
-            map={textures.floorPlankColor}
-            bumpMap={textures.floorPlankBump}
-            bumpScale={0.008}
-            roughness={0.85}
-          />
-        </mesh>
-
-        {/* Handmade lime-wash plaster back wall */}
-        <mesh position={[0, 1.9, -1.65]} receiveShadow>
-          <boxGeometry args={[6.8, 3.8, 0.18]} />
-          <meshStandardMaterial
-            color="#ffffff"
-            map={textures.plasterColor}
-            bumpMap={textures.plasterBump}
-            bumpScale={0.012}
-            roughness={0.92}
-          />
-        </mesh>
-
-        {/* Warm ceramic subway-tile backsplash behind counter */}
-        <mesh position={[0, 1.18, -1.53]} receiveShadow>
-          <boxGeometry args={[6.8, 0.72, 0.04]} />
-          <meshStandardMaterial
-            color="#ffffff"
-            map={textures.tileColor}
-            bumpMap={textures.tileBump}
-            bumpScale={0.01}
-            roughness={0.42}
-          />
-        </mesh>
-
-        {/* Warm wooden wainscoting lower back-wall trim */}
-        <mesh position={[0, 0.41, -1.52]} receiveShadow>
-          <boxGeometry args={[6.8, 0.82, 0.06]} />
-          <meshStandardMaterial
-            color="#8b5a3c"
-            bumpMap={textures.woodCounterBump}
-            bumpScale={0.008}
-            roughness={0.82}
-          />
-        </mesh>
-
-        {/* Sunlit Café Window on left back wall + soft morning sunbeam shaft */}
-        <group position={[-1.62, 1.86, -1.53]}>
-          <RoundedBox args={[1.05, 1.2, 0.08]} radius={0.02} smoothness={3}>
-            <meshStandardMaterial color="#6b4226" roughness={0.78} />
-          </RoundedBox>
-          <mesh position={[0, 0, 0.03]}>
-            <planeGeometry args={[0.9, 1.04]} />
-            <meshStandardMaterial
-              color="#fff6d6"
-              emissive="#fde68a"
-              emissiveIntensity={0.82}
-              roughness={0.2}
-            />
-          </mesh>
-          {/* Mullion cross bars */}
-          <mesh position={[0, 0, 0.045]}>
-            <boxGeometry args={[0.04, 1.06, 0.03]} />
-            <meshStandardMaterial color="#6b4226" roughness={0.78} />
-          </mesh>
-          <mesh position={[0, 0, 0.045]}>
-            <boxGeometry args={[0.92, 0.04, 0.03]} />
-            <meshStandardMaterial color="#6b4226" roughness={0.78} />
-          </mesh>
-          {/* Soft morning light shaft */}
-          {textures.sunbeamAlpha && (
-            <mesh position={[0.45, -0.35, 0.75]} rotation={[0.62, 0.28, -0.32]} renderOrder={4}>
-              <planeGeometry args={[1.15, 2.2]} />
-              <meshBasicMaterial
-                map={textures.sunbeamAlpha}
-                transparent
-                opacity={0.45}
-                blending={THREE.AdditiveBlending}
-                depthWrite={false}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          )}
-        </group>
-
-        {/* Floating golden dust motes drifting in the morning light */}
-        <SunlitDustMotes />
-
-        {/* Floating wooden wall shelf + bean jars + potted terracotta plant */}
-        <group position={[-0.78, 1.84, -1.4]}>
-          <RoundedBox args={[1.4, 0.075, 0.32]} radius={0.015} smoothness={3} castShadow receiveShadow>
-            <meshStandardMaterial
-              color="#9a633c"
-              map={textures.woodCounterColor}
-              bumpMap={textures.woodCounterBump}
-              bumpScale={0.006}
-              roughness={0.76}
-            />
-          </RoundedBox>
-          {/* Coffee bean glass jars */}
-          <group position={[-0.4, 0.04, 0]}>
-            <mesh position={[0, 0.09, 0]}>
-              <cylinderGeometry args={[0.064, 0.064, 0.16, 14]} />
-              <meshStandardMaterial color="#4a2511" bumpMap={textures.clayBump} bumpScale={0.01} roughness={0.8} />
-            </mesh>
-            <mesh position={[0, 0.11, 0]} castShadow>
-              <cylinderGeometry args={[0.075, 0.075, 0.22, 16]} />
-              <meshPhysicalMaterial
-                color="#fef3c7"
-                transparent
-                opacity={0.28}
-                roughness={0.06}
-                clearcoat={1}
-                depthWrite={false}
-              />
-            </mesh>
-            <mesh position={[0, 0.23, 0]}>
-              <cylinderGeometry args={[0.068, 0.068, 0.03, 16]} />
-              <meshStandardMaterial color="#c49563" roughness={0.88} />
-            </mesh>
-          </group>
-          <group position={[-0.14, 0.04, 0.02]}>
-            <mesh position={[0, 0.09, 0]} castShadow>
-              <cylinderGeometry args={[0.065, 0.065, 0.18, 16]} />
-              <meshStandardMaterial color="#e07a5f" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.45} />
-            </mesh>
-            <mesh position={[0, 0.19, 0]}>
-              <cylinderGeometry args={[0.068, 0.068, 0.024, 16]} />
-              <meshStandardMaterial color="#f5e6d3" roughness={0.4} />
-            </mesh>
-          </group>
-          {/* Cute potted terracotta plant */}
-          <group position={[0.38, 0.04, 0]}>
-            <mesh position={[0, 0.075, 0]} castShadow>
-              <cylinderGeometry args={[0.082, 0.058, 0.15, 16]} />
-              <meshStandardMaterial
-                color="#c96548"
-                bumpMap={textures.clayBump}
-                bumpScale={0.008}
-                roughness={0.85}
-              />
-            </mesh>
-            <mesh position={[0, 0.19, 0]} castShadow>
-              <sphereGeometry args={[0.078, 12, 12]} />
-              <meshStandardMaterial color="#4d7c5b" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.88} />
-            </mesh>
-            <mesh position={[-0.065, 0.16, 0.03]} castShadow>
-              <sphereGeometry args={[0.058, 10, 10]} />
-              <meshStandardMaterial color="#3d6b4b" roughness={0.88} />
-            </mesh>
-            <mesh position={[0.065, 0.17, -0.02]} castShadow>
-              <sphereGeometry args={[0.054, 10, 10]} />
-              <meshStandardMaterial color="#5a8f69" roughness={0.88} />
-            </mesh>
-            {/* Trailing ivy vine draping off shelf */}
-            <mesh position={[0.09, 0.02, 0.07]} castShadow>
-              <sphereGeometry args={[0.038, 8, 8]} />
-              <meshStandardMaterial color="#4d7c5b" roughness={0.88} />
-            </mesh>
-            <mesh position={[0.12, -0.06, 0.09]} castShadow>
-              <sphereGeometry args={[0.03, 8, 8]} />
-              <meshStandardMaterial color="#5a8f69" roughness={0.88} />
-            </mesh>
-          </group>
-        </group>
-
-        {/* Framed geometric icon menu board (zero text, pure visual café craft) */}
-        <group position={[0.96, 1.9, -1.52]}>
-          <RoundedBox args={[0.92, 0.68, 0.05]} radius={0.015} smoothness={3} castShadow>
-            <meshStandardMaterial color="#7a4e32" roughness={0.78} />
-          </RoundedBox>
-          <mesh position={[0, 0, 0.028]}>
-            <planeGeometry args={[0.8, 0.56]} />
-            <meshStandardMaterial color="#27312f" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.95} />
-          </mesh>
-          {/* Minimalist chalk-style geometric cup & steam icon */}
-          <mesh position={[-0.18, -0.02, 0.032]}>
-            <cylinderGeometry args={[0.065, 0.052, 0.11, 14]} />
-            <meshBasicMaterial color="#fef3c7" />
-          </mesh>
-          <mesh position={[0.14, 0.06, 0.032]}>
-            <boxGeometry args={[0.26, 0.025, 0.005]} />
-            <meshBasicMaterial color="#fde68a" />
-          </mesh>
-          <mesh position={[0.14, -0.03, 0.032]}>
-            <boxGeometry args={[0.2, 0.022, 0.005]} />
-            <meshBasicMaterial color="#cbd5e1" />
-          </mesh>
-          <mesh position={[0.14, -0.12, 0.032]}>
-            <boxGeometry args={[0.24, 0.022, 0.005]} />
-            <meshBasicMaterial color="#93c5fd" />
-          </mesh>
-        </group>
-
-        {/* Overhead Mid-Century Copper Pendant Lamp */}
-        <group position={[0, 2.08, 0.12]}>
-          <mesh position={[0, 0.55, 0]}>
-            <cylinderGeometry args={[0.008, 0.008, 0.9, 8]} />
-            <meshStandardMaterial color="#292524" roughness={0.7} />
-          </mesh>
-          <mesh geometry={geos.pendantShade} castShadow>
-            <meshStandardMaterial color="#c86f46" metalness={0.62} roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0.06, 0]}>
-            <sphereGeometry args={[0.055, 14, 14]} />
-            <meshStandardMaterial
-              color="#fffbeb"
-              emissive="#fbbf24"
-              emissiveIntensity={1.6}
-              roughness={0.1}
-            />
-          </mesh>
-        </group>
-
-        {/* Detailed Retro Terracotta & Chrome Espresso Machine */}
-        <group position={[1.04, 0.97, -0.22]} rotation={[0, -0.34, 0]}>
-          {/* Brushed chrome base & drip tray */}
-          <RoundedBox args={[0.56, 0.07, 0.48]} radius={0.015} smoothness={3} position={[0, 0.035, 0.02]} castShadow>
-            <meshStandardMaterial color="#d4d4d8" metalness={0.82} roughness={0.22} />
-          </RoundedBox>
-          {/* Main enamel housing */}
-          <RoundedBox args={[0.54, 0.44, 0.4]} radius={0.04} smoothness={4} position={[0, 0.27, -0.02]} castShadow>
-            <meshPhysicalMaterial
-              color="#c9563c"
-              roughness={0.28}
-              metalness={0.18}
-              clearcoat={0.75}
-              clearcoatRoughness={0.2}
-            />
-          </RoundedBox>
-          {/* Chrome cup-warmer top plate + stacked mini cups */}
-          <RoundedBox args={[0.55, 0.035, 0.42]} radius={0.01} smoothness={2} position={[0, 0.5, -0.02]} castShadow>
-            <meshStandardMaterial color="#e4e4e7" metalness={0.86} roughness={0.18} />
-          </RoundedBox>
-          <mesh position={[-0.13, 0.55, -0.02]} castShadow>
-            <cylinderGeometry args={[0.045, 0.038, 0.075, 14]} />
-            <meshStandardMaterial color="#fff7ed" roughness={0.25} />
-          </mesh>
-          <mesh position={[0.02, 0.55, -0.04]} castShadow>
-            <cylinderGeometry args={[0.045, 0.038, 0.075, 14]} />
-            <meshStandardMaterial color="#fff7ed" roughness={0.25} />
-          </mesh>
-          {/* Pressure gauge dial */}
-          <mesh position={[0.13, 0.36, 0.185]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.044, 0.044, 0.02, 16]} />
-            <meshStandardMaterial color="#fefce8" roughness={0.25} />
-          </mesh>
-          <mesh position={[0.13, 0.36, 0.182]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.046, 0.008, 8, 20]} />
-            <meshStandardMaterial color="#a1a1aa" metalness={0.88} roughness={0.2} />
-          </mesh>
-          {/* Grouphead & portafilter with walnut handle */}
-          <mesh position={[-0.08, 0.26, 0.21]} castShadow>
-            <cylinderGeometry args={[0.055, 0.05, 0.08, 16]} />
-            <meshStandardMaterial color="#d4d4d8" metalness={0.88} roughness={0.18} />
-          </mesh>
-          <mesh position={[-0.08, 0.22, 0.32]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.014, 0.018, 0.15, 10]} />
-            <meshStandardMaterial color="#4a2b18" roughness={0.62} />
-          </mesh>
-          {/* Steam wand + stainless milk pitcher on drip tray + glowing power LED */}
-          <mesh position={[0.16, 0.19, 0.22]} rotation={[0.25, 0, -0.22]}>
-            <cylinderGeometry args={[0.008, 0.008, 0.18, 8]} />
-            <meshStandardMaterial color="#e4e4e7" metalness={0.9} roughness={0.15} />
-          </mesh>
-          <mesh position={[-0.17, 0.115, 0.19]} castShadow>
-            <cylinderGeometry args={[0.036, 0.044, 0.095, 14]} />
-            <meshStandardMaterial color="#e4e4e7" metalness={0.88} roughness={0.18} />
-          </mesh>
-          <mesh position={[-0.17, 0.37, 0.185]}>
-            <sphereGeometry args={[0.011, 8, 8]} />
-            <meshStandardMaterial color="#4ade80" emissive="#22c55e" emissiveIntensity={1.6} />
-          </mesh>
-        </group>
-
-        {/* Decorative Glass Pastry Cloche Dome with Golden Croissant (hidden during thermal_contrast so customer has room) */}
-        {phase !== 'thermal_contrast' && (
-          <group position={[-0.98, 0.973, -0.26]}>
-            <mesh position={[0, 0.014, 0]} castShadow receiveShadow>
-              <cylinderGeometry args={[0.145, 0.13, 0.028, 22]} />
-              <meshStandardMaterial color="#8b5a3c" roughness={0.65} />
-            </mesh>
-            {/* Golden croissant */}
-            <mesh position={[0, 0.05, 0]} rotation={[0.2, 0.4, 0]} scale={[1.25, 0.72, 0.85]} castShadow>
-              <torusGeometry args={[0.042, 0.022, 8, 16, Math.PI * 1.4]} />
-              <meshStandardMaterial color="#d98a36" bumpMap={textures.clayBump} bumpScale={0.006} roughness={0.72} />
-            </mesh>
-            {/* Clear glass cloche bell */}
-            <mesh position={[0, 0.028, 0]} renderOrder={3}>
-              <sphereGeometry args={[0.125, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
-              <meshPhysicalMaterial
-                color="#fffdf9"
-                transparent
-                opacity={0.24}
-                roughness={0.04}
-                clearcoat={1}
-                depthWrite={false}
-              />
-            </mesh>
-            <mesh position={[0, 0.16, 0]}>
-              <sphereGeometry args={[0.018, 10, 10]} />
-              <meshPhysicalMaterial color="#fffdf9" transparent opacity={0.45} roughness={0.06} clearcoat={1} />
-            </mesh>
-          </group>
-        )}
-
-        {/* Ceramic Barista Utensil Crock with Wooden Stirrers between carafe & water */}
-        <group position={[0.31, 0.973, -0.32]}>
-          <mesh position={[0, 0.065, 0]} castShadow>
-            <cylinderGeometry args={[0.048, 0.042, 0.13, 16]} />
-            <meshStandardMaterial color="#2a6f62" bumpMap={textures.clayBump} bumpScale={0.005} roughness={0.45} />
-          </mesh>
-          {[-0.012, 0.004, 0.016].map((sx, idx) => (
-            <mesh key={idx} position={[sx, 0.145, idx * 0.006]} rotation={[0.08 * (idx - 1), 0, -0.12 + idx * 0.11]}>
-              <cylinderGeometry args={[0.0045, 0.0045, 0.11, 6]} />
-              <meshStandardMaterial color="#d4a373" roughness={0.82} />
-            </mesh>
-          ))}
-        </group>
-
-        {/* Main Wooden Café Counter (0.95m height) with fluted front slats & beveled grained top */}
-        <mesh position={[0, 0.455, 0.05]} castShadow receiveShadow>
-          <boxGeometry args={[3.24, 0.91, 0.9]} />
-          <meshStandardMaterial
-            color="#6f462c"
-            bumpMap={textures.woodCounterBump}
-            bumpScale={0.01}
-            roughness={0.85}
-          />
-        </mesh>
-        {/* Front vertical decorative wood slats */}
-        {Array.from({ length: 13 }, (_, idx) => (
-          <mesh
-            key={idx}
-            position={[-1.44 + idx * 0.24, 0.455, 0.505]}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={[0.14, 0.84, 0.025]} />
-            <meshStandardMaterial
-              color="#7f5134"
-              bumpMap={textures.woodCounterBump}
-              bumpScale={0.008}
-              roughness={0.82}
-            />
-          </mesh>
-        ))}
-        {/* Brass kick-plate along counter base */}
-        <mesh position={[0, 0.04, 0.512]}>
-          <boxGeometry args={[3.26, 0.07, 0.02]} />
-          <meshStandardMaterial color="#b48a3e" metalness={0.78} roughness={0.3} />
-        </mesh>
-        {/* Beveled Oak Countertop with wood grain PBR maps */}
-        <RoundedBox
-          args={[3.38, 0.075, 1.08]}
-          radius={0.022}
-          smoothness={4}
-          position={[0, 0.935, 0.06]}
-          castShadow
-          receiveShadow
-        >
-          <meshStandardMaterial
-            color="#ffffff"
-            map={textures.woodCounterColor}
-            bumpMap={textures.woodCounterBump}
-            bumpScale={0.009}
-            roughnessMap={textures.woodCounterRoughness}
-            roughness={0.62}
-          />
-        </RoundedBox>
-      </group>
+      {/* ENV_Static: shared warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
+      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} />
 
       {/* Subtle highlight halo rendered beneath whichever prop is currently highlighted */}
       {highlightedProp && highlightedProp !== 'prop_cafe_door' && (
