@@ -22,19 +22,36 @@ import {
   recordDailyQuestProgress,
 } from './domain/dailyQuests';
 import { evaluateCefrProgress } from './domain/cefrEngine';
+import {
+  DIALOGUE_CONCEPTS,
+  INTERIOR_CONCEPTS,
+  PRACTICE_UNIT_CONCEPTS,
+  STORY_CONCEPTS,
+} from './domain/curriculumMap';
 import { getActiveQuest } from './domain/inventoryAndQuests';
 import {
   addInventoryItem,
   applyCafeCycleOutcome,
   applyLesson2Outcome,
   applyLesson3Outcome,
-  applySrsReviewOutcome,
   completeQuestInProfile,
   createInitialProfile,
+  recordPedagogicalEvidence,
   recordStreetDiscovery,
 } from './domain/learnerMemory';
+import { computeNextBestStep } from './domain/nextBestStep';
+import type { DialogueScenarioId } from './domain/travelDialogues';
 import { resolveWorldAtmosphere, type GuidanceContext } from './domain/immersion';
-import type { CafeCycleId, ConceptId, LearnerProfile, PropName, SpeechKey } from './domain/types';
+import type {
+  CafeCycleId,
+  ConceptId,
+  LearnerProfile,
+  NextStepRecommendation,
+  PropName,
+  SpeechKey,
+  WorldMapId,
+} from './domain/types';
+import { ACTIVE_WORLD_MAPS, WORLD_MAP_REGISTRY, type AvatarPose } from './scene/worldNavigation';
 import { createAudioPlayer, type AudioStatus } from './services/audioPlayer';
 import { playPourTick, playRewardFanfare, playShopBell, playSuccessChime } from './services/soundEngine';
 import { loadProfile, resetProfile, saveProfile } from './services/learnerStorage';
@@ -79,9 +96,17 @@ export default function App() {
   const [profile, setProfile] = useState<LearnerProfile>(() => loadProfile());
   const [lesson, setLesson] = useState(() => createLesson1State());
   const [activeView, setActiveView] = useState<ActiveView>('map');
-  const [cameraMode, setCameraMode] = useState<CameraMode>('third_person');
+  const [currentMapId, setCurrentMapId] = useState<WorldMapId>(() => {
+    const saved = profile.currentMapId;
+    return saved && ACTIVE_WORLD_MAPS.includes(saved) ? saved : 'town';
+  });
+  const [cameraSnapSeq, setCameraSnapSeq] = useState(0);
+  const [mapFading, setMapFading] = useState(false);
+  const mapFadeTimerRef = useRef<number | null>(null);
+  const [cameraMode, setCameraMode] = useState<CameraMode>('fixed_2_5d');
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [travelDialogueOpen, setTravelDialogueOpen] = useState(false);
+  const [activeDialogueScenarioId, setActiveDialogueScenarioId] = useState<DialogueScenarioId>('cafe');
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [questsOpen, setQuestsOpen] = useState(false);
@@ -245,6 +270,10 @@ export default function App() {
       prev.mistakeExerciseIds === profile.mistakeExerciseIds &&
       prev.completedPracticeUnitIds === profile.completedPracticeUnitIds &&
       prev.completedStoryIds === profile.completedStoryIds &&
+      prev.completedDialogueIds === profile.completedDialogueIds &&
+      prev.completedInteriors === profile.completedInteriors &&
+      prev.completedMilestoneIds === profile.completedMilestoneIds &&
+      prev.recentSessionBuckets === profile.recentSessionBuckets &&
       prev.dailyQuests === profile.dailyQuests;
 
     // Throttle pure 1s clock ticks to every 15s; persist all real progress immediately
@@ -461,10 +490,23 @@ export default function App() {
 
   const handleCompleteCafeCycle = useCallback(
     (cycleId: CafeCycleId, concepts: readonly ConceptId[]) => {
+      const nowIso = new Date().toISOString();
       updateProfile((prev) =>
         updateDailyStreak(
           awardCoins(
-            applyCafeCycleOutcome(prev, cycleId, concepts, new Date().toISOString()),
+            recordPedagogicalEvidence(
+              applyCafeCycleOutcome(prev, cycleId, concepts, nowIso),
+              {
+                mode: 'interior_3d',
+                contextId: cycleId,
+                concepts,
+                interiorId: 'cafe',
+                completedMilestoneId:
+                  cycleId === 'cafe_pre_a1_shift' ? 'pre_a1_graduation_shift' : undefined,
+                bucket: 'spiral',
+                nowIso,
+              },
+            ),
             20,
           ),
         ),
@@ -539,8 +581,22 @@ export default function App() {
   }, [audioPlayer, stopVoice]);
 
   const handleCompleteMarket = useCallback(() => {
+    const nowIso = new Date().toISOString();
     updateProfile((prev) =>
-      updateDailyStreak(awardCoins(applyLesson2Outcome(prev, new Date().toISOString()), 20)),
+      updateDailyStreak(
+        awardCoins(
+          recordPedagogicalEvidence(applyLesson2Outcome(prev, nowIso), {
+            mode: 'interior_3d',
+            contextId: 'lesson2_market',
+            concepts: INTERIOR_CONCEPTS.market,
+            interiorId: 'market',
+            completedActivityId: 'lesson2_market',
+            bucket: 'spiral',
+            nowIso,
+          }),
+          20,
+        ),
+      ),
     );
     showRewardToast('🍎 Market lesson complete! +20 🪙 earned!');
     setActiveView('badges');
@@ -555,8 +611,22 @@ export default function App() {
   }, [audioPlayer, stopVoice]);
 
   const handleCompletePlaza = useCallback(() => {
+    const nowIso = new Date().toISOString();
     updateProfile((prev) =>
-      updateDailyStreak(awardCoins(applyLesson3Outcome(prev, new Date().toISOString()), 20)),
+      updateDailyStreak(
+        awardCoins(
+          recordPedagogicalEvidence(applyLesson3Outcome(prev, nowIso), {
+            mode: 'interior_3d',
+            contextId: 'lesson3_plaza',
+            concepts: INTERIOR_CONCEPTS.plaza,
+            interiorId: 'plaza',
+            completedActivityId: 'lesson3_plaza',
+            bucket: 'spiral',
+            nowIso,
+          }),
+          20,
+        ),
+      ),
     );
     showRewardToast('⛲ Plaza lesson complete! +20 🪙 earned!');
     setActiveView('badges');
@@ -624,9 +694,23 @@ export default function App() {
   }, [audioPlayer, resetPourState, stopVoice]);
 
   const handleCompletePizzeria = useCallback(() => {
+    const nowIso = new Date().toISOString();
     updateProfile((prev) =>
       addInventoryItem(
-        updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pizzeria_kitchen'), 20)),
+        updateDailyStreak(
+          awardCoins(
+            recordPedagogicalEvidence(prev, {
+              mode: 'interior_3d',
+              contextId: 'pizzeria_kitchen',
+              concepts: INTERIOR_CONCEPTS.pizzeria,
+              interiorId: 'pizzeria',
+              completedActivityId: 'interior_pizzeria',
+              bucket: 'spiral',
+              nowIso,
+            }),
+            20,
+          ),
+        ),
         'pizza',
       ),
     );
@@ -645,15 +729,125 @@ export default function App() {
   }, [audioPlayer, resetPourState, stopVoice]);
 
   const handleCompletePharmacy = useCallback(() => {
+    const nowIso = new Date().toISOString();
     updateProfile((prev) =>
       addInventoryItem(
-        updateDailyStreak(awardCoins(recordStreetDiscovery(prev, 'world_pharmacy_counter'), 20)),
+        updateDailyStreak(
+          awardCoins(
+            recordPedagogicalEvidence(prev, {
+              mode: 'interior_3d',
+              contextId: 'pharmacy_counter',
+              concepts: INTERIOR_CONCEPTS.pharmacy,
+              interiorId: 'pharmacy',
+              completedActivityId: 'interior_pharmacy',
+              bucket: 'spiral',
+              nowIso,
+            }),
+            20,
+          ),
+        ),
         'medicine',
       ),
     );
     showRewardToast('💊 Patient cared for & medicine packed! +20 coins earned!');
     setActiveView('map');
   }, [showRewardToast, updateProfile]);
+
+  const handleTriggerNextStep = useCallback(
+    (recommendation: NextStepRecommendation) => {
+      audioPlayer.stop();
+      stopVoice();
+      resetPourState();
+      setMinimapOpen(false);
+      setActiveCuriosityId(null);
+      setWardrobeOpen(false);
+      setQuestsOpen(false);
+      setPracticeOpen(false);
+      setStoriesOpen(false);
+      setTravelDialogueOpen(false);
+
+      const { target } = recommendation;
+      if (target.kind === 'enter_interior') {
+        if (target.interiorId === 'cafe') {
+          if (target.cafeCycleId === 'cafe_c1_drinks') {
+            playShopBell();
+            setActiveView('lesson');
+            if (
+              lessonRef.current.completed ||
+              lessonRef.current.phase !== 'map_arrival' ||
+              lessonRef.current.subStep !== 'idle_map'
+            ) {
+              const fresh = createLesson1State();
+              lessonRef.current = fresh;
+              setLesson(fresh);
+            }
+            dispatch({ type: 'ENTER_CAFE' });
+          } else if (target.cafeCycleId) {
+            playShopBell();
+            const cycle = target.cafeCycleId;
+            setActiveCafeCycle(cycle);
+            setActiveView('cafe_cycle');
+            const introMap: Record<Exclude<CafeCycleId, 'cafe_c1_drinks'>, SpeechKey> = {
+              cafe_c2_food: 'cafe_c2_intro',
+              cafe_c3_quantity: 'cafe_c3_intro',
+              cafe_pre_a1_shift: 'cafe_shift_order_1',
+              cafe_a1_spiral: 'cafe_a1_intro',
+            };
+            audioPlayer.play(introMap[cycle]);
+          } else {
+            handleEnterCafe();
+          }
+        } else if (target.interiorId === 'market') {
+          handleEnterMarket();
+        } else if (target.interiorId === 'plaza') {
+          handleEnterPlaza();
+        } else if (target.interiorId === 'pizzeria') {
+          handleEnterPizzeria();
+        } else if (target.interiorId === 'pharmacy') {
+          handleEnterPharmacy();
+        }
+      } else if (target.kind === 'open_practice') {
+        setActiveView('map');
+        setPracticeOpen(true);
+      } else if (target.kind === 'open_srs') {
+        setActiveView('badges');
+      } else if (target.kind === 'open_story') {
+        setActiveView('map');
+        setStoriesOpen(true);
+      } else if (target.kind === 'open_talk') {
+        const validScenarios: readonly DialogueScenarioId[] = [
+          'cafe',
+          'pharmacy',
+          'pizzeria',
+          'barber',
+          'postbank',
+        ];
+        if (
+          target.scenarioId &&
+          (validScenarios as readonly string[]).includes(target.scenarioId)
+        ) {
+          setActiveDialogueScenarioId(target.scenarioId as DialogueScenarioId);
+        }
+        setActiveView('map');
+        setTravelDialogueOpen(true);
+      } else if (target.kind === 'explore_street') {
+        setActiveView('map');
+        showRewardToast('🧭 Explore the boulevard & tap glowing objects!');
+      }
+    },
+    [
+      audioPlayer,
+      dispatch,
+      handleEnterCafe,
+      handleEnterMarket,
+      handleEnterPharmacy,
+      handleEnterPizzeria,
+      handleEnterPlaza,
+      resetPourState,
+      showRewardToast,
+      stopVoice,
+    ],
+  );
 
   const handleMapBlockedBump = useCallback(() => {
     setMapBlockedHint(true);
@@ -727,6 +921,7 @@ export default function App() {
   const starCount = Object.keys(profile.constellation).length;
   const badgeCount = countEarnedBadges(evaluateNeighborhoodBadges(profile));
   const cefrProgress = evaluateCefrProgress(profile);
+  const nextBestStep = useMemo(() => computeNextBestStep(profile), [profile]);
   const activeQuest = getActiveQuest(completedQuestIds);
   const { timeOfDay, weather } = resolveWorldAtmosphere(profile.completedLessonIds);
   const cefrBadge =
@@ -767,10 +962,61 @@ export default function App() {
                       ? 'cafe_tap_prop'
                       : 'cafe_listen';
 
+  const handleTravelToMap = useCallback(
+    (target: WorldMapId, spawn?: AvatarPose) => {
+      if (!ACTIVE_WORLD_MAPS.includes(target)) return;
+      if (mapFadeTimerRef.current) {
+        window.clearTimeout(mapFadeTimerRef.current);
+      }
+      audioPlayer.stop();
+      stopVoice();
+      setMinimapOpen(false);
+      setMapFading(true);
+
+      const targetConfig = WORLD_MAP_REGISTRY[target];
+      const nextSpawn = spawn ?? targetConfig.defaultSpawn;
+
+      mapFadeTimerRef.current = window.setTimeout(() => {
+        setCurrentMapId(target);
+        setActiveView('map');
+        setTeleportRequest((prev) => ({
+          x: nextSpawn.x,
+          z: nextSpawn.z,
+          yaw: nextSpawn.yaw,
+          seq: (prev?.seq ?? 0) + 1,
+        }));
+        setCameraSnapSeq((s) => s + 1);
+        updateProfile((prev) => {
+          const visited = prev.visitedMapIds ?? ['town'];
+          const nextVisited = visited.includes(target) ? visited : [...visited, target];
+          return {
+            ...prev,
+            currentMapId: target,
+            visitedMapIds: nextVisited,
+          };
+        });
+
+        mapFadeTimerRef.current = window.setTimeout(() => {
+          setMapFading(false);
+          mapFadeTimerRef.current = null;
+        }, 160);
+      }, 150);
+    },
+    [audioPlayer, stopVoice, updateProfile],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (mapFadeTimerRef.current) window.clearTimeout(mapFadeTimerRef.current);
+    };
+  }, []);
+
   return (
     <main className="app-shell">
       <ExperienceCanvas
         activeView={activeView}
+        currentMapId={currentMapId}
+        cameraSnapSeq={cameraSnapSeq}
         cameraMode={cameraMode}
         avatarStyle={getEffectiveAvatarStyle(profile)}
         teleportRequest={teleportRequest}
@@ -803,6 +1049,11 @@ export default function App() {
         onCompletePizzeria={handleCompletePizzeria}
         onEnterPharmacy={handleEnterPharmacy}
         onCompletePharmacy={handleCompletePharmacy}
+        onTravelToMap={handleTravelToMap}
+        onOpenWardrobe={() => {
+          stopVoice();
+          setWardrobeOpen(true);
+        }}
         onMarketStageChange={setMarketStage}
         onCompleteMarket={handleCompleteMarket}
         onPlazaStageChange={setPlazaStage}
@@ -828,13 +1079,7 @@ export default function App() {
           setWardrobeOpen((prev) => !prev);
         }}
         onCycleCameraMode={() =>
-          setCameraMode((prev) =>
-            prev === 'third_person'
-              ? 'first_person'
-              : prev === 'first_person'
-                ? 'overview'
-                : 'third_person',
-          )
+          setCameraMode((prev) => (prev === 'fixed_2_5d' ? 'overview' : 'fixed_2_5d'))
         }
       />
 
@@ -851,6 +1096,8 @@ export default function App() {
             starCount={starCount}
             cefrBadge={cefrBadge}
             darkSurface={activeView === 'map' && timeOfDay === 'night'}
+            nextStep={activeView === 'map' ? nextBestStep : undefined}
+            onTriggerNextStep={activeView === 'map' ? handleTriggerNextStep : undefined}
           />
         )}
 
@@ -954,6 +1201,20 @@ export default function App() {
           />
         )}
 
+      {activeView === 'map' && currentMapId !== 'town' && (
+        <button
+          type="button"
+          className="world-map-return-pill"
+          onClick={() => handleTravelToMap('town')}
+          aria-label="Return to Baeuda Town"
+        >
+          <span>{WORLD_MAP_REGISTRY[currentMapId].icon} {WORLD_MAP_REGISTRY[currentMapId].label}</span>
+          <span className="world-map-return-cta">↩ Town</span>
+        </button>
+      )}
+
+      {mapFading && <div className="map-transition-curtain" aria-hidden="true" />}
+
       {rewardToast && (
         <div className="reward-toast" role="status" aria-live="polite">
           {rewardToast}
@@ -963,7 +1224,20 @@ export default function App() {
       <Suspense fallback={null}>
         {activeView === 'map' && minimapOpen && (
           <CityMinimapModal
+            currentMapId={currentMapId}
+            onTravelToMap={(mapId) => handleTravelToMap(mapId)}
+            nextStep={nextBestStep}
+            onTriggerNextStep={handleTriggerNextStep}
             onSelectLocation={(entry) => {
+              if (currentMapId !== 'town') {
+                handleTravelToMap('town', {
+                  x: entry.x,
+                  y: 0.06,
+                  z: entry.z,
+                  yaw: entry.yaw,
+                });
+                return;
+              }
               setTeleportRequest((prev) => ({
                 x: entry.x,
                 z: entry.z,
@@ -1020,7 +1294,13 @@ export default function App() {
                   'practice',
                 );
                 if (reviewedConceptIds && reviewedConceptIds.length > 0) {
-                  next = applySrsReviewOutcome(next, reviewedConceptIds, nowIso);
+                  next = recordPedagogicalEvidence(next, {
+                    mode: 'srs',
+                    contextId: gameKey,
+                    concepts: reviewedConceptIds,
+                    bucket: 'retention',
+                    nowIso,
+                  });
                 }
                 return next;
               });
@@ -1055,16 +1335,33 @@ export default function App() {
 
         {travelDialogueOpen && (
           <TravelDialogueModal
+            key={activeDialogueScenarioId}
+            initialScenarioId={activeDialogueScenarioId}
             completedDiscoveries={profile.streetDiscoveries ?? []}
             onPlayAudio={(key) => {
               stopVoice();
               audioPlayer.play(key);
             }}
             onComplete={(scenarioId) => {
+              const nowIso = new Date().toISOString();
               updateProfile((prev) =>
                 recordDailyQuestProgress(
                   updateDailyStreak(
-                    awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
+                    awardCoins(
+                      recordPedagogicalEvidence(
+                        recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`),
+                        {
+                          mode: 'talk',
+                          contextId: `talk_${scenarioId}`,
+                          concepts: DIALOGUE_CONCEPTS[scenarioId] ?? [],
+                          producedOutput: true,
+                          completedDialogueId: scenarioId,
+                          bucket: 'application',
+                          nowIso,
+                        },
+                      ),
+                      15,
+                    ),
                   ),
                   'story_or_dialogue',
                 ),
@@ -1104,6 +1401,7 @@ export default function App() {
             completedUnitIds={profile.completedPracticeUnitIds ?? []}
             mistakeExerciseIds={profile.mistakeExerciseIds ?? []}
             onCompleteSession={(payload) => {
+              const nowIso = new Date().toISOString();
               updateProfile((prev) => {
                 const prevMistakes = prev.mistakeExerciseIds ?? [];
                 const clearedSet = new Set(payload.clearedMistakeIds);
@@ -1113,11 +1411,10 @@ export default function App() {
                     ...payload.newMistakeIds,
                   ]),
                 );
-                const prevUnits = prev.completedPracticeUnitIds ?? [];
-                const nextUnits =
-                  payload.unitId && !prevUnits.includes(payload.unitId)
-                    ? [...prevUnits, payload.unitId]
-                    : prevUnits;
+                const isMistakesSession = payload.unitId === null;
+                const concepts = payload.unitId
+                  ? (PRACTICE_UNIT_CONCEPTS[payload.unitId] ?? [])
+                  : [];
                 let next = recordDailyQuestProgress(
                   updateDailyStreak(awardCoins(prev, payload.coinsEarned)),
                   'practice',
@@ -1125,10 +1422,22 @@ export default function App() {
                 if (payload.unitId) {
                   next = recordStreetDiscovery(next, `world_practice_${payload.unitId}`);
                 }
+                next = recordPedagogicalEvidence(next, {
+                  mode: 'practice',
+                  contextId: isMistakesSession
+                    ? 'practice_mistakes_lab'
+                    : `practice_${payload.unitId}`,
+                  concepts,
+                  succeeded: true,
+                  neededHint: payload.newMistakeIds.length > 0,
+                  producedOutput: true,
+                  completedActivityId: payload.unitId ?? undefined,
+                  bucket: isMistakesSession ? 'retention' : 'spiral',
+                  nowIso,
+                });
                 return {
                   ...next,
                   mistakeExerciseIds: mergedMistakes,
-                  completedPracticeUnitIds: nextUnits,
                 };
               });
               showRewardToast(`⚡ Practice complete (${payload.accuracy}%)! +${payload.coinsEarned} coins`);
@@ -1165,22 +1474,28 @@ export default function App() {
           <CityStoriesModal
             completedStoryIds={profile.completedStoryIds ?? []}
             onCompleteStory={(story) => {
-              updateProfile((prev) => {
-                const prevStories = prev.completedStoryIds ?? [];
-                const nextStories = prevStories.includes(story.id)
-                  ? prevStories
-                  : [...prevStories, story.id];
-                const next = recordDailyQuestProgress(
+              const nowIso = new Date().toISOString();
+              updateProfile((prev) =>
+                recordDailyQuestProgress(
                   updateDailyStreak(
-                    awardCoins(recordStreetDiscovery(prev, `world_${story.id}`), story.rewardCoins),
+                    awardCoins(
+                      recordPedagogicalEvidence(
+                        recordStreetDiscovery(prev, `world_${story.id}`),
+                        {
+                          mode: 'story',
+                          contextId: story.id,
+                          concepts: STORY_CONCEPTS[story.id] ?? [],
+                          completedActivityId: story.id,
+                          bucket: 'application',
+                          nowIso,
+                        },
+                      ),
+                      story.rewardCoins,
+                    ),
                   ),
                   'story_or_dialogue',
-                );
-                return {
-                  ...next,
-                  completedStoryIds: nextStories,
-                };
-              });
+                ),
+              );
               showRewardToast(`📖 "${story.title}" finished! +${story.rewardCoins} coins`);
             }}
             onClose={() => setStoriesOpen(false)}

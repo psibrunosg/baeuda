@@ -1,5 +1,5 @@
 import { createInitialProfile } from '../domain/learnerMemory';
-import type { LearnerProfile } from '../domain/types';
+import type { LearnerProfile, WorldMapId } from '../domain/types';
 
 export const STORAGE_KEY = 'baeuda.learnerProfile.v1';
 
@@ -54,6 +54,13 @@ function normalizeProfile(value: unknown): LearnerProfile | null {
       typeof candidate.coins === 'number' && Number.isFinite(candidate.coins)
         ? candidate.coins
         : undefined,
+    currentMapId:
+      typeof candidate.currentMapId === 'string'
+        ? (candidate.currentMapId as WorldMapId)
+        : undefined,
+    visitedMapIds: candidate.visitedMapIds
+      ? (sanitizeStringArray(candidate.visitedMapIds, []) as WorldMapId[])
+      : undefined,
     locations: {
       ...base.locations,
       ...candidate.locations,

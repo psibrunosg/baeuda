@@ -1,3 +1,15 @@
+import type { WorldMapId } from '../domain/types';
+import { ACTIVE_WORLD_MAPS, WORLD_MAP_REGISTRY } from '../scene/worldNavigation';
+
+import { getCefrLabel } from '../domain/curriculumMap';
+import type { NextStepRecommendation, SessionBucket } from '../domain/types';
+
+const BUCKET_LABELS: Record<SessionBucket, string> = {
+  spiral: 'Avanço',
+  retention: 'Revisão',
+  application: 'Aplicação',
+};
+
 export interface CityDirectoryEntry {
   id: string;
   icon: string;
@@ -10,24 +22,30 @@ export interface CityDirectoryEntry {
 }
 
 export const CITY_DIRECTORY: readonly CityDirectoryEntry[] = [
-  { id: 'petshop', icon: '🐶', name: 'Pet Shop', profession: 'Vet', side: 'north', x: -9.8, z: 1.55, yaw: Math.PI },
-  { id: 'pharmacy', icon: '💊', name: 'Pharmacy', profession: 'Pharmacist', side: 'north', x: -7.1, z: 1.55, yaw: Math.PI },
-  { id: 'market', icon: '🍎', name: 'Fruit Market', profession: 'Grocer', side: 'north', x: -4.2, z: 1.55, yaw: Math.PI },
-  { id: 'cafe', icon: '☕', name: 'Corner Café', profession: 'Barista', side: 'north', x: -0.35, z: 1.98, yaw: Math.PI },
-  { id: 'plaza', icon: '🎵', name: 'Central Plaza', profession: 'Musician', side: 'north', x: 4.4, z: 1.55, yaw: Math.PI },
-  { id: 'tech', icon: '💻', name: 'Tech & Phone', profession: 'Technician', side: 'north', x: 7.1, z: 1.55, yaw: Math.PI },
-  { id: 'barber', icon: '💈', name: 'Barber Shop', profession: 'Barber', side: 'north', x: 9.8, z: 1.55, yaw: Math.PI },
-  { id: 'bookshop', icon: '📚', name: 'Bookshop', profession: 'Librarian', side: 'south', x: -9.8, z: 2.35, yaw: 0 },
-  { id: 'boutique', icon: '👗', name: 'Clothing Store', profession: 'Shopkeeper', side: 'south', x: -7.2, z: 2.35, yaw: 0 },
-  { id: 'bakery', icon: '🥖', name: 'Artisan Bakery', profession: 'Baker', side: 'south', x: -4.5, z: 2.35, yaw: 0 },
-  { id: 'postbank', icon: '📮', name: 'Post & Bank', profession: 'Postal Worker', side: 'south', x: 0.15, z: 2.35, yaw: 0 },
-  { id: 'tireshop', icon: '🔧', name: 'Tire Shop', profession: 'Mechanic', side: 'south', x: 4.6, z: 2.35, yaw: 0 },
-  { id: 'worksite', icon: '👷', name: 'Work Site', profession: 'Builder', side: 'south', x: 7.3, z: 2.35, yaw: 0 },
-  { id: 'pizzeria', icon: '🍕', name: 'Pizzeria', profession: 'Chef', side: 'south', x: 9.8, z: 2.35, yaw: 0 },
+  // Z1 Centro + Z3 Parque (Main Avenue & North Park)
+  { id: 'market', icon: '🍎', name: 'Fruit Market', profession: 'Grocer', side: 'north', x: -3.6, z: -1.4, yaw: Math.PI },
+  { id: 'cafe', icon: '☕', name: 'Corner Café', profession: 'Barista', side: 'north', x: -0.35, z: -0.5, yaw: Math.PI },
+  { id: 'bakery', icon: '🥖', name: 'Artisan Bakery', profession: 'Baker', side: 'north', x: 3.8, z: -1.4, yaw: Math.PI },
+  { id: 'plaza', icon: '🎵', name: 'Central Plaza', profession: 'Musician', side: 'north', x: -1.6, z: -6.1, yaw: Math.PI },
+  { id: 'bookshop', icon: '📚', name: 'Bookshop', profession: 'Librarian', side: 'north', x: -13.8, z: -1.4, yaw: Math.PI },
+  { id: 'boutique', icon: '👗', name: 'Clothing Store', profession: 'Shopkeeper', side: 'north', x: -9.8, z: -1.4, yaw: Math.PI },
+  { id: 'barber', icon: '💈', name: 'Barber Shop', profession: 'Barber', side: 'north', x: 13.5, z: -1.4, yaw: Math.PI },
+  // Z1 South Block + Z4 Services East + Z5 Coast
+  { id: 'pizzeria', icon: '🍕', name: 'Pizzeria', profession: 'Chef', side: 'south', x: -3.6, z: 5.7, yaw: Math.PI },
+  { id: 'pharmacy', icon: '💊', name: 'Pharmacy', profession: 'Pharmacist', side: 'south', x: 0.0, z: 5.7, yaw: Math.PI },
+  { id: 'petshop', icon: '🐶', name: 'Pet Shop', profession: 'Vet', side: 'south', x: 3.8, z: 5.7, yaw: Math.PI },
+  { id: 'postbank', icon: '📮', name: 'Post & Bank', profession: 'Postal Worker', side: 'south', x: 0.0, z: 10.7, yaw: Math.PI },
+  { id: 'tech', icon: '💻', name: 'Tech & Phone', profession: 'Technician', side: 'south', x: 16.6, z: -1.4, yaw: Math.PI },
+  { id: 'tireshop', icon: '🔧', name: 'Tire Shop', profession: 'Mechanic', side: 'south', x: 13.5, z: 5.7, yaw: Math.PI },
+  { id: 'worksite', icon: '👷', name: 'Work Site', profession: 'Builder', side: 'south', x: 16.6, z: 5.7, yaw: Math.PI },
 ];
 
 interface CityMinimapModalProps {
+  currentMapId?: WorldMapId;
+  onTravelToMap?: (mapId: WorldMapId) => void;
   onSelectLocation: (entry: CityDirectoryEntry) => void;
+  nextStep?: NextStepRecommendation;
+  onTriggerNextStep?: (step: NextStepRecommendation) => void;
   onOpenPractice?: () => void;
   onOpenQuests?: () => void;
   onOpenStories?: () => void;
@@ -38,7 +56,11 @@ interface CityMinimapModalProps {
 }
 
 export function CityMinimapModal({
+  currentMapId = 'town',
+  onTravelToMap,
   onSelectLocation,
+  nextStep,
+  onTriggerNextStep,
   onOpenPractice,
   onOpenQuests,
   onOpenStories,
@@ -64,6 +86,58 @@ export function CityMinimapModal({
             ✕
           </button>
         </header>
+
+        {nextStep && onTriggerNextStep && (
+          <div className="minimap-next-step-card" data-next-bucket={nextStep.bucket}>
+            <div className="minimap-next-step-body">
+              <div className="minimap-next-step-meta">
+                <span className={`next-bucket-tag bucket-${nextStep.bucket}`}>
+                  {BUCKET_LABELS[nextStep.bucket]}
+                </span>
+                <span className="next-cefr-tag">{getCefrLabel(nextStep.cefrLevel)}</span>
+              </div>
+              <strong className="minimap-next-step-title">{nextStep.title}</strong>
+              <span className="minimap-next-step-sub">{nextStep.subtitle}</span>
+            </div>
+            <button
+              type="button"
+              className="minimap-next-step-cta"
+              onClick={() => onTriggerNextStep(nextStep)}
+            >
+              Start →
+            </button>
+          </div>
+        )}
+
+        {onTravelToMap && (
+          <div className="minimap-interiors-bar" style={{ marginTop: 0, marginBottom: 12 }}>
+            <span className="minimap-section-label" style={{ margin: 0 }}>World Maps · Biomes &amp; 2.5D Interiors</span>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              {ACTIVE_WORLD_MAPS.map((mapId) => {
+                const cfg = WORLD_MAP_REGISTRY[mapId];
+                const isCurrent = currentMapId === mapId;
+                return (
+                  <button
+                    key={mapId}
+                    type="button"
+                    className="minimap-card"
+                    style={{
+                      flexDirection: 'row',
+                      gap: 8,
+                      padding: '8px 14px',
+                      borderColor: isCurrent ? '#f59e0b' : undefined,
+                      opacity: isCurrent ? 0.95 : 1,
+                    }}
+                    onClick={() => onTravelToMap(mapId)}
+                  >
+                    <span aria-hidden="true">{cfg.icon}</span>
+                    <span className="minimap-name">{cfg.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="minimap-section-label">North Avenue</div>
         <div className="minimap-grid">

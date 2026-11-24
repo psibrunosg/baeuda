@@ -4,6 +4,7 @@ import type {
   ConceptNode,
   ConstellationEdge,
   LocationId,
+  PedagogicalMode,
 } from './types';
 
 export const LESSON1_CONCEPTS: readonly ConceptId[] = [
@@ -93,7 +94,16 @@ export const STAGE_RANK: Record<AcquisitionStage, number> = {
   seed: 1,
   root: 2,
   voice: 3,
+  fluent: 4,
 };
+
+export interface UpsertConceptOptions {
+  contextId?: string;
+  mode?: PedagogicalMode;
+  succeeded?: boolean;
+  reviewCount?: number;
+  intervalHours?: number;
+}
 
 export function promoteStage(
   current: AcquisitionStage | undefined,
@@ -103,6 +113,26 @@ export function promoteStage(
   return STAGE_RANK[next] > STAGE_RANK[current] ? next : current;
 }
 
+/**
+ * A concept qualifies for promotion to `fluent` when it has already reached `voice`
+ * and is used correctly without a hint in a distinct new context (spiral transfer).
+ */
+export function canPromoteToFluent(
+  existing: ConceptNode | undefined,
+  contextId: string | undefined,
+  neededHint: boolean,
+  succeeded = true,
+): boolean {
+  if (!existing || !succeeded || neededHint || !contextId) return false;
+  if (STAGE_RANK[existing.stage] < STAGE_RANK.voice) return false;
+  if (existing.stage === 'fluent') return true;
+  const seen = existing.contextsSeen ?? [];
+  if (seen.length > 0) {
+    return !seen.includes(contextId);
+  }
+  return contextId !== existing.originLocation;
+}
+
 export function upsertConceptNode(
   constellation: Partial<Record<ConceptId, ConceptNode>>,
   conceptId: ConceptId,
@@ -110,17 +140,54 @@ export function upsertConceptNode(
   neededHint: boolean,
   originLocation: LocationId,
   nowIso: string,
+  options?: UpsertConceptOptions,
 ): Partial<Record<ConceptId, ConceptNode>> {
   const existing = constellation[conceptId];
+  const succeeded = options?.succeeded ?? true;
+  const effectiveStage: AcquisitionStage = canPromoteToFluent(
+    existing,
+    options?.contextId,
+    neededHint,
+    succeeded,
+  )
+    ? 'fluent'
+    : nextStage;
+
+  const node: ConceptNode = {
+    id: conceptId,
+    stage: promoteStage(existing?.stage, effectiveStage),
+    originLocation: existing?.originLocation ?? originLocation,
+    neededHint,
+    lastContactAt: nowIso,
+  };
+
+  const reviewCount = options?.reviewCount ?? existing?.reviewCount;
+  if (reviewCount !== undefined) {
+    node.reviewCount = reviewCount;
+  }
+
+  const intervalHours = options?.intervalHours ?? existing?.intervalHours;
+  if (intervalHours !== undefined) {
+    node.intervalHours = intervalHours;
+  }
+
+  let contextsSeen = existing?.contextsSeen;
+  if (options?.contextId && succeeded) {
+    const prev = existing?.contextsSeen ?? [];
+    contextsSeen = prev.includes(options.contextId) ? prev : [...prev, options.contextId];
+  }
+  if (contextsSeen !== undefined) {
+    node.contextsSeen = contextsSeen;
+  }
+
+  const lastMode = options?.mode ?? existing?.lastMode;
+  if (lastMode !== undefined) {
+    node.lastMode = lastMode;
+  }
+
   return {
     ...constellation,
-    [conceptId]: {
-      id: conceptId,
-      stage: promoteStage(existing?.stage, nextStage),
-      originLocation: existing?.originLocation ?? originLocation,
-      neededHint,
-      lastContactAt: nowIso,
-    },
+    [conceptId]: node,
   };
 }
 

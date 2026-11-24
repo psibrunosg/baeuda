@@ -1,4 +1,5 @@
 import type { ConceptId, SpeechKey, VisemeCue } from '../domain/types';
+import { WORLD_AUDIO_LINES } from './worldAudio';
 
 export type { SpeechKey } from '../domain/types';
 
@@ -1153,6 +1154,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: 'viseme_ee' },
     { at: 1.95, viseme: null },
   ]),
+  ...WORLD_AUDIO_LINES,
 };
 
 export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
