@@ -21,6 +21,8 @@ interface BadgesHubProps {
   onCompleteGame: (gameKey: string, reviewedConceptIds?: ConceptId[]) => void;
   onOpenDialogues?: () => void;
   onOpenPractice?: () => void;
+  onOpenQuests?: () => void;
+  onOpenStories?: () => void;
   onClose: () => void;
 }
 
@@ -31,6 +33,8 @@ export function BadgesHub({
   onCompleteGame,
   onOpenDialogues,
   onOpenPractice,
+  onOpenQuests,
+  onOpenStories,
   onClose,
 }: BadgesHubProps) {
   const [tab, setTab] = useState<HubTab>('badges');
@@ -219,6 +223,22 @@ export function BadgesHub({
                 onClick={onOpenPractice}
               >
                 ⚡ Practice
+              </button>
+            )}
+            {onOpenQuests && (
+              <button
+                type="button"
+                onClick={onOpenQuests}
+              >
+                🎯 Quests
+              </button>
+            )}
+            {onOpenStories && (
+              <button
+                type="button"
+                onClick={onOpenStories}
+              >
+                📖 Stories
               </button>
             )}
           </div>

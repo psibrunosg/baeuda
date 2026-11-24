@@ -16,6 +16,11 @@ import {
   updateDailyStreak,
 } from './domain/avatarShop';
 import { CURIOSITY_CATALOG } from './domain/curiosityCatalog';
+import {
+  claimDailyChest,
+  DAILY_CHEST_REWARD_COINS,
+  recordDailyQuestProgress,
+} from './domain/dailyQuests';
 import { evaluateCefrProgress } from './domain/cefrEngine';
 import { getActiveQuest } from './domain/inventoryAndQuests';
 import {
@@ -60,6 +65,12 @@ const TravelDialogueModal = lazy(() =>
 const LessonPracticeModal = lazy(() =>
   import('./ui/LessonPracticeModal').then((m) => ({ default: m.LessonPracticeModal })),
 );
+const DailyQuestsModal = lazy(() =>
+  import('./ui/DailyQuestsModal').then((m) => ({ default: m.DailyQuestsModal })),
+);
+const CityStoriesModal = lazy(() =>
+  import('./ui/CityStoriesModal').then((m) => ({ default: m.CityStoriesModal })),
+);
 
 const POUR_DURATION_SEC = 1.4;
 const HESITATION_MS = 5000;
@@ -73,6 +84,8 @@ export default function App() {
   const [travelDialogueOpen, setTravelDialogueOpen] = useState(false);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [practiceOpen, setPracticeOpen] = useState(false);
+  const [questsOpen, setQuestsOpen] = useState(false);
+  const [storiesOpen, setStoriesOpen] = useState(false);
   const [teleportRequest, setTeleportRequest] = useState<{
     x: number;
     z: number;
@@ -230,7 +243,9 @@ export default function App() {
       prev.unlockedStyleIds === profile.unlockedStyleIds &&
       prev.dailyStreak === profile.dailyStreak &&
       prev.mistakeExerciseIds === profile.mistakeExerciseIds &&
-      prev.completedPracticeUnitIds === profile.completedPracticeUnitIds;
+      prev.completedPracticeUnitIds === profile.completedPracticeUnitIds &&
+      prev.completedStoryIds === profile.completedStoryIds &&
+      prev.dailyQuests === profile.dailyQuests;
 
     // Throttle pure 1s clock ticks to every 15s; persist all real progress immediately
     if (onlyClockChanged && profile.immersionSeconds % 15 !== 0) {
@@ -254,7 +269,11 @@ export default function App() {
   useEffect(() => {
     const onEscape = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (practiceOpen) {
+      if (storiesOpen) {
+        setStoriesOpen(false);
+      } else if (questsOpen) {
+        setQuestsOpen(false);
+      } else if (practiceOpen) {
         setPracticeOpen(false);
       } else if (wardrobeOpen) {
         setWardrobeOpen(false);
@@ -272,7 +291,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onEscape);
     return () => window.removeEventListener('keydown', onEscape);
-  }, [activeCuriosityId, activeView, audioPlayer, minimapOpen, practiceOpen, stopVoice, travelDialogueOpen, wardrobeOpen]);
+  }, [activeCuriosityId, activeView, audioPlayer, minimapOpen, practiceOpen, questsOpen, stopVoice, storiesOpen, travelDialogueOpen, wardrobeOpen]);
 
   const resetPourState = useCallback(() => {
     pourProgressRef.current = 0;
@@ -824,7 +843,9 @@ export default function App() {
         !wardrobeOpen &&
         !minimapOpen &&
         !travelDialogueOpen &&
-        !practiceOpen && (
+        !practiceOpen &&
+        !questsOpen &&
+        !storiesOpen && (
           <GuidancePill
             context={guidanceContext}
             starCount={starCount}
@@ -837,7 +858,9 @@ export default function App() {
         !wardrobeOpen &&
         !minimapOpen &&
         !travelDialogueOpen &&
-        !practiceOpen && (
+        !practiceOpen &&
+        !questsOpen &&
+        !storiesOpen && (
         <LessonHud
           activeView={activeView}
           phase={lesson.phase}
@@ -866,8 +889,9 @@ export default function App() {
           }}
           onSolved={(item) => {
             updateProfile((prev) => {
-              let next = updateDailyStreak(
-                awardCoins(recordStreetDiscovery(prev, item.discoveryKey), 5),
+              let next = recordDailyQuestProgress(
+                updateDailyStreak(awardCoins(recordStreetDiscovery(prev, item.discoveryKey), 5)),
+                'discovery',
               );
               if (item.collectible) {
                 const cid = item.collectible.itemId;
@@ -893,7 +917,9 @@ export default function App() {
         !wardrobeOpen &&
         !minimapOpen &&
         !travelDialogueOpen &&
-        !practiceOpen && (
+        !practiceOpen &&
+        !questsOpen &&
+        !storiesOpen && (
           <InventoryQuestBar
             inventoryIds={inventoryIds}
             activeQuest={getActiveQuest(completedQuestIds)}
@@ -952,6 +978,18 @@ export default function App() {
               setMinimapOpen(false);
               setPracticeOpen(true);
             }}
+            onOpenQuests={() => {
+              audioPlayer.stop();
+              stopVoice();
+              setMinimapOpen(false);
+              setQuestsOpen(true);
+            }}
+            onOpenStories={() => {
+              audioPlayer.stop();
+              stopVoice();
+              setMinimapOpen(false);
+              setStoriesOpen(true);
+            }}
             onReplayCafeLesson1={() => {
               audioPlayer.stop();
               stopVoice();
@@ -977,7 +1015,10 @@ export default function App() {
             onCompleteGame={(gameKey, reviewedConceptIds) => {
               const nowIso = new Date().toISOString();
               updateProfile((prev) => {
-                let next = updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10));
+                let next = recordDailyQuestProgress(
+                  updateDailyStreak(awardCoins(recordStreetDiscovery(prev, gameKey), 10)),
+                  'practice',
+                );
                 if (reviewedConceptIds && reviewedConceptIds.length > 0) {
                   next = applySrsReviewOutcome(next, reviewedConceptIds, nowIso);
                 }
@@ -995,6 +1036,16 @@ export default function App() {
               setActiveView('map');
               setPracticeOpen(true);
             }}
+            onOpenQuests={() => {
+              stopVoice();
+              setActiveView('map');
+              setQuestsOpen(true);
+            }}
+            onOpenStories={() => {
+              stopVoice();
+              setActiveView('map');
+              setStoriesOpen(true);
+            }}
             onClose={() => {
               stopVoice();
               setActiveView('map');
@@ -1011,8 +1062,11 @@ export default function App() {
             }}
             onComplete={(scenarioId) => {
               updateProfile((prev) =>
-                updateDailyStreak(
-                  awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
+                recordDailyQuestProgress(
+                  updateDailyStreak(
+                    awardCoins(recordStreetDiscovery(prev, `world_dialogue_${scenarioId}`), 15),
+                  ),
+                  'story_or_dialogue',
                 ),
               );
               showRewardToast(`🎉 ${scenarioId.toUpperCase()} mastered! +15 coins`);
@@ -1064,7 +1118,10 @@ export default function App() {
                   payload.unitId && !prevUnits.includes(payload.unitId)
                     ? [...prevUnits, payload.unitId]
                     : prevUnits;
-                let next = updateDailyStreak(awardCoins(prev, payload.coinsEarned));
+                let next = recordDailyQuestProgress(
+                  updateDailyStreak(awardCoins(prev, payload.coinsEarned)),
+                  'practice',
+                );
                 if (payload.unitId) {
                   next = recordStreetDiscovery(next, `world_practice_${payload.unitId}`);
                 }
@@ -1077,6 +1134,56 @@ export default function App() {
               showRewardToast(`⚡ Practice complete (${payload.accuracy}%)! +${payload.coinsEarned} coins`);
             }}
             onClose={() => setPracticeOpen(false)}
+          />
+        )}
+
+        {questsOpen && (
+          <DailyQuestsModal
+            profile={profile}
+            onClaimChest={() => {
+              const res = claimDailyChest(profileRef.current);
+              if (res.claimed) {
+                playRewardFanfare();
+                profileRef.current = res.profile;
+                setProfile(res.profile);
+                showRewardToast(`🎁 Daily Chest opened! +${DAILY_CHEST_REWARD_COINS} coins!`);
+              }
+            }}
+            onOpenPractice={() => {
+              setQuestsOpen(false);
+              setPracticeOpen(true);
+            }}
+            onOpenStories={() => {
+              setQuestsOpen(false);
+              setStoriesOpen(true);
+            }}
+            onClose={() => setQuestsOpen(false)}
+          />
+        )}
+
+        {storiesOpen && (
+          <CityStoriesModal
+            completedStoryIds={profile.completedStoryIds ?? []}
+            onCompleteStory={(story) => {
+              updateProfile((prev) => {
+                const prevStories = prev.completedStoryIds ?? [];
+                const nextStories = prevStories.includes(story.id)
+                  ? prevStories
+                  : [...prevStories, story.id];
+                const next = recordDailyQuestProgress(
+                  updateDailyStreak(
+                    awardCoins(recordStreetDiscovery(prev, `world_${story.id}`), story.rewardCoins),
+                  ),
+                  'story_or_dialogue',
+                );
+                return {
+                  ...next,
+                  completedStoryIds: nextStories,
+                };
+              });
+              showRewardToast(`📖 "${story.title}" finished! +${story.rewardCoins} coins`);
+            }}
+            onClose={() => setStoriesOpen(false)}
           />
         )}
       </Suspense>

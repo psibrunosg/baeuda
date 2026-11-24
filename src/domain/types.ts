@@ -75,6 +75,14 @@ export interface DailyStreak {
   lastDate: string;
 }
 
+export interface DailyQuestState {
+  date: string;
+  practiceCompleted: number;
+  discoveriesCount: number;
+  dialoguesOrStories: number;
+  chestClaimed: boolean;
+}
+
 export interface LearnerProfile {
   schemaVersion: 1;
   preferredDrink: DrinkChoice | null;
@@ -91,6 +99,8 @@ export interface LearnerProfile {
   completedQuestIds?: string[];
   mistakeExerciseIds?: string[];
   completedPracticeUnitIds?: string[];
+  completedStoryIds?: string[];
+  dailyQuests?: DailyQuestState;
   locations: Record<LocationId, LocationStatus>;
   constellation: Partial<Record<ConceptId, ConceptNode>>;
 }

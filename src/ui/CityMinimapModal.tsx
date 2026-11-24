@@ -29,6 +29,8 @@ export const CITY_DIRECTORY: readonly CityDirectoryEntry[] = [
 interface CityMinimapModalProps {
   onSelectLocation: (entry: CityDirectoryEntry) => void;
   onOpenPractice?: () => void;
+  onOpenQuests?: () => void;
+  onOpenStories?: () => void;
   onReplayCafeLesson1?: () => void;
   onEnterPizzeria?: () => void;
   onEnterPharmacy?: () => void;
@@ -38,6 +40,8 @@ interface CityMinimapModalProps {
 export function CityMinimapModal({
   onSelectLocation,
   onOpenPractice,
+  onOpenQuests,
+  onOpenStories,
   onReplayCafeLesson1,
   onEnterPizzeria,
   onEnterPharmacy,
@@ -108,6 +112,28 @@ export function CityMinimapModal({
                 >
                   <span aria-hidden="true">⚡</span>
                   <span className="minimap-name">Practice Units</span>
+                </button>
+              )}
+              {onOpenQuests && (
+                <button
+                  type="button"
+                  className="minimap-card"
+                  style={{ flexDirection: 'row', gap: 8, padding: '8px 14px' }}
+                  onClick={onOpenQuests}
+                >
+                  <span aria-hidden="true">🎯</span>
+                  <span className="minimap-name">Daily Quests</span>
+                </button>
+              )}
+              {onOpenStories && (
+                <button
+                  type="button"
+                  className="minimap-card"
+                  style={{ flexDirection: 'row', gap: 8, padding: '8px 14px' }}
+                  onClick={onOpenStories}
+                >
+                  <span aria-hidden="true">📖</span>
+                  <span className="minimap-name">City Stories</span>
                 </button>
               )}
               {onReplayCafeLesson1 && (
