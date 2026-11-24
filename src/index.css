@@ -2603,3 +2603,249 @@ button:focus-visible {
   color: #fcd34d;
   font-size: 12px;
 }
+
+/* ==========================================================================
+   RESPONSIVE LAYER (phone 320+, tablet 600-1024, desktop)
+   One fluid pad + safe-area insets drive every HUD edge. Overlays that centre
+   with left:50% need width:max-content, otherwise they shrink to half the
+   screen and wrap one word per line. Keep this block last.
+   ========================================================================== */
+
+:root {
+  --hud-pad: clamp(10px, 2.4vw, 18px);
+  --hud-top: max(var(--hud-pad), env(safe-area-inset-top));
+  --hud-bottom: max(var(--hud-pad), env(safe-area-inset-bottom));
+  --hud-side: max(var(--hud-pad), env(safe-area-inset-left));
+  --hud-ctl: clamp(40px, 6vw, 48px); /* touch target, never below 40 */
+  --text-sm: clamp(12px, 1.5vw + 8px, 14px);
+}
+
+.app-shell {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.top-nav {
+  top: var(--hud-top);
+  right: var(--hud-side);
+  max-width: calc(100% - 2 * var(--hud-side));
+}
+
+.hud-bottom-center {
+  bottom: var(--hud-bottom);
+}
+
+.guidance-pill,
+.speech-subtitle-pill,
+.world-map-return-pill {
+  width: max-content;
+  max-width: calc(100% - 2 * var(--hud-side));
+}
+
+.guidance-pill {
+  bottom: calc(var(--hud-bottom) + 76px);
+  font-size: var(--text-sm);
+}
+
+.back-street-btn,
+.interior-top-actions {
+  top: var(--hud-top);
+  left: var(--hud-side);
+}
+
+.quest-pill {
+  top: var(--hud-top);
+  left: var(--hud-side);
+}
+
+.inventory-bar {
+  right: var(--hud-side);
+  bottom: var(--hud-bottom);
+}
+
+.badges-hub-backdrop {
+  padding: calc(var(--hud-top) + 48px) var(--hud-side) var(--hud-bottom);
+}
+
+.badges-hub-panel {
+  width: min(640px, 100%);
+  max-height: 100%;
+}
+
+/* Tablet portrait and small laptops */
+@media (max-width: 900px) {
+  .guidance-pill-has-action {
+    max-width: calc(100% - 2 * var(--hud-side));
+  }
+}
+
+/* Phones and narrow tablets: stack HUD rows instead of overlapping them */
+@media (max-width: 640px) {
+  .top-nav {
+    left: var(--hud-side);
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .top-nav .icon-btn {
+    width: var(--hud-ctl);
+    height: var(--hud-ctl);
+    flex-shrink: 0;
+  }
+
+  .pill-toggle {
+    flex-shrink: 0;
+  }
+
+  .pill-toggle button {
+    width: var(--hud-ctl);
+    height: var(--hud-ctl);
+  }
+
+  .hud-status-cluster {
+    min-width: 0;
+    padding-inline: 10px;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  /* second HUD row sits below the nav bar */
+  .interior-top-actions,
+  .back-street-btn,
+  .quest-pill {
+    top: calc(var(--hud-top) + var(--hud-ctl) + 12px);
+  }
+
+  .interior-top-actions .back-street-btn {
+    top: auto;
+  }
+
+  .speech-subtitle-pill {
+    top: calc(var(--hud-top) + var(--hud-ctl) + 12px + 52px);
+  }
+
+  .world-map-return-pill {
+    top: calc(var(--hud-top) + var(--hud-ctl) + 12px);
+  }
+
+  .quest-pill {
+    max-width: calc(100% - 2 * var(--hud-side));
+  }
+
+  .inventory-bar {
+    max-width: calc(100% - 2 * var(--hud-side) - 72px);
+  }
+
+  .guidance-pill {
+    border-radius: var(--r-2);
+    padding: 8px 14px;
+  }
+}
+
+/* Short landscape phones: keep the stage visible */
+@media (max-height: 480px) and (orientation: landscape) {
+  .guidance-pill {
+    bottom: calc(var(--hud-bottom) + 64px);
+  }
+
+  .badges-hub-backdrop {
+    padding-top: calc(var(--hud-top) + 8px);
+  }
+}
+
+/* Learning-mode strip: 2x2 on phones, 4 across from 440px, touch-sized */
+.hub-quick-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+.hub-quick-pill {
+  min-width: 0;
+  height: auto;
+  min-height: 40px;
+}
+
+@media (min-width: 440px) {
+  .hub-quick-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (pointer: coarse) {
+  .hub-quick-pill,
+  .practice-primary-btn,
+  .practice-secondary-btn,
+  .practice-option-card {
+    min-height: 44px;
+  }
+}
+
+/* ==========================================================================
+   GAME FEEL: keycap depth on every pressable (unslop: quiet chrome, one accent;
+   dimensional-drawing: concentric radii, 1px hairlines)
+   ========================================================================== */
+
+.practice-tile,
+.practice-option-card,
+.practice-secondary-btn,
+.hub-quick-pill {
+  box-shadow: 0 2px 0 var(--hairline-strong);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.14s ease;
+}
+
+.practice-primary-btn,
+.hub-quick-pill.primary {
+  box-shadow: 0 3px 0 #9a3412;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.14s ease;
+}
+
+.practice-tile:active:not(.used),
+.practice-option-card:active,
+.practice-secondary-btn:active,
+.hub-quick-pill:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--hairline-strong);
+}
+
+.practice-primary-btn:active:not(:disabled),
+.hub-quick-pill.primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #9a3412;
+}
+
+.practice-primary-btn:disabled {
+  box-shadow: none;
+}
+
+.practice-progress-fill {
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Phones: modals become bottom sheets, easy to reach with a thumb */
+@media (max-width: 640px) {
+  .badges-hub-backdrop {
+    align-items: flex-end;
+    padding: calc(var(--hud-top) + var(--hud-ctl) + 8px) 0 0;
+  }
+
+  .badges-hub-panel {
+    width: 100%;
+    max-height: 100%;
+    border-radius: var(--r-1) var(--r-1) 0 0;
+    padding-bottom: calc(var(--s-1) + env(safe-area-inset-bottom));
+    animation: sheetRise 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes sheetRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badges-hub-panel { animation: none; }
+  .practice-tile, .practice-option-card, .practice-primary-btn, .hub-quick-pill { transition: none; }
+}
