@@ -57,6 +57,9 @@ const CityMinimapModal = lazy(() =>
 const TravelDialogueModal = lazy(() =>
   import('./ui/TravelDialogueModal').then((m) => ({ default: m.TravelDialogueModal })),
 );
+const LessonPracticeModal = lazy(() =>
+  import('./ui/LessonPracticeModal').then((m) => ({ default: m.LessonPracticeModal })),
+);
 
 const POUR_DURATION_SEC = 1.4;
 const HESITATION_MS = 5000;
@@ -69,6 +72,7 @@ export default function App() {
   const [minimapOpen, setMinimapOpen] = useState(false);
   const [travelDialogueOpen, setTravelDialogueOpen] = useState(false);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
   const [teleportRequest, setTeleportRequest] = useState<{
     x: number;
     z: number;
@@ -224,7 +228,9 @@ export default function App() {
       prev.coins === profile.coins &&
       prev.avatarStyle === profile.avatarStyle &&
       prev.unlockedStyleIds === profile.unlockedStyleIds &&
-      prev.dailyStreak === profile.dailyStreak;
+      prev.dailyStreak === profile.dailyStreak &&
+      prev.mistakeExerciseIds === profile.mistakeExerciseIds &&
+      prev.completedPracticeUnitIds === profile.completedPracticeUnitIds;
 
     // Throttle pure 1s clock ticks to every 15s; persist all real progress immediately
     if (onlyClockChanged && profile.immersionSeconds % 15 !== 0) {
@@ -248,7 +254,9 @@ export default function App() {
   useEffect(() => {
     const onEscape = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (wardrobeOpen) {
+      if (practiceOpen) {
+        setPracticeOpen(false);
+      } else if (wardrobeOpen) {
         setWardrobeOpen(false);
       } else if (travelDialogueOpen) {
         setTravelDialogueOpen(false);
@@ -264,7 +272,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onEscape);
     return () => window.removeEventListener('keydown', onEscape);
-  }, [activeCuriosityId, activeView, audioPlayer, minimapOpen, stopVoice, travelDialogueOpen, wardrobeOpen]);
+  }, [activeCuriosityId, activeView, audioPlayer, minimapOpen, practiceOpen, stopVoice, travelDialogueOpen, wardrobeOpen]);
 
   const resetPourState = useCallback(() => {
     pourProgressRef.current = 0;
@@ -815,7 +823,8 @@ export default function App() {
         !activeCuriosityId &&
         !wardrobeOpen &&
         !minimapOpen &&
-        !travelDialogueOpen && (
+        !travelDialogueOpen &&
+        !practiceOpen && (
           <GuidancePill
             context={guidanceContext}
             starCount={starCount}
@@ -824,7 +833,11 @@ export default function App() {
           />
         )}
 
-      {!activeCuriosityId && !wardrobeOpen && !minimapOpen && !travelDialogueOpen && (
+      {!activeCuriosityId &&
+        !wardrobeOpen &&
+        !minimapOpen &&
+        !travelDialogueOpen &&
+        !practiceOpen && (
         <LessonHud
           activeView={activeView}
           phase={lesson.phase}
@@ -879,7 +892,8 @@ export default function App() {
         !activeCuriosityId &&
         !wardrobeOpen &&
         !minimapOpen &&
-        !travelDialogueOpen && (
+        !travelDialogueOpen &&
+        !practiceOpen && (
           <InventoryQuestBar
             inventoryIds={inventoryIds}
             activeQuest={getActiveQuest(completedQuestIds)}
@@ -932,6 +946,12 @@ export default function App() {
               }));
               setMinimapOpen(false);
             }}
+            onOpenPractice={() => {
+              audioPlayer.stop();
+              stopVoice();
+              setMinimapOpen(false);
+              setPracticeOpen(true);
+            }}
             onReplayCafeLesson1={() => {
               audioPlayer.stop();
               stopVoice();
@@ -969,6 +989,11 @@ export default function App() {
               stopVoice();
               setActiveView('map');
               setTravelDialogueOpen(true);
+            }}
+            onOpenPractice={() => {
+              stopVoice();
+              setActiveView('map');
+              setPracticeOpen(true);
             }}
             onClose={() => {
               stopVoice();
@@ -1017,6 +1042,41 @@ export default function App() {
               };
             }}
             onClose={() => setWardrobeOpen(false)}
+          />
+        )}
+
+        {practiceOpen && (
+          <LessonPracticeModal
+            completedUnitIds={profile.completedPracticeUnitIds ?? []}
+            mistakeExerciseIds={profile.mistakeExerciseIds ?? []}
+            onCompleteSession={(payload) => {
+              updateProfile((prev) => {
+                const prevMistakes = prev.mistakeExerciseIds ?? [];
+                const clearedSet = new Set(payload.clearedMistakeIds);
+                const mergedMistakes = Array.from(
+                  new Set([
+                    ...prevMistakes.filter((id) => !clearedSet.has(id)),
+                    ...payload.newMistakeIds,
+                  ]),
+                );
+                const prevUnits = prev.completedPracticeUnitIds ?? [];
+                const nextUnits =
+                  payload.unitId && !prevUnits.includes(payload.unitId)
+                    ? [...prevUnits, payload.unitId]
+                    : prevUnits;
+                let next = updateDailyStreak(awardCoins(prev, payload.coinsEarned));
+                if (payload.unitId) {
+                  next = recordStreetDiscovery(next, `world_practice_${payload.unitId}`);
+                }
+                return {
+                  ...next,
+                  mistakeExerciseIds: mergedMistakes,
+                  completedPracticeUnitIds: nextUnits,
+                };
+              });
+              showRewardToast(`⚡ Practice complete (${payload.accuracy}%)! +${payload.coinsEarned} coins`);
+            }}
+            onClose={() => setPracticeOpen(false)}
           />
         )}
       </Suspense>

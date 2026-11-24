@@ -20,6 +20,7 @@ interface BadgesHubProps {
   onPlayAudio: (key: SpeechKey) => void;
   onCompleteGame: (gameKey: string, reviewedConceptIds?: ConceptId[]) => void;
   onOpenDialogues?: () => void;
+  onOpenPractice?: () => void;
   onClose: () => void;
 }
 
@@ -29,6 +30,7 @@ export function BadgesHub({
   onPlayAudio,
   onCompleteGame,
   onOpenDialogues,
+  onOpenPractice,
   onClose,
 }: BadgesHubProps) {
   const [tab, setTab] = useState<HubTab>('badges');
@@ -209,6 +211,14 @@ export function BadgesHub({
                 onClick={onOpenDialogues}
               >
                 💬 Talk
+              </button>
+            )}
+            {onOpenPractice && (
+              <button
+                type="button"
+                onClick={onOpenPractice}
+              >
+                ⚡ Practice
               </button>
             )}
           </div>

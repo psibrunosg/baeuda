@@ -89,6 +89,8 @@ export interface LearnerProfile {
   streetDiscoveries?: string[];
   inventoryIds?: string[];
   completedQuestIds?: string[];
+  mistakeExerciseIds?: string[];
+  completedPracticeUnitIds?: string[];
   locations: Record<LocationId, LocationStatus>;
   constellation: Partial<Record<ConceptId, ConceptNode>>;
 }

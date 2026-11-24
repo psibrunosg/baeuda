@@ -28,6 +28,7 @@ export const CITY_DIRECTORY: readonly CityDirectoryEntry[] = [
 
 interface CityMinimapModalProps {
   onSelectLocation: (entry: CityDirectoryEntry) => void;
+  onOpenPractice?: () => void;
   onReplayCafeLesson1?: () => void;
   onEnterPizzeria?: () => void;
   onEnterPharmacy?: () => void;
@@ -36,6 +37,7 @@ interface CityMinimapModalProps {
 
 export function CityMinimapModal({
   onSelectLocation,
+  onOpenPractice,
   onReplayCafeLesson1,
   onEnterPizzeria,
   onEnterPharmacy,
@@ -93,10 +95,21 @@ export function CityMinimapModal({
           ))}
         </div>
 
-        {(onReplayCafeLesson1 || onEnterPizzeria || onEnterPharmacy) && (
+        {(onOpenPractice || onReplayCafeLesson1 || onEnterPizzeria || onEnterPharmacy) && (
           <div className="minimap-interiors-bar">
-            <span className="minimap-section-label" style={{ margin: 0 }}>Playable 3D Interiors &amp; Replay</span>
+            <span className="minimap-section-label" style={{ margin: 0 }}>Playable 3D Interiors &amp; Practice</span>
             <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              {onOpenPractice && (
+                <button
+                  type="button"
+                  className="minimap-card"
+                  style={{ flexDirection: 'row', gap: 8, padding: '8px 14px', borderColor: '#ea580c' }}
+                  onClick={onOpenPractice}
+                >
+                  <span aria-hidden="true">⚡</span>
+                  <span className="minimap-name">Practice Units</span>
+                </button>
+              )}
               {onReplayCafeLesson1 && (
                 <button
                   type="button"
