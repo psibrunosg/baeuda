@@ -15,6 +15,7 @@ import {
   MiniLeoGreeter,
   PlazaMusicianNpc,
 } from './StylizedCharacters';
+import { CityLife } from './CityLife';
 import { StreetMicroEvents } from './StreetMicroEvents';
 import {
   InteractiveBakery,
@@ -650,29 +651,25 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
       />
 
       {/* Full 2.5D City Plateau: warm terracotta earth base + lush sage lawn */}
-      <RoundedBox args={[42.4, 0.48, 32.4]} radius={0.35} smoothness={3} position={[0, -0.34, 0]} receiveShadow>
+      {/* Plain boxes: drei RoundedBox inflates when height < 2*radius and buried every street under the lawn */}
+      <mesh position={[0, -0.34, 0]} receiveShadow>
+        <boxGeometry args={[42.4, 0.48, 32.4]} />
         <meshStandardMaterial
           color="#a67c52"
           bumpMap={textures.clayBump}
           bumpScale={0.015}
           roughness={0.95}
         />
-      </RoundedBox>
-      <RoundedBox
-        args={[42.0, 0.12, 32.0]}
-        radius={0.25}
-        smoothness={3}
-        position={[0, -0.05, 0]}
-        receiveShadow
-        onClick={handleGroundWalkClick}
-      >
+      </mesh>
+      <mesh position={[0, -0.05, 0]} receiveShadow onClick={handleGroundWalkClick}>
+        <boxGeometry args={[42.0, 0.12, 32.0]} />
         <meshStandardMaterial
           color="#b2c48e"
           bumpMap={textures.clayBump}
           bumpScale={0.012}
           roughness={0.94}
         />
-      </RoundedBox>
+      </mesh>
 
       {/* ===== MULTI-BLOCK STREET NETWORK (2 E-W Avenues + 2 N-S Streets + Residential Lane) ===== */}
       {/* Main Avenue E-W (Z = -0.5) */}
@@ -979,6 +976,8 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         weather={weather}
         onTriggerAudio={handleShopAudio}
       />
+
+      <CityLife obstacles={OBSTACLE_AABBS} avatarPoseRef={avatarPoseRef} />
 
       {/* Café da Esquina — tactile artisan diorama hero */}
       <group position={[0, 0.06, -3.6]}>
