@@ -94,7 +94,16 @@ function RoundTable({ position, mugPhase }: { position: [number, number, number]
   );
 }
 
-export type GuestState = 'idle' | 'ordering' | 'served';
+/** cold / warm: the lesson's thermal-contrast customer, shown as a blue or orange order bubble. */
+export type GuestState = 'idle' | 'ordering' | 'served' | 'cold' | 'warm';
+
+const MARKER: Record<GuestState, { color: string; glow: string }> = {
+  idle: { color: '#fbbf24', glow: '#f59e0b' },
+  ordering: { color: '#fbbf24', glow: '#f59e0b' },
+  served: { color: '#22c55e', glow: '#16a34a' },
+  cold: { color: '#60a5fa', glow: '#2563eb' },
+  warm: { color: '#fb923c', glow: '#ea580c' },
+};
 
 /** The three seated guests. `tray` is where a delivery lands (table top, or the reader's hands). */
 export const SALON_GUESTS: ReadonlyArray<{
@@ -139,7 +148,8 @@ function Guest({ index, state, onTap }: { index: number; state: GuestState; onTa
   useFrame((fs, delta) => {
     const dt = Math.min(delta, 0.05);
     // an ordering guest waves for attention every few seconds
-    if (state === 'ordering') {
+    const waiting = state === 'ordering' || state === 'cold' || state === 'warm';
+    if (waiting) {
       idle.current += dt;
       if (idle.current > 3.2) {
         idle.current = 0;
@@ -148,10 +158,10 @@ function Guest({ index, state, onTap }: { index: number; state: GuestState; onTa
     }
     if (marker.current) {
       marker.current.visible = state !== 'idle';
-      marker.current.position.y = 1.32 + Math.sin(fs.clock.elapsedTime * 4) * (state === 'ordering' ? 0.05 : 0.015);
+      marker.current.position.y = 1.32 + Math.sin(fs.clock.elapsedTime * 4) * (waiting ? 0.05 : 0.015);
     }
   });
-  const served = state === 'served';
+  const mk = MARKER[state];
   return (
     <group position={g.pos}>
       <group rotation={[0, g.facing, 0]} {...handlers}>
@@ -165,11 +175,11 @@ function Guest({ index, state, onTap }: { index: number; state: GuestState; onTa
       <group ref={marker} visible={false}>
         <mesh>
           <sphereGeometry args={[0.1, 14, 12]} />
-          <meshStandardMaterial color={served ? '#22c55e' : '#fbbf24'} emissive={served ? '#16a34a' : '#f59e0b'} emissiveIntensity={0.9} />
+          <meshStandardMaterial color={mk.color} emissive={mk.glow} emissiveIntensity={0.9} />
         </mesh>
         <mesh position={[0, -0.11, 0]} rotation={[Math.PI, 0, 0]}>
           <coneGeometry args={[0.04, 0.07, 8]} />
-          <meshStandardMaterial color={served ? '#22c55e' : '#fbbf24'} emissive={served ? '#16a34a' : '#f59e0b'} emissiveIntensity={0.9} />
+          <meshStandardMaterial color={mk.color} emissive={mk.glow} emissiveIntensity={0.9} />
         </mesh>
       </group>
     </group>
@@ -323,13 +333,6 @@ export function CafeSalon({
         <planeGeometry args={[6.8, 6.7]} />
         <meshStandardMaterial color="#e9dcc6" roughness={0.9} />
       </mesh>
-      {[-0.8, 0.9, 2.6, 4.2].map((z) => (
-        <mesh key={z} position={[0, 3.36, z]}>
-          <boxGeometry args={[6.8, 0.14, 0.2]} />
-          <meshStandardMaterial color={WOOD_DARK} roughness={0.8} />
-        </mesh>
-      ))}
-
       {/* warm rug under the seating */}
       <mesh position={[0, 0.006, 1.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[5.2, 2.6]} />

@@ -1048,9 +1048,12 @@ function CafeGreybox({
   });
 
   const handleGroupClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
+    // Only swallow clicks on interactive props: the contact-shadow plane sits at counter height
+    // above the floor, and consuming its clicks would stop the avatar from walking.
     const prop = findPropName(e.object);
-    if (prop) onPropTap(prop);
+    if (!prop) return;
+    e.stopPropagation();
+    onPropTap(prop);
   };
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -1104,7 +1107,7 @@ function CafeGreybox({
       />
 
       {/* ENV_Static: shared warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
-      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} guestStates={LESSON_GUESTS[phase]} />
+      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} guestStates={LESSON_GUESTS[phase].map((g, i) => (i === 0 && customerMood && g === 'ordering' ? customerMood : g))} />
 
       {/* Subtle highlight halo rendered beneath whichever prop is currently highlighted */}
       {highlightedProp && highlightedProp !== 'prop_cafe_door' && (
@@ -1166,63 +1169,6 @@ function CafeGreybox({
             />
           </group>
 
-          {/* Expressive Claybound-style customer cue silhouette (framed cleanly inside counter view) */}
-          {customerMood && (
-            <group position={[-0.86, 1.14, -0.24]} rotation={[0, 0.36, 0]}>
-              <mesh castShadow>
-                <capsuleGeometry args={[0.145, 0.28, 8, 14]} />
-                <meshStandardMaterial
-                  color={customerMood === 'cold' ? '#3b82f6' : '#f59e0b'}
-                  bumpMap={textures.clayBump}
-                  bumpScale={0.006}
-                  roughness={0.85}
-                />
-              </mesh>
-              {/* Cozy scarf for cold customer */}
-              {customerMood === 'cold' && (
-                <mesh position={[0, 0.2, 0.01]} rotation={[0.1, 0, 0]} castShadow>
-                  <torusGeometry args={[0.115, 0.036, 10, 20]} />
-                  <meshStandardMaterial color="#93c5fd" roughness={0.92} />
-                </mesh>
-              )}
-              <mesh position={[0, 0.35, 0]} castShadow>
-                <sphereGeometry args={[0.14, 16, 16]} />
-                <meshStandardMaterial
-                  color="#f3c6a0"
-                  bumpMap={textures.clayBump}
-                  bumpScale={0.004}
-                  roughness={0.82}
-                />
-              </mesh>
-              {/* Expressive glossy customer eyes */}
-              <mesh position={[-0.045, 0.36, 0.125]}>
-                <sphereGeometry args={[0.016, 10, 10]} />
-                <meshStandardMaterial color="#1c1917" roughness={0.15} />
-              </mesh>
-              <mesh position={[0.045, 0.36, 0.125]}>
-                <sphereGeometry args={[0.016, 10, 10]} />
-                <meshStandardMaterial color="#1c1917" roughness={0.15} />
-              </mesh>
-              {/* Beanie (cold) or sporty visor cap (warm) */}
-              <mesh position={[0, 0.43, 0]} castShadow>
-                <sphereGeometry args={[0.142, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-                <meshStandardMaterial
-                  color={customerMood === 'cold' ? '#1d4ed8' : '#ea580c'}
-                  roughness={0.88}
-                />
-              </mesh>
-              {/* Floating mood cue gem (blue ice crystal vs golden sun) */}
-              <mesh position={[0, 0.66, 0]}>
-                <octahedronGeometry args={[0.088, 0]} />
-                <meshStandardMaterial
-                  color={customerMood === 'cold' ? '#bae6fd' : '#fef08a'}
-                  emissive={customerMood === 'cold' ? '#38bdf8' : '#f97316'}
-                  emissiveIntensity={0.85}
-                  roughness={0.2}
-                />
-              </mesh>
-            </group>
-          )}
         </group>
       )}
 

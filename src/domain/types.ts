@@ -160,7 +160,7 @@ export type BiomeMapId =
   | 'station'
   | 'festival';
 
-export type InteriorMapId = 'interior_house_leo';
+export type InteriorMapId = 'interior_house_leo' | 'interior_cafe';
 
 export type WorldMapId = BiomeMapId | InteriorMapId;
 
@@ -271,9 +271,7 @@ export type CameraAnchorId =
   | 'cam_caixa'
   | 'cam_constelacao'
   | 'cam_mercado'
-  | 'cam_praca'
-  | 'cam_salao'
-  | 'cam_servico';
+  | 'cam_praca';
 
 export type SpeechKey =
   | 'hi_leo'

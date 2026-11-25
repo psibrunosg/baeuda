@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useEffect, useLayoutEffect, useRef, useState, type ComponentRef, type MutableRefObject } from 'react';
+import { lazy, memo, Suspense, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
@@ -21,6 +21,7 @@ import { CAMERA_ANCHORS, type AssetMode } from './contracts';
 import { AtmosphericSky } from './AtmosphericSky';
 import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
+import { CafeWalkRoom } from './CafeWalkRoom';
 import { LeoBarista } from './LeoBarista';
 import { MarketScene, type MarketStage } from './MarketScene';
 import { NeighborhoodMap } from './NeighborhoodMap';
@@ -84,6 +85,8 @@ export interface ExperienceCanvasProps {
   onExploreObject?: (key: SpeechKey) => void;
   onInspectCuriosity?: (curiosityId: string) => void;
   onMapBlockedBump?: () => void;
+  /** Leave an interior that is not a map (the café) and go back to the street. */
+  onExitInterior?: () => void;
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
@@ -129,8 +132,7 @@ function CameraRig({
     }
     const pose = CAMERA_ANCHORS[anchorId];
     // Pull interior counter cameras back gently on portrait screens so outer counter props never crop
-    const wide = anchorId === 'cam_servico' || anchorId === 'cam_salao'; // must keep the guests in frame
-    const portraitZPullback = !isMapView && aspect < 1 ? (1 - aspect) * (wide ? 5.6 : 1.45) : 0;
+    const portraitZPullback = !isMapView && aspect < 1 ? (1 - aspect) * 1.45 : 0;
     desiredPosRef.current.set(pose.position[0], pose.position[1], pose.position[2] + portraitZPullback);
     desiredTargetRef.current.set(pose.target[0], pose.target[1], pose.target[2]);
     isTransitioningRef.current = true;
@@ -314,27 +316,20 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
   const isLesson = props.activeView === 'lesson';
   const isCafeCycle = props.activeView === 'cafe_cycle';
   const inCafe = isLesson || isCafeCycle;
-  // Open every café scene with a ~2.6 s establishing shot of the room, then dolly to the counter.
-  // In the lesson the room is shown again after each served guest (personal choice, micro echo),
-  // because the counter close-up keeps the guests out of frame.
-  const introKey = !inCafe
-    ? ''
-    : isLesson
-      ? props.phase === 'personal_choice' || props.phase === 'micro_echo'
-        ? props.phase
-        : 'lesson'
-      : String(props.activeCafeCycle);
-  const [salonIntro, setSalonIntro] = useState(true);
-  useEffect(() => {
-    if (!introKey) return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      setSalonIntro(false);
-      return;
+  const camConfig = inCafe ? WORLD_MAP_REGISTRY.interior_cafe : mapConfig;
+  // Entering the café parks the town pose and spawns at the door; leaving restores it.
+  const townPoseRef = useRef<AvatarPose | null>(null);
+  const wasInCafe = useRef(false);
+  if (inCafe !== wasInCafe.current) {
+    wasInCafe.current = inCafe;
+    if (inCafe) {
+      townPoseRef.current = { ...avatarPoseRef.current };
+      Object.assign(avatarPoseRef.current, WORLD_MAP_REGISTRY.interior_cafe.defaultSpawn);
+    } else if (townPoseRef.current) {
+      Object.assign(avatarPoseRef.current, townPoseRef.current);
+      townPoseRef.current = null;
     }
-    setSalonIntro(true);
-    const id = window.setTimeout(() => setSalonIntro(false), 2600);
-    return () => window.clearTimeout(id);
-  }, [introKey]);
+  }
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
   const isPizzeria = props.activeView === 'pizzeria';
@@ -347,17 +342,13 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
 
   const effectiveAnchor: CameraAnchorId = isMap
     ? 'cam_mapa'
-    : inCafe && salonIntro
-      ? 'cam_salao'
-      : isCafeCycle
-        ? 'cam_servico'
-        : isPizzeria || isPharmacy
-          ? 'cam_balcao'
-          : isMarket
-            ? 'cam_mercado'
-            : isPlaza
-              ? 'cam_praca'
-              : props.cameraAnchor;
+    : isCafeCycle || isPizzeria || isPharmacy
+      ? 'cam_balcao'
+      : isMarket
+        ? 'cam_mercado'
+        : isPlaza
+          ? 'cam_praca'
+          : props.cameraAnchor;
 
   const bgColor = isInteriorMap && mapConfig.bgColor
     ? mapConfig.bgColor
@@ -436,11 +427,11 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
 
       {/* Key sunlight / moonlight / overcast rain light with dynamic per-map / avatar-following shadow frustum */}
       <DynamicKeyLight
-        isMap={isMap}
+        isMap={isMap || inCafe}
         isExteriorMap={isExteriorMap}
         cameraMode={cameraMode}
         avatarPoseRef={avatarPoseRef}
-        shadowFrustum={mapConfig.shadowFrustum}
+        shadowFrustum={camConfig.shadowFrustum}
         isNight={isNightOutdoor}
         isRainy={isRainyOutdoor}
       />
@@ -472,10 +463,10 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
       <CameraRig
         anchorId={effectiveAnchor}
         orbitEnabled={props.activeView === 'map' && cameraMode === 'overview'}
-        isMapView={isMap}
-        cameraMode={cameraMode}
-        cameraOffset={mapConfig.cameraOffset}
-        cameraTargetOffset={mapConfig.cameraTargetOffset}
+        isMapView={isMap || inCafe}
+        cameraMode={inCafe ? 'fixed_2_5d' : cameraMode}
+        cameraOffset={camConfig.cameraOffset}
+        cameraTargetOffset={camConfig.cameraTargetOffset}
         cameraSnapSeq={props.cameraSnapSeq ?? 0}
         avatarPoseRef={avatarPoseRef}
       />
@@ -572,41 +563,47 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         />
       )}
 
-      {isLesson && (
-        <CafeScene
-          assetMode={props.assetMode}
-        phase={props.phase}
-        highlightedProp={props.highlightedProp}
-        hintMode={props.hintMode}
-        customerMood={props.customerMood}
-        activePourLiquid={props.activePourLiquid}
-        pourProgressRef={props.pourProgressRef}
-        isPouringRef={props.isPouringRef}
-        mysteryBoxVisible={props.mysteryBoxVisible}
-        visible={isLesson}
-        onPropTap={props.onPropTap}
-        onPourStart={props.onPourStart}
-        onPourEnd={props.onPourEnd}
-        onGuestTap={props.onExploreObject}
-      />
-      )}
-
-      {isCafeCycle && (
-        <CafeDynamicSession
-          visible={isCafeCycle}
-          cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
-          onPlayAudio={props.onExploreObject ?? (() => {})}
-          onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
-        />
-      )}
-
-      {(isLesson || isCafeCycle) && (
-        <LeoBarista
-          assetMode={props.assetMode}
-          animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
-          speechRef={props.speechRef}
-          visible={isLesson || isCafeCycle}
-        />
+      {inCafe && (
+        <CafeWalkRoom
+          visible
+          avatarStyle={props.avatarStyle}
+          avatarPoseRef={avatarPoseRef}
+          onExploreObject={props.onExploreObject}
+          onExit={props.onExitInterior}
+        >
+          {isLesson && (
+            <CafeScene
+              assetMode={props.assetMode}
+              phase={props.phase}
+              highlightedProp={props.highlightedProp}
+              hintMode={props.hintMode}
+              customerMood={props.customerMood}
+              activePourLiquid={props.activePourLiquid}
+              pourProgressRef={props.pourProgressRef}
+              isPouringRef={props.isPouringRef}
+              mysteryBoxVisible={props.mysteryBoxVisible}
+              visible={isLesson}
+              onPropTap={props.onPropTap}
+              onPourStart={props.onPourStart}
+              onPourEnd={props.onPourEnd}
+              onGuestTap={props.onExploreObject}
+            />
+          )}
+          {isCafeCycle && (
+            <CafeDynamicSession
+              visible={isCafeCycle}
+              cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
+              onPlayAudio={props.onExploreObject ?? (() => {})}
+              onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
+            />
+          )}
+          <LeoBarista
+            assetMode={props.assetMode}
+            animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
+            speechRef={props.speechRef}
+            visible
+          />
+        </CafeWalkRoom>
       )}
 
       {/* Selective Bloom on emissive windows, oven fire, pharmacy cross, lamps & sun/moon + WebGL2 MSAA */}
