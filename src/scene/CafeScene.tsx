@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject } from 'react';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
@@ -951,6 +951,9 @@ function CafeGreybox({
 
   const geos = useMemo(() => getCafeGeometries(), []);
   const textures = useMemo(() => getCafeTextures(), []);
+  const { size } = useThree();
+  // On tall screens the wide room shrinks the counter; scale the props so they stay tappable.
+  const itemScale = size.width < size.height ? 1 + (1 - size.width / size.height) * 0.9 : 1;
 
   useGlobalPourRelease(phase, onPourEnd);
 
@@ -1109,6 +1112,9 @@ function CafeGreybox({
       {/* ENV_Static: shared warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
       <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} guestStates={LESSON_GUESTS[phase].map((g, i) => (i === 0 && customerMood && g === 'ordering' ? customerMood : g))} />
 
+      {/* Counter props (and their halo), scaled about the counter centre */}
+      <group position={[0, 0.973, 0.12]} scale={itemScale}>
+        <group position={[0, -0.973, -0.12]}>
       {/* Subtle highlight halo rendered beneath whichever prop is currently highlighted */}
       {highlightedProp && highlightedProp !== 'prop_cafe_door' && (
         <mesh
@@ -1316,6 +1322,8 @@ function CafeGreybox({
           </group>
         </group>
       )}
+        </group>
+      </group>
     </group>
   );
 }
