@@ -27,6 +27,17 @@ export interface CafeSceneProps {
   onGuestTap?: (key: SpeechKey) => void;
 }
 
+/** The room follows the lesson: guests start waiting and are "served" as the phases progress. */
+const LESSON_GUESTS: Record<LessonPhase, readonly GuestState[]> = {
+  map_arrival: ['idle', 'idle', 'idle'],
+  counter_intro: ['idle', 'idle', 'idle'],
+  thermal_contrast: ['ordering', 'idle', 'idle'],
+  action_pour: ['ordering', 'idle', 'idle'],
+  personal_choice: ['served', 'ordering', 'idle'],
+  micro_echo: ['served', 'served', 'ordering'],
+  farewell_constellation: ['served', 'served', 'served'],
+};
+
 const DUST_MOTE_COUNT = 26;
 
 interface DustMoteSeed {
@@ -1093,7 +1104,7 @@ function CafeGreybox({
       />
 
       {/* ENV_Static: shared warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
-      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} />
+      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} guestStates={LESSON_GUESTS[phase]} />
 
       {/* Subtle highlight halo rendered beneath whichever prop is currently highlighted */}
       {highlightedProp && highlightedProp !== 'prop_cafe_door' && (

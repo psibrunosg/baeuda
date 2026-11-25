@@ -24,6 +24,16 @@ const ITEM_GUEST: Record<string, number> = {
   full: 2,
 };
 
+/** Invisible, generous tap target so small counter items are easy to hit on touch screens. */
+function HitPad() {
+  return (
+    <mesh position={[0, 0.1, 0]}>
+      <boxGeometry args={[0.5, 0.32, 0.42]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
 export interface CafeDynamicSessionProps {
   visible: boolean;
   cycleId: Exclude<CafeCycleId, 'cafe_c1_drinks'>;
@@ -310,6 +320,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <MilkPitcher highlighted={!stepDone.includes('milk')} />
           </group>
 
@@ -322,6 +333,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <SugarJar highlighted={!stepDone.includes('sugar')} />
           </group>
 
@@ -334,6 +346,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <CakeSlice highlighted={!stepDone.includes('cake')} />
           </group>
         </group>
@@ -353,6 +366,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <mesh geometry={geos.mug} castShadow>
               <meshStandardMaterial color="#dc5a2c" roughness={0.3} />
             </mesh>
@@ -371,6 +385,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {[-0.1, 0.1].map((ox, idx) => (
               <group key={idx} position={[ox, 0, 0]} scale={0.72}>
                 <mesh geometry={geos.mug} castShadow>
@@ -394,6 +409,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {glassFull && (
               <mesh position={[0, 0.11, 0]}>
                 <cylinderGeometry args={[0.072, 0.06, 0.18, 18]} />
@@ -420,6 +436,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <group position={[-0.1, 0, 0]} scale={1.15}>
               <mesh geometry={geos.mug} castShadow>
                 <meshStandardMaterial color="#dc5a2c" roughness={0.3} />
@@ -440,6 +457,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {[-0.1, 0.1].map((ox, idx) => (
               <group key={idx} position={[ox, 0, 0]} scale={0.85}>
                 <mesh position={[0, 0.1, 0]}>
@@ -463,6 +481,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <MilkPitcher highlighted={shiftHintVisible && shiftOrderIndex === 2} />
             <group position={[0.14, 0, 0.04]} scale={0.75}>
               <SugarJar highlighted={shiftHintVisible && shiftOrderIndex === 2} />
@@ -509,6 +528,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <CakeSlice highlighted={!a1PlacedNextTo} />
           </group>
 
@@ -530,6 +550,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {[-0.06, 0.06].map((cx, idx) => (
               <mesh key={idx} position={[cx, 0.015, idx * 0.03]} castShadow>
                 <cylinderGeometry args={[0.055, 0.055, 0.018, 18]} />
