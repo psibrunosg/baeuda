@@ -4,6 +4,18 @@ import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 import { StylizedHumanoid, type StylizedHumanoidProps } from './StylizedCharacters';
+import { BlobShadow, toyMaterial } from './toyKit';
+import {
+  armchairGeometry,
+  chairGeometry,
+  doorGeometry,
+  pendantGeometry,
+  pictureGeometry,
+  pottedPlantGeometry,
+  rugTrimGeometry,
+  salonMugGeometry,
+  tableGeometry,
+} from './toyProps';
 
 /**
  * The room around the counter: tables with guests, a reading corner, the front door,
@@ -13,9 +25,6 @@ import { StylizedHumanoid, type StylizedHumanoidProps } from './StylizedCharacte
  */
 
 type GuestTap = (key: SpeechKey) => void;
-
-const WOOD = '#8a5a3b';
-const WOOD_DARK = '#5c3a26';
 
 function useStop(onTap?: () => void) {
   return {
@@ -34,26 +43,7 @@ function useStop(onTap?: () => void) {
 }
 
 function Chair({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
-  return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      <mesh position={[0, 0.44, 0]} castShadow>
-        <boxGeometry args={[0.38, 0.045, 0.38]} />
-        <meshStandardMaterial color={WOOD} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 0.7, -0.17]} castShadow>
-        <boxGeometry args={[0.36, 0.42, 0.04]} />
-        <meshStandardMaterial color={WOOD} roughness={0.8} />
-      </mesh>
-      {[-0.16, 0.16].flatMap((x) =>
-        [-0.16, 0.16].map((z) => (
-          <mesh key={`${x}${z}`} position={[x, 0.21, z]}>
-            <cylinderGeometry args={[0.018, 0.018, 0.42, 6]} />
-            <meshStandardMaterial color={WOOD_DARK} roughness={0.85} />
-          </mesh>
-        )),
-      )}
-    </group>
-  );
+  return <mesh geometry={chairGeometry()} material={toyMaterial()} position={position} rotation={[0, rotation, 0]} castShadow />;
 }
 
 function RoundTable({ position, mugPhase }: { position: [number, number, number]; mugPhase: number }) {
@@ -68,28 +58,11 @@ function RoundTable({ position, mugPhase }: { position: [number, number, number]
   });
   return (
     <group position={position}>
-      <mesh position={[0, 0.72, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.46, 0.46, 0.04, 24]} />
-        <meshStandardMaterial color="#e8d3b0" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.36, 0]} castShadow>
-        <cylinderGeometry args={[0.05, 0.07, 0.72, 10]} />
-        <meshStandardMaterial color={WOOD_DARK} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 0.02, 0]}>
-        <cylinderGeometry args={[0.24, 0.26, 0.04, 16]} />
-        <meshStandardMaterial color={WOOD_DARK} roughness={0.8} />
-      </mesh>
+      <BlobShadow size={[1.25, 1.25]} y={0.014} />
+      <mesh geometry={tableGeometry()} material={toyMaterial()} castShadow receiveShadow />
       <group ref={mugRef} position={[0.14, 0.745, 0.05]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.045, 0.04, 0.09, 12]} />
-          <meshStandardMaterial color="#f5ebd8" roughness={0.35} />
-        </mesh>
+        <mesh geometry={salonMugGeometry()} material={toyMaterial('gloss')} castShadow />
       </group>
-      <mesh position={[-0.16, 0.745, -0.06]}>
-        <cylinderGeometry args={[0.07, 0.07, 0.012, 14]} />
-        <meshStandardMaterial color="#fdf6ea" roughness={0.3} />
-      </mesh>
     </group>
   );
 }
@@ -226,14 +199,7 @@ function DeliveryTray({ delivery }: { delivery: { guest: number; seq: number } |
 function PendantLamp({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.006, 0.006, 1.0, 4]} />
-        <meshStandardMaterial color="#1f2937" />
-      </mesh>
-      <mesh>
-        <coneGeometry args={[0.2, 0.18, 14, 1, true]} />
-        <meshStandardMaterial color="#d97706" side={THREE.DoubleSide} roughness={0.5} metalness={0.3} />
-      </mesh>
+      <mesh geometry={pendantGeometry()} material={toyMaterial('gloss')} />
       <mesh position={[0, -0.04, 0]}>
         <sphereGeometry args={[0.05, 10, 8]} />
         <meshStandardMaterial color="#fff3c4" emissive="#fbbf24" emissiveIntensity={1.6} />
@@ -243,39 +209,11 @@ function PendantLamp({ position }: { position: [number, number, number] }) {
 }
 
 function Plant({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.17, 0]} castShadow>
-        <cylinderGeometry args={[0.14, 0.1, 0.34, 12]} />
-        <meshStandardMaterial color="#b4572f" roughness={0.85} />
-      </mesh>
-      {[
-        [0, 0.55, 0, 0.2],
-        [-0.12, 0.45, 0.05, 0.14],
-        [0.13, 0.5, -0.04, 0.15],
-      ].map(([x, y, z, r], i) => (
-        <mesh key={i} position={[x, y, z]} castShadow>
-          <icosahedronGeometry args={[r, 1]} />
-          <meshStandardMaterial color={i === 0 ? '#4d7c4a' : '#6b9a5e'} roughness={0.9} flatShading />
-        </mesh>
-      ))}
-    </group>
-  );
+  return <mesh geometry={pottedPlantGeometry()} material={toyMaterial()} position={position} scale={scale} castShadow />;
 }
 
 function Frame({ position, size, color }: { position: [number, number, number]; size: [number, number]; color: string }) {
-  return (
-    <group position={position}>
-      <mesh>
-        <boxGeometry args={[size[0], size[1], 0.03]} />
-        <meshStandardMaterial color={WOOD_DARK} roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0, 0.018]}>
-        <planeGeometry args={[size[0] - 0.08, size[1] - 0.08]} />
-        <meshStandardMaterial color={color} roughness={0.9} />
-      </mesh>
-    </group>
-  );
+  return <mesh geometry={pictureGeometry(size[0], size[1], color)} material={toyMaterial()} position={position} />;
 }
 
 /** Glass front door set into the back wall; tap it to hear the welcome. */
@@ -287,17 +225,10 @@ function Door({ position, onTap }: { position: [number, number, number]; onTap: 
   });
   return (
     <group position={position} {...handlers}>
-      <mesh position={[0, 1.05, 0]} castShadow>
-        <boxGeometry args={[1.0, 2.1, 0.08]} />
-        <meshStandardMaterial color={WOOD_DARK} roughness={0.7} />
-      </mesh>
+      <mesh geometry={doorGeometry()} material={toyMaterial()} castShadow />
       <mesh position={[0, 1.2, 0.045]}>
         <planeGeometry args={[0.76, 1.55]} />
         <meshStandardMaterial color="#cfe8f5" emissive="#bfe3f7" emissiveIntensity={0.55} roughness={0.15} />
-      </mesh>
-      <mesh position={[0.32, 0.95, 0.07]}>
-        <sphereGeometry args={[0.03, 8, 8]} />
-        <meshStandardMaterial color="#d4a017" metalness={0.8} roughness={0.3} />
       </mesh>
       <mesh ref={bell} position={[-0.3, 2.0, 0.09]}>
         <coneGeometry args={[0.05, 0.08, 10]} />
@@ -343,6 +274,8 @@ export function CafeSalon({
         <meshStandardMaterial color="#e6c9a0" roughness={1} />
       </mesh>
 
+      <mesh geometry={rugTrimGeometry()} material={toyMaterial()} position={[0, 0.011, 2.6]} receiveShadow />
+
       {/* table 1 (west) and table 2 (east): guests sit across so the camera sees their faces */}
       <RoundTable position={[-2.5, 0, 2.05]} mugPhase={0.5} />
       <Chair position={[-2.5, 0, 1.5]} />
@@ -362,14 +295,7 @@ export function CafeSalon({
       <Chair position={[1.2, 0, 5.15]} rotation={Math.PI} />
 
       {/* reading corner near the door */}
-      <mesh position={[2.35, 0.24, -0.45]} castShadow>
-        <boxGeometry args={[0.6, 0.48, 0.6]} />
-        <meshStandardMaterial color="#9a3412" roughness={0.9} />
-      </mesh>
-      <mesh position={[2.62, 0.62, -0.45]} castShadow>
-        <boxGeometry args={[0.12, 0.7, 0.6]} />
-        <meshStandardMaterial color="#9a3412" roughness={0.9} />
-      </mesh>
+      <mesh geometry={armchairGeometry()} material={toyMaterial()} position={[2.35, 0, -0.45]} castShadow />
       <PendantLamp position={[2.1, 2.45, -0.45]} />
 
       {SALON_GUESTS.map((_, i) => (

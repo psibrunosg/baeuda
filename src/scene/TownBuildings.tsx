@@ -4,6 +4,9 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
+import { houseGeometry, houseGlassMaterial } from './toyBuildings';
+import { BlobShadow, toyMaterial } from './toyKit';
+import { carGeometry } from './toyProps';
 
 const RAIN_COUNT = 180;
 
@@ -207,8 +210,7 @@ export function ResidentialHouse({
   isNight: boolean;
   onExplore?: () => void;
 }) {
-  const textures = useMemo(() => getCafeTextures(), []);
-  const glow = isNight ? 1.55 : 0.45;
+  const house = houseGeometry(wallColor, roofColor, doorColor);
 
   return (
     <group
@@ -227,66 +229,8 @@ export function ResidentialHouse({
         document.body.style.cursor = 'auto';
       }}
     >
-      {/* Main stucco house body */}
-      <RoundedBox args={[2.15, 1.85, 1.72]} radius={0.05} smoothness={2} position={[0, 0.92, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={wallColor} bumpMap={textures.plasterBump} bumpScale={0.01} roughness={0.88} />
-      </RoundedBox>
-      {/* Base plinth */}
-      <RoundedBox args={[2.24, 0.18, 1.8]} radius={0.03} smoothness={2} position={[0, 0.09, 0]} receiveShadow>
-        <meshStandardMaterial color="#dcd0bc" roughness={0.9} />
-      </RoundedBox>
-      {/* Pitched 2-tier clay roof */}
-      <RoundedBox args={[2.38, 0.24, 1.94]} radius={0.05} smoothness={2} position={[0, 1.95, 0]} castShadow>
-        <meshStandardMaterial color={roofColor} bumpMap={textures.clayBump} bumpScale={0.01} roughness={0.85} />
-      </RoundedBox>
-      <RoundedBox args={[1.92, 0.26, 1.48]} radius={0.05} smoothness={2} position={[0, 2.18, 0]} castShadow>
-        <meshStandardMaterial color={roofColor} roughness={0.84} />
-      </RoundedBox>
-      {/* Brick chimney */}
-      <mesh position={[0.62, 2.42, -0.3]} castShadow>
-        <boxGeometry args={[0.26, 0.44, 0.26]} />
-        <meshStandardMaterial color="#8f4f3c" roughness={0.88} />
-      </mesh>
-      {/* Warm front windows */}
-      {[-0.56, 0.56].map((wx, idx) => (
-        <group key={idx} position={[wx, 1.15, 0.87]}>
-          <RoundedBox args={[0.5, 0.54, 0.06]} radius={0.015} smoothness={2}>
-            <meshStandardMaterial color="#fff8ee" roughness={0.82} />
-          </RoundedBox>
-          <mesh position={[0, 0, 0.034]}>
-            <planeGeometry args={[0.38, 0.42]} />
-            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
-          </mesh>
-          <RoundedBox args={[0.48, 0.12, 0.14]} radius={0.02} smoothness={2} position={[0, -0.3, 0.06]}>
-            <meshStandardMaterial color="#7a4e32" roughness={0.85} />
-          </RoundedBox>
-        </group>
-      ))}
-      {/* Front Door + Welcome Mat */}
-      <RoundedBox args={[0.54, 0.96, 0.07]} radius={0.02} smoothness={2} position={[0, 0.52, 0.87]} castShadow>
-        <meshStandardMaterial color={doorColor} roughness={0.78} />
-      </RoundedBox>
-      <mesh position={[0.16, 0.5, 0.92]}>
-        <sphereGeometry args={[0.032, 8, 8]} />
-        <meshStandardMaterial color="#facc15" metalness={0.7} roughness={0.25} />
-      </mesh>
-      <mesh position={[0, 0.02, 1.08]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[0.64, 0.32]} />
-        <meshStandardMaterial color="#c49563" roughness={0.92} />
-      </mesh>
-      {/* Front garden hedge */}
-      {[-0.86, 0.86].map((bx, idx) => (
-        <group key={idx} position={[bx, 0.16, 1.05]}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.18, 10, 10]} />
-            <meshStandardMaterial color="#5f8d5b" roughness={0.9} />
-          </mesh>
-          <mesh position={[0, 0.12, 0.08]}>
-            <sphereGeometry args={[0.04, 8, 8]} />
-            <meshStandardMaterial color={idx === 0 ? '#f472b6' : '#facc15'} roughness={0.7} />
-          </mesh>
-        </group>
-      ))}
+      <mesh geometry={house.solid} material={toyMaterial()} castShadow receiveShadow />
+      <mesh geometry={house.glow} material={houseGlassMaterial(isNight)} />
     </group>
   );
 }
@@ -305,43 +249,15 @@ export function RetroParkedCar({
   color?: string;
   isNight?: boolean;
 }) {
+  const car = carGeometry(color, 1);
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      <RoundedBox args={[1.28, 0.34, 0.66]} radius={0.08} smoothness={3} position={[0, 0.28, 0]} castShadow receiveShadow>
-        <meshPhysicalMaterial color={color} roughness={0.28} clearcoat={0.8} />
-      </RoundedBox>
-      <RoundedBox args={[0.72, 0.28, 0.56]} radius={0.07} smoothness={3} position={[-0.04, 0.54, 0]} castShadow>
-        <meshStandardMaterial color="#fdf6ea" roughness={0.35} />
-      </RoundedBox>
-      <mesh position={[-0.04, 0.54, 0.285]}>
-        <planeGeometry args={[0.54, 0.18]} />
-        <meshStandardMaterial color="#334155" roughness={0.15} metalness={0.3} />
-      </mesh>
-      <mesh position={[-0.04, 0.54, -0.285]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[0.54, 0.18]} />
-        <meshStandardMaterial color="#334155" roughness={0.15} metalness={0.3} />
-      </mesh>
-      {[
-        [-0.38, 0.14, 0.32],
-        [0.38, 0.14, 0.32],
-        [-0.38, 0.14, -0.32],
-        [0.38, 0.14, -0.32],
-      ].map(([wx, wy, wz], idx) => (
-        <mesh key={idx} position={[wx, wy, wz]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.13, 0.13, 0.09, 16]} />
-          <meshStandardMaterial color="#1f2937" roughness={0.8} />
-        </mesh>
-      ))}
-      {[-0.2, 0.2].map((hz, idx) => (
-        <mesh key={idx} position={[0.64, 0.3, hz]}>
-          <sphereGeometry args={[0.055, 10, 10]} />
-          <meshStandardMaterial
-            color="#fef9c3"
-            emissive="#fbbf24"
-            emissiveIntensity={isNight ? 2.2 : 0.35}
-          />
-        </mesh>
-      ))}
+      <BlobShadow size={[1.75, 1.05]} y={0.004} />
+      <group scale={1.5}>
+        <mesh geometry={car.body} material={toyMaterial('gloss')} castShadow receiveShadow />
+        {/* parked: lamps only light up at night */}
+        <mesh geometry={car.lights} material={toyMaterial(isNight ? 'glow' : 'gloss')} />
+      </group>
     </group>
   );
 }

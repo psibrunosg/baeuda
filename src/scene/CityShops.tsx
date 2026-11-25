@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { SpeechKey } from '../domain/types';
 import { getCafeTextures } from './cafeTextures';
 import { StylizedHumanoid } from './StylizedCharacters';
+import { ToyAwning, ToyRoof, ToyWindowTrim } from './toyBuildings';
 
 export interface InteractiveShopProps {
   position: [number, number, number];
@@ -142,9 +143,7 @@ export function InteractiveBakery({
       <RoundedBox args={[2.65, 0.22, 1.9]} radius={0.03} smoothness={2} position={[0, 0.11, 0]} receiveShadow>
         <meshStandardMaterial color="#d6c7b2" roughness={0.9} />
       </RoundedBox>
-      <RoundedBox args={[2.72, 0.24, 1.98]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
-        <meshStandardMaterial color="#a65239" bumpMap={textures.clayBump} bumpScale={0.01} roughness={0.85} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.14, 0]} width={2.72} depth={1.98} color="#a65239" bodyHeight={1.8} />
 
       {/* Brick Chimney + Rising Baking Steam */}
       <mesh position={[0.78, 2.48, -0.35]} castShadow>
@@ -175,23 +174,7 @@ export function InteractiveBakery({
 
       {/* Striped Terracotta & Cream Bakery Awning facing the street (-z) */}
       <group position={[0, 1.48, -1.16]} rotation={[-0.28, 0, 0]}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <RoundedBox
-            key={i}
-            args={[0.45, 0.09, 0.62]}
-            radius={0.02}
-            smoothness={2}
-            position={[-0.9 + i * 0.45, 0, 0]}
-            castShadow
-          >
-            <meshStandardMaterial
-              color={i % 2 === 0 ? '#d96b47' : '#fdf6ea'}
-              bumpMap={textures.awningBump}
-              bumpScale={0.01}
-              roughness={0.86}
-            />
-          </RoundedBox>
-        ))}
+        <ToyAwning colors={['#d96b47', '#fdf6ea', '#d96b47', '#fdf6ea', '#d96b47']} stripe={0.45} depth={0.62} front={-1} />
       </group>
 
       {/* Warm Lit Display Window facing street (-z) */}
@@ -203,6 +186,7 @@ export function InteractiveBakery({
           <planeGeometry args={[1.22, 0.72]} />
           <meshStandardMaterial color="#fde68a" emissive="#f59e0b" emissiveIntensity={glow} />
         </mesh>
+        <ToyWindowTrim position={[0, 0, -0.052]} width={1.22} height={0.72} facing={-1} />
       </group>
 
       {/* INTERACTIVE 1: Outdoor Bakery Counter & Fresh Bread / Croissant Display */}
@@ -498,9 +482,7 @@ export function InteractiveTireShop({
         <meshStandardMaterial color="#f59e0b" roughness={0.6} />
       </mesh>
       {/* Corrugated Navy-Blue Garage Roof */}
-      <RoundedBox args={[2.72, 0.22, 1.98]} radius={0.04} smoothness={2} position={[0, 2.12, 0]} castShadow>
-        <meshStandardMaterial color="#1e3a8a" roughness={0.78} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.12, 0]} width={2.72} depth={1.98} color="#1e3a8a" bodyHeight={1.8} />
 
       {/* Open Garage Bay Recessed Interior facing street (-z) */}
       <mesh position={[0, 0.74, -0.92]} rotation={[0, Math.PI, 0]}>
@@ -790,9 +772,7 @@ export function InteractiveClothingStore({
       <RoundedBox args={[2.55, 0.2, 1.9]} radius={0.03} smoothness={2} position={[0, 0.1, 0]} receiveShadow>
         <meshStandardMaterial color="#efeae3" map={textures.marbleColor} bumpMap={textures.marbleBump} bumpScale={0.008} roughness={0.8} />
       </RoundedBox>
-      <RoundedBox args={[2.62, 0.24, 1.98]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
-        <meshStandardMaterial color="#2f6f62" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.82} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.14, 0]} width={2.62} depth={1.98} color="#2f6f62" bodyHeight={1.8} />
 
       {/* Iconic 3D Golden Coat Hanger Emblem Sign above Awning (zero text) */}
       <group position={[0, 1.84, -0.96]}>
@@ -816,23 +796,7 @@ export function InteractiveClothingStore({
 
       {/* Striped Rose & Cream Boutique Awning facing street (-z) */}
       <group position={[0, 1.48, -1.14]} rotation={[-0.28, 0, 0]}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <RoundedBox
-            key={i}
-            args={[0.43, 0.09, 0.58]}
-            radius={0.02}
-            smoothness={2}
-            position={[-0.86 + i * 0.43, 0, 0]}
-            castShadow
-          >
-            <meshStandardMaterial
-              color={i % 2 === 0 ? '#e11d48' : '#fff5f7'}
-              bumpMap={textures.awningBump}
-              bumpScale={0.01}
-              roughness={0.86}
-            />
-          </RoundedBox>
-        ))}
+        <ToyAwning colors={['#e11d48', '#fff5f7', '#e11d48', '#fff5f7', '#e11d48']} stripe={0.43} depth={0.58} front={-1} />
       </group>
 
       {/* Warm Boutique Display Window */}
@@ -844,6 +808,7 @@ export function InteractiveClothingStore({
           <planeGeometry args={[1.52, 0.74]} />
           <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
         </mesh>
+        <ToyWindowTrim position={[0, 0, -0.052]} width={1.52} height={0.74} facing={-1} />
       </group>
 
       {/* INTERACTIVE 1: Outdoor Wooden Clothing Rack (Red Shirt, Blue Coat, Green Sweater) */}
@@ -1111,9 +1076,7 @@ export function InteractiveTechShop({
         />
       </RoundedBox>
       {/* Dark Slate Roof & Electric Cyan LED Accent Stripe */}
-      <RoundedBox args={[2.62, 0.22, 1.96]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
-        <meshStandardMaterial color="#1e293b" roughness={0.65} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.14, 0]} width={2.62} depth={1.96} color="#334155" bodyHeight={1.8} />
       <mesh position={[0, 1.96, 0.92]}>
         <boxGeometry args={[2.46, 0.08, 0.04]} />
         <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={glow} />

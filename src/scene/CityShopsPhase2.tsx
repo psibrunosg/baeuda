@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { InteractiveShopProps } from './CityShops';
 import { getCafeTextures } from './cafeTextures';
 import { StylizedHumanoid } from './StylizedCharacters';
+import { ToyAwning, ToyRoof, ToyWindowTrim } from './toyBuildings';
 
 function setPointer(over: boolean) {
   document.body.style.cursor = over ? 'pointer' : 'auto';
@@ -92,9 +93,7 @@ export function InteractivePharmacy({
         <meshStandardMaterial color="#f8fafc" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.8} />
       </RoundedBox>
       {/* Emerald Roof Trim & Mint Accent Stripe */}
-      <RoundedBox args={[2.62, 0.22, 1.96]} radius={0.04} smoothness={2} position={[0, 2.14, 0]} castShadow>
-        <meshStandardMaterial color="#059669" roughness={0.72} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.14, 0]} width={2.62} depth={1.96} color="#059669" bodyHeight={1.8} />
       <mesh position={[0, 1.94, 0.92]}>
         <boxGeometry args={[2.46, 0.1, 0.04]} />
         <meshStandardMaterial color="#34d399" emissive="#10b981" emissiveIntensity={glow * 0.6} />
@@ -319,9 +318,7 @@ export function InteractivePetShop({
         <meshStandardMaterial color="#e0f2fe" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.84} />
       </RoundedBox>
       {/* Warm Orange Roof Cap */}
-      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
-        <meshStandardMaterial color="#ea580c" roughness={0.78} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.13, 0]} width={2.62} depth={1.96} color="#ea580c" bodyHeight={1.8} />
 
       {/* Iconic 3D Golden Paw Print Roof Emblem (zero text) */}
       <group position={[0, 2.48, 0.65]}>
@@ -528,9 +525,7 @@ export function InteractiveBarberShop({
       <RoundedBox args={[2.45, 2.02, 1.8]} radius={0.04} smoothness={2} position={[0, 1.01, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#f5ebd8" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.85} />
       </RoundedBox>
-      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
-        <meshStandardMaterial color="#7f1d1d" roughness={0.78} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.13, 0]} width={2.62} depth={1.96} color="#8f2323" bodyHeight={1.8} />
       {/* Warm Lit Barber Window (+z) */}
       <group position={[0, 0.98, 0.92]}>
         <RoundedBox args={[1.72, 0.9, 0.07]} radius={0.02} smoothness={2}>
@@ -540,6 +535,7 @@ export function InteractiveBarberShop({
           <planeGeometry args={[1.56, 0.76]} />
           <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={glow} />
         </mesh>
+        <ToyWindowTrim position={[0, 0, 0.052]} width={1.56} height={0.76} facing={1} />
       </group>
 
       {/* INTERACTIVE 1: Spinning Classic Red-White-Blue Barber Pole */}
@@ -730,9 +726,7 @@ export function InteractiveBookshop({
       <RoundedBox args={[2.45, 2.02, 1.8]} radius={0.04} smoothness={2} position={[0, 1.01, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#d9e7dc" bumpMap={textures.plasterBump} bumpScale={0.008} roughness={0.86} />
       </RoundedBox>
-      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
-        <meshStandardMaterial color="#166534" roughness={0.8} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.13, 0]} width={2.62} depth={1.96} color="#1f7a43" bodyHeight={1.8} />
 
       {/* Iconic 3D Open Book Emblem on Roof (zero text) */}
       <group position={[0, 2.42, -0.62]}>
@@ -949,30 +943,11 @@ export function InteractivePizzeria({
           roughness={0.86}
         />
       </RoundedBox>
-      <RoundedBox args={[2.62, 0.24, 1.96]} radius={0.04} smoothness={2} position={[0, 2.13, 0]} castShadow>
-        <meshStandardMaterial
-          color="#c2410c"
-          map={textures.brickColor}
-          bumpMap={textures.brickBump}
-          bumpScale={0.016}
-          roughness={0.82}
-        />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.13, 0]} width={2.62} depth={1.96} color="#c2410c" bodyHeight={1.8} />
 
       {/* Italian Red-White-Green Striped Awning facing street (-z) */}
       <group position={[0, 1.48, -1.14]} rotation={[-0.28, 0, 0]}>
-        {['#16a34a', '#ffffff', '#dc2626', '#ffffff', '#16a34a'].map((color, i) => (
-          <RoundedBox
-            key={i}
-            args={[0.43, 0.09, 0.58]}
-            radius={0.02}
-            smoothness={2}
-            position={[-0.86 + i * 0.43, 0, 0]}
-            castShadow
-          >
-            <meshStandardMaterial color={color} bumpMap={textures.awningBump} bumpScale={0.01} roughness={0.84} />
-          </RoundedBox>
-        ))}
+        <ToyAwning colors={['#16a34a', '#ffffff', '#dc2626', '#ffffff', '#16a34a']} stripe={0.43} depth={0.58} front={-1} />
       </group>
 
       {/* Iconic 3D Pizza Emblem on Roof (zero text) */}
@@ -1207,9 +1182,7 @@ export function InteractivePostBank({
           roughness={0.78}
         />
       </RoundedBox>
-      <RoundedBox args={[2.76, 0.24, 1.88]} radius={0.04} smoothness={2} position={[0, 2.18, 0]} castShadow>
-        <meshStandardMaterial color="#1e3a8a" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.78} />
-      </RoundedBox>
+      <ToyRoof position={[0, 2.18, 0]} width={2.76} depth={1.88} color="#24479e" bodyHeight={1.85} />
       {/* Golden Civic Roof Stripe & Envelope Sign */}
       <mesh position={[0, 1.98, -0.88]}>
         <boxGeometry args={[2.62, 0.1, 0.04]} />
