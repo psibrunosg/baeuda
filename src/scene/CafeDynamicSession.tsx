@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import type * as THREE from 'three';
 import {
@@ -160,6 +160,9 @@ export function CafeDynamicSession({
   const deliverySeq = useRef(0);
 
   const ringRef = useRef<THREE.Mesh>(null);
+  const { size } = useThree();
+  // On tall screens the wide room shrinks the counter; scale the items so they stay tappable.
+  const itemScale = size.width < size.height ? 1 + (1 - size.width / size.height) * 0.9 : 1;
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const busyRef = useRef(false);
   const geos = useMemo(() => getCafeGeometries(), []);
@@ -308,6 +311,9 @@ export function CafeDynamicSession({
       {/* Full shared Café interior backdrop (espresso machine, pendant lamp, window, dust motes, fluted counter) */}
       <CafeEnvironmentStatic showCloche={false} onGuestTap={onPlayAudio} guestStates={guestStates} delivery={delivery} />
 
+      {/* Counter items, scaled about the counter centre */}
+      <group position={[0, 0.973, 0.14]} scale={itemScale}>
+        <group position={[0, -0.973, -0.14]}>
       {/* CYCLE 2: Food & Mixing (milk, sugar, cake, sweet, more) */}
       {cycleId === 'cafe_c2_food' && (
         <group>
@@ -575,6 +581,8 @@ export function CafeDynamicSession({
           </mesh>
         </group>
       )}
+        </group>
+      </group>
     </group>
   );
 }
