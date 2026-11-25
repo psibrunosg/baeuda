@@ -1,7 +1,8 @@
 import { lazy, memo, Suspense, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
-import { Bloom, EffectComposer } from '@react-three/postprocessing';
+import { Bloom, EffectComposer, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
 import type {
@@ -369,7 +370,7 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
       shadows="percentage"
       dpr={[1, 1.5]}
       camera={{ position: [5.4, 4.6, 6.2], fov: 42 }}
-      gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.04 }}
+      gl={{ toneMappingExposure: 1.14 }}
     >
       <color attach="background" args={[bgColor]} />
       <fog attach="fog" args={[bgColor, 34, 72]} />
@@ -619,6 +620,9 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
           intensity={0.42}
           radius={0.62}
         />
+        {/* the composer disables renderer tone mapping, so it happens here: Neutral keeps toy colours true */}
+        <ToneMapping mode={ToneMappingMode.NEUTRAL} />
+        <Vignette offset={0.28} darkness={0.42} />
       </EffectComposer>
     </Canvas>
   );

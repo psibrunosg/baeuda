@@ -251,6 +251,8 @@ export interface TrafficCtx {
   green: boolean;
   people: readonly Vec[];
   rand: () => number;
+  /** Learned speed share (0..1) from distance to the nearest stop point ahead and own speed. */
+  driver?: (gap: number, speed: number) => number;
 }
 
 const inCrosswalk = (p: Vec, cx: number) => Math.abs(p.x - cx) < 0.75 && p.z > -1.6 && p.z < 0.6;
@@ -282,6 +284,7 @@ export function stepCars(cars: Car[], dt: number, ctx: TrafficCtx): void {
       continue;
     }
     let target = c.turn ? TURN_SPEED : CRUISE;
+    let gap = Infinity; // distance to the nearest rule trigger ahead; the net learns to ease off before it
 
     // car ahead in the same corridor
     for (const o of cars) {
@@ -290,7 +293,10 @@ export function stepCars(cars: Car[], dt: number, ctx: TrafficCtx): void {
       const dz = o.z - c.z;
       const a = dx * c.hx + dz * c.hz;
       const l = Math.abs(dx * c.hz - dz * c.hx);
-      if (a > 0 && a < CAR_GAP && l < 0.4) target = 0;
+      if (a > 0 && l < 0.4) {
+        gap = Math.min(gap, a - CAR_GAP);
+        if (a < CAR_GAP) target = 0;
+      }
     }
 
     // people straight ahead (covers the player walking anywhere on the road)
@@ -299,18 +305,27 @@ export function stepCars(cars: Car[], dt: number, ctx: TrafficCtx): void {
       const dz = p.z - c.z;
       const a = dx * c.hx + dz * c.hz;
       const l = Math.abs(dx * c.hz - dz * c.hx);
-      if (a > 0.2 && a < 1.4 && l < 0.5) target = 0;
+      if (a > 0.2 && l < 0.5) {
+        gap = Math.min(gap, a - 1.4);
+        if (a < 1.4) target = 0;
+      }
     }
 
     if (c.hx !== 0 && c.z > -1.5 && c.z < 0.5 && !c.turn) {
       for (const cx of CROSSWALK_XS) {
         const ahead = (cx - c.x) * c.hx;
         // give way to anyone on the zebra while the car is still before it
-        if (ahead > 0.95 && ahead < 2.6 && crosswalkBusy(ctx.people, cx)) target = 0;
+        if (ahead > 0.95 && crosswalkBusy(ctx.people, cx)) {
+          gap = Math.min(gap, ahead - 2.6);
+          if (ahead < 2.6) target = 0;
+        }
         // red light for cars (pedestrian phase)
         if (cx === LIGHT_X && !ctx.green) {
           const toLine = (-STOP_LINE * c.hx - c.x) * c.hx;
-          if (toLine > -0.05 && toLine < 0.9) target = 0;
+          if (toLine > -0.05) {
+            gap = Math.min(gap, toLine - 0.9);
+            if (toLine < 0.9) target = 0;
+          }
         }
       }
     }
@@ -325,6 +340,7 @@ export function stepCars(cars: Car[], dt: number, ctx: TrafficCtx): void {
         const heldByOther = cars.some((o) => o !== c && o.active && o.holds === i);
         if (c.holds !== i) {
           if (heldByOther) {
+            gap = Math.min(gap, d - 1.5);
             if (d < 1.5) target = 0;
           } else {
             c.holds = i;
@@ -334,6 +350,8 @@ export function stepCars(cars: Car[], dt: number, ctx: TrafficCtx): void {
         if (c.holds === i && d <= BOX && c.plan && c.plan !== 'S') startTurn(c, ix, c.plan);
       }
     }
+
+    if (ctx.driver && target > 0 && gap < 3) target *= ctx.driver(Math.max(gap, 0), c.speed);
 
     c.speed += (target - c.speed) * Math.min(1, dt * (target < c.speed ? 7 : 3));
 

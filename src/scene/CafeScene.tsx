@@ -9,6 +9,8 @@ import { getCafeTextures } from './cafeTextures';
 import { CafeSalon, type GuestState } from './CafeSalon';
 import { findPropName, type AssetMode } from './contracts';
 import { ModelErrorBoundary } from './ModelErrorBoundary';
+import { toyMaterial } from './toyKit';
+import { counterGeometry, wainscotGeometry } from './toyProps';
 
 export interface CafeSceneProps {
   assetMode: AssetMode;
@@ -589,23 +591,15 @@ export function CafeEnvironmentStatic({
         />
       </mesh>
 
-      {/* Warm wooden wainscoting lower back-wall trim */}
-      <mesh position={[0, 0.41, -1.52]} receiveShadow>
-        <boxGeometry args={[10.4, 0.82, 0.06]} />
-        <meshStandardMaterial
-          color="#8b5a3c"
-          bumpMap={textures.woodCounterBump}
-          bumpScale={0.008}
-          roughness={0.82}
-        />
-      </mesh>
+      {/* Panelled wooden wainscot along the lower back wall */}
+      <mesh geometry={wainscotGeometry()} material={toyMaterial()} position={[0, 0, -1.52]} receiveShadow />
 
       {/* Sunlit Café Window on left back wall + soft morning sunbeam shaft */}
       <group position={[-1.62, 1.86, -1.53]}>
         <RoundedBox args={[1.05, 1.2, 0.08]} radius={0.02} smoothness={3}>
           <meshStandardMaterial color="#6b4226" roughness={0.78} />
         </RoundedBox>
-        <mesh position={[0, 0, 0.03]}>
+        <mesh position={[0, 0, 0.045]}>
           <planeGeometry args={[0.9, 1.04]} />
           <meshStandardMaterial
             color="#fff6d6"
@@ -615,11 +609,11 @@ export function CafeEnvironmentStatic({
           />
         </mesh>
         {/* Mullion cross bars */}
-        <mesh position={[0, 0, 0.045]}>
+        <mesh position={[0, 0, 0.05]}>
           <boxGeometry args={[0.04, 1.06, 0.03]} />
           <meshStandardMaterial color="#6b4226" roughness={0.78} />
         </mesh>
-        <mesh position={[0, 0, 0.045]}>
+        <mesh position={[0, 0, 0.05]}>
           <boxGeometry args={[0.92, 0.04, 0.03]} />
           <meshStandardMaterial color="#6b4226" roughness={0.78} />
         </mesh>
@@ -874,38 +868,8 @@ export function CafeEnvironmentStatic({
         ))}
       </group>
 
-      {/* Main Wooden Café Counter (0.95m height) with fluted front slats & beveled grained top */}
-      <mesh position={[0, 0.455, 0.05]} castShadow receiveShadow>
-        <boxGeometry args={[3.24, 0.91, 0.9]} />
-        <meshStandardMaterial
-          color="#6f462c"
-          bumpMap={textures.woodCounterBump}
-          bumpScale={0.01}
-          roughness={0.85}
-        />
-      </mesh>
-      {/* Front vertical decorative wood slats */}
-      {Array.from({ length: 13 }, (_, idx) => (
-        <mesh
-          key={idx}
-          position={[-1.44 + idx * 0.24, 0.455, 0.505]}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={[0.14, 0.84, 0.025]} />
-          <meshStandardMaterial
-            color="#7f5134"
-            bumpMap={textures.woodCounterBump}
-            bumpScale={0.008}
-            roughness={0.82}
-          />
-        </mesh>
-      ))}
-      {/* Brass kick-plate along counter base */}
-      <mesh position={[0, 0.04, 0.512]}>
-        <boxGeometry args={[3.26, 0.07, 0.02]} />
-        <meshStandardMaterial color="#b48a3e" metalness={0.78} roughness={0.3} />
-      </mesh>
+      {/* Main Wooden Café Counter (0.95m height) with rounded flutes, mouldings & brass kick-plate */}
+      <mesh geometry={counterGeometry()} material={toyMaterial()} castShadow receiveShadow />
       {/* Beveled Oak Countertop with wood grain PBR maps */}
       <RoundedBox
         args={[3.38, 0.075, 1.08]}

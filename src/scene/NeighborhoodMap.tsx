@@ -16,6 +16,17 @@ import {
   PlazaMusicianNpc,
 } from './StylizedCharacters';
 import { CityLife } from './CityLife';
+import { ToyAwning, ToyRoof, ToyWindowTrim } from './toyBuildings';
+import { once, toyMaterial } from './toyKit';
+import {
+  bicycleGeometry,
+  bushGeometry,
+  cloudGeometry,
+  fruitCrateGeometry,
+  streetlampGeometry,
+  treeCanopyGeometry,
+  treeTrunkGeometry,
+} from './toyProps';
 import { StreetMicroEvents } from './StreetMicroEvents';
 import {
   InteractiveBakery,
@@ -104,6 +115,13 @@ const OBSTACLE_AABBS: readonly Aabb[] = [
   lotBox(4.2, 8.15, 0.85, 0.52),  // Retro Parked Car
 ];
 
+const CAFE_AWNING = ['#f6e7cc', '#2a6f62', '#f6e7cc', '#2a6f62', '#f6e7cc', '#2a6f62', '#f6e7cc'] as const;
+const MARKET_AWNING = ['#d96b47', '#fdf6ea', '#d96b47', '#fdf6ea', '#d96b47'] as const;
+
+/** The bush geometry is white-based; instanced bushes tint per instance, these two share one green. */
+const cafeBushMaterial = () =>
+  once('material:cafeBush', () => new THREE.MeshStandardMaterial({ vertexColors: true, color: '#5f8d5b', roughness: 0.88 }));
+
 function isWaterBlocked(x: number, z: number): boolean {
   // East River channel (X: 9.45..11.75) open only on Bridge 1 (Z: -1.4..0.4) and Bridge 2 (Z: 5.6..7.4)
   if (x > 9.45 && x < 11.75 && z > -8.5) {
@@ -134,7 +152,7 @@ function StylizedCloud({
   speed?: number;
   phase?: number;
 }) {
-  const cloudRef = useRef<THREE.Group>(null);
+  const cloudRef = useRef<THREE.Mesh>(null);
   const mapVisibleRef = useMapVisibleRef();
   useFrame((state) => {
     if (!mapVisibleRef.current || !cloudRef.current) return;
@@ -145,20 +163,7 @@ function StylizedCloud({
 
   return (
     <group position={position} scale={scale}>
-      <group ref={cloudRef}>
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[0.42, 14, 14]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.96} />
-        </mesh>
-        <mesh position={[-0.36, -0.06, 0.04]}>
-          <sphereGeometry args={[0.31, 12, 12]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.96} />
-        </mesh>
-        <mesh position={[0.36, -0.05, -0.04]}>
-          <sphereGeometry args={[0.33, 12, 12]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.96} />
-        </mesh>
-      </group>
+      <mesh ref={cloudRef} geometry={cloudGeometry()} material={toyMaterial()} />
     </group>
   );
 }
@@ -172,47 +177,11 @@ function StylizedTree({
   scale?: number;
   fogged?: boolean;
 }) {
-  const textures = useMemo(() => getCafeTextures(), []);
+  const material = toyMaterial(fogged ? 'fog' : 'matte');
   return (
     <group position={position} scale={scale}>
-      <mesh position={[0, 0.34, 0]} castShadow={!fogged}>
-        <cylinderGeometry args={[0.09, 0.13, 0.68, 10]} />
-        <meshStandardMaterial
-          color={fogged ? '#94a3b8' : '#7c5234'}
-          transparent={fogged}
-          opacity={fogged ? 0.45 : 1}
-          roughness={0.92}
-        />
-      </mesh>
-      <mesh position={[0, 0.86, 0]} castShadow={!fogged}>
-        <sphereGeometry args={[0.42, 14, 14]} />
-        <meshStandardMaterial
-          color={fogged ? '#cbd5e1' : '#5f8d5b'}
-          bumpMap={fogged ? null : textures.clayBump}
-          bumpScale={0.01}
-          transparent={fogged}
-          opacity={fogged ? 0.48 : 1}
-          roughness={0.9}
-        />
-      </mesh>
-      <mesh position={[-0.22, 0.76, 0.15]} castShadow={!fogged}>
-        <sphereGeometry args={[0.28, 12, 12]} />
-        <meshStandardMaterial
-          color={fogged ? '#cbd5e1' : '#4d7c4a'}
-          transparent={fogged}
-          opacity={fogged ? 0.45 : 1}
-          roughness={0.9}
-        />
-      </mesh>
-      <mesh position={[0.24, 0.82, -0.1]} castShadow={!fogged}>
-        <sphereGeometry args={[0.26, 12, 12]} />
-        <meshStandardMaterial
-          color={fogged ? '#cbd5e1' : '#73a36d'}
-          transparent={fogged}
-          opacity={fogged ? 0.45 : 1}
-          roughness={0.9}
-        />
-      </mesh>
+      <mesh geometry={treeTrunkGeometry()} material={material} castShadow={!fogged} />
+      <mesh geometry={treeCanopyGeometry()} material={material} castShadow={!fogged} />
     </group>
   );
 }
@@ -227,71 +196,38 @@ const FOREST_TREES: readonly (readonly [number, number, number])[] = [
 ];
 
 /**
- * Renders all 17 neighborhood trees in just 4 WebGL draw calls (down from 68)
- * using static InstancedMesh batches for trunks and 3-lobe canopies.
+ * All neighborhood trees in 2 draw calls: static instanced trunks and canopies,
+ * each tree turned and tinted a little differently.
  */
 function InstancedForest() {
-  const textures = useMemo(() => getCafeTextures(), []);
   const trunkRef = useRef<THREE.InstancedMesh>(null);
-  const centerRef = useRef<THREE.InstancedMesh>(null);
-  const leftRef = useRef<THREE.InstancedMesh>(null);
-  const rightRef = useRef<THREE.InstancedMesh>(null);
+  const canopyRef = useRef<THREE.InstancedMesh>(null);
   const count = FOREST_TREES.length;
 
   useLayoutEffect(() => {
     const dummy = new THREE.Object3D();
-    for (let i = 0; i < count; i++) {
-      const [tx, tz, sc] = FOREST_TREES[i];
-
-      if (trunkRef.current) {
-        dummy.position.set(tx, 0.34 * sc, tz);
-        dummy.scale.setScalar(sc);
-        dummy.updateMatrix();
-        trunkRef.current.setMatrixAt(i, dummy.matrix);
-      }
-      if (centerRef.current) {
-        dummy.position.set(tx, 0.86 * sc, tz);
-        dummy.scale.setScalar(sc);
-        dummy.updateMatrix();
-        centerRef.current.setMatrixAt(i, dummy.matrix);
-      }
-      if (leftRef.current) {
-        dummy.position.set(tx - 0.22 * sc, 0.76 * sc, tz + 0.15 * sc);
-        dummy.scale.setScalar(sc);
-        dummy.updateMatrix();
-        leftRef.current.setMatrixAt(i, dummy.matrix);
-      }
-      if (rightRef.current) {
-        dummy.position.set(tx + 0.24 * sc, 0.82 * sc, tz - 0.1 * sc);
-        dummy.scale.setScalar(sc);
-        dummy.updateMatrix();
-        rightRef.current.setMatrixAt(i, dummy.matrix);
-      }
+    const tint = new THREE.Color();
+    FOREST_TREES.forEach(([tx, tz, sc], i) => {
+      dummy.position.set(tx, 0, tz);
+      dummy.rotation.y = i * 2.4;
+      dummy.scale.setScalar(sc);
+      dummy.updateMatrix();
+      trunkRef.current?.setMatrixAt(i, dummy.matrix);
+      canopyRef.current?.setMatrixAt(i, dummy.matrix);
+      canopyRef.current?.setColorAt(i, tint.setRGB(i % 3 === 1 ? 1.18 : 1, i % 4 === 2 ? 0.9 : 1, i % 5 === 3 ? 0.8 : 1));
+    });
+    for (const mesh of [trunkRef.current, canopyRef.current]) {
+      if (!mesh) continue;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.computeBoundingSphere();
     }
-    if (trunkRef.current) trunkRef.current.instanceMatrix.needsUpdate = true;
-    if (centerRef.current) centerRef.current.instanceMatrix.needsUpdate = true;
-    if (leftRef.current) leftRef.current.instanceMatrix.needsUpdate = true;
-    if (rightRef.current) rightRef.current.instanceMatrix.needsUpdate = true;
-  }, [count]);
+  }, []);
 
   return (
     <group name="Instanced_Forest">
-      <instancedMesh ref={trunkRef} args={[undefined, undefined, count]} castShadow>
-        <cylinderGeometry args={[0.09, 0.13, 0.68, 10]} />
-        <meshStandardMaterial color="#7c5234" bumpMap={textures.darkWoodBump} bumpScale={0.008} roughness={0.92} />
-      </instancedMesh>
-      <instancedMesh ref={centerRef} args={[undefined, undefined, count]} castShadow>
-        <sphereGeometry args={[0.42, 14, 14]} />
-        <meshStandardMaterial color="#5f8d5b" bumpMap={textures.clayBump} bumpScale={0.01} roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh ref={leftRef} args={[undefined, undefined, count]} castShadow>
-        <sphereGeometry args={[0.28, 12, 12]} />
-        <meshStandardMaterial color="#4d7c4a" roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh ref={rightRef} args={[undefined, undefined, count]} castShadow>
-        <sphereGeometry args={[0.26, 12, 12]} />
-        <meshStandardMaterial color="#73a36d" roughness={0.9} />
-      </instancedMesh>
+      <instancedMesh ref={trunkRef} args={[treeTrunkGeometry(), toyMaterial(), count]} castShadow />
+      <instancedMesh ref={canopyRef} args={[treeCanopyGeometry(), toyMaterial(), count]} castShadow />
     </group>
   );
 }
@@ -1000,19 +936,8 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
           <meshStandardMaterial color="#f2e4ce" roughness={0.85} />
         </RoundedBox>
 
-        {/* Pitched roof cap with warm clay overhang */}
-        <RoundedBox args={[2.86, 0.24, 2.34]} radius={0.05} smoothness={3} position={[0, 2.24, 0]} castShadow>
-          <meshStandardMaterial
-            color="#5a3827"
-            bumpMap={textures.clayBump}
-            bumpScale={0.012}
-            roughness={0.86}
-          />
-        </RoundedBox>
-        {/* Terracotta rooftop trim */}
-        <RoundedBox args={[2.5, 0.18, 1.98]} radius={0.04} smoothness={3} position={[0, 2.42, 0]} castShadow>
-          <meshStandardMaterial color="#7c4732" roughness={0.85} />
-        </RoundedBox>
+        {/* Tiled hip roof */}
+        <ToyRoof position={[0, 2.24, 0]} width={2.8} depth={2.28} color="#8a4a34" />
 
         {/* Brick chimney with collar + rising steam puffs */}
         <group position={[0.82, 2.52, -0.45]}>
@@ -1040,23 +965,7 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
 
         {/* Scalloped 7-stripe awning */}
         <group position={[0, 1.65, 1.26]} rotation={[0.32, 0, 0]}>
-          {Array.from({ length: 7 }, (_, i) => (
-            <RoundedBox
-              key={i}
-              args={[0.35, 0.12, 0.76]}
-              radius={0.03}
-              smoothness={3}
-              position={[-1.05 + i * 0.35, 0, 0]}
-              castShadow
-            >
-              <meshStandardMaterial
-                color={i % 2 === 0 ? '#f6e7cc' : '#2a6f62'}
-                bumpMap={textures.clayBump}
-                bumpScale={0.006}
-                roughness={0.84}
-              />
-            </RoundedBox>
-          ))}
+          <ToyAwning colors={CAFE_AWNING} stripe={0.35} depth={0.76} front={1} />
         </group>
 
         {/* Framed warm glowing café window + wooden flower box with colorful blooms */}
@@ -1073,33 +982,11 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
               roughness={0.25}
             />
           </mesh>
-          <mesh position={[0, 0, 0.045]}>
-            <boxGeometry args={[0.04, 0.7, 0.03]} />
-            <meshStandardMaterial color="#f5ebd8" />
-          </mesh>
-          <mesh position={[0, 0, 0.045]}>
-            <boxGeometry args={[0.8, 0.04, 0.03]} />
-            <meshStandardMaterial color="#f5ebd8" />
-          </mesh>
+          <ToyWindowTrim position={[0, 0, 0.052]} width={0.78} height={0.68} facing={1} />
           {/* Flower box */}
-          <RoundedBox args={[0.92, 0.18, 0.22]} radius={0.02} smoothness={2} position={[0, -0.44, 0.09]} castShadow>
+          <RoundedBox args={[0.92, 0.18, 0.22]} radius={0.02} smoothness={2} position={[0, -0.5, 0.09]} castShadow>
             <meshStandardMaterial color="#7a4e32" roughness={0.85} />
           </RoundedBox>
-          {[-0.28, -0.08, 0.12, 0.28].map((fx, idx) => (
-            <group key={idx} position={[fx, -0.32, 0.11]}>
-              <mesh>
-                <sphereGeometry args={[0.075, 10, 10]} />
-                <meshStandardMaterial color="#4d7c54" roughness={0.9} />
-              </mesh>
-              <mesh position={[0, 0.055, 0.02]}>
-                <sphereGeometry args={[0.036, 8, 8]} />
-                <meshStandardMaterial
-                  color={idx % 2 === 0 ? '#f472b6' : '#facc15'}
-                  roughness={0.7}
-                />
-              </mesh>
-            </group>
-          ))}
         </group>
 
         {/* Hanging wrought-iron café sign with miniature 3D ceramic mug (0 text!) */}
@@ -1221,10 +1108,7 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
           onPointerOver={handleDoorPointerOver}
           onPointerOut={handleDoorPointerOut}
         >
-          <mesh position={[0, 0.95, 0]} castShadow>
-            <cylinderGeometry args={[0.035, 0.06, 1.9, 10]} />
-            <meshStandardMaterial color="#27272a" metalness={0.65} roughness={0.38} />
-          </mesh>
+          <mesh geometry={streetlampGeometry()} material={toyMaterial()} castShadow />
           <mesh position={[0, 1.98, 0]}>
             <sphereGeometry args={[0.14, 14, 14]} />
             <meshStandardMaterial
@@ -1245,10 +1129,6 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
               />
             </mesh>
           )}
-          <mesh position={[0, 2.13, 0]} castShadow>
-            <coneGeometry args={[0.18, 0.12, 12]} />
-            <meshStandardMaterial color="#27272a" metalness={0.65} roughness={0.4} />
-          </mesh>
         </group>
 
         {/* Emergent Micro-Event: Café Cat + Interactive Water Bowl (zero dialogue!) */}
@@ -1341,22 +1221,7 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
             onPointerOver={handleDoorPointerOver}
             onPointerOut={handleDoorPointerOut}
           >
-            <mesh castShadow>
-              <sphereGeometry args={[0.22, 12, 12]} />
-              <meshStandardMaterial color="#4d7c54" bumpMap={textures.clayBump} bumpScale={0.008} roughness={0.9} />
-            </mesh>
-            <mesh position={[0.14, -0.04, 0.08]} castShadow>
-              <sphereGeometry args={[0.15, 10, 10]} />
-              <meshStandardMaterial color="#5f8d5b" roughness={0.9} />
-            </mesh>
-            <mesh position={[-0.08, 0.12, 0.12]}>
-              <sphereGeometry args={[0.04, 8, 8]} />
-              <meshStandardMaterial color="#f472b6" roughness={0.7} />
-            </mesh>
-            <mesh position={[0.09, 0.08, 0.14]}>
-              <sphereGeometry args={[0.036, 8, 8]} />
-              <meshStandardMaterial color="#facc15" roughness={0.7} />
-            </mesh>
+            <mesh geometry={bushGeometry()} material={cafeBushMaterial()} castShadow />
           </group>
         ))}
 
@@ -1368,23 +1233,7 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
           onPointerOver={handleDoorPointerOver}
           onPointerOut={handleDoorPointerOut}
         >
-          {[-0.24, 0.24].map((wz, idx) => (
-            <mesh key={idx} position={[0, 0.16, wz]} rotation={[0, Math.PI / 2, 0]} castShadow>
-              <torusGeometry args={[0.15, 0.022, 8, 18]} />
-              <meshStandardMaterial color="#292524" roughness={0.75} />
-            </mesh>
-          ))}
-          <mesh position={[0, 0.25, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.016, 0.016, 0.48, 8]} />
-            <meshStandardMaterial color="#6ee7b7" roughness={0.45} />
-          </mesh>
-          <mesh position={[0, 0.34, 0.18]} rotation={[0.25, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.014, 0.014, 0.22, 8]} />
-            <meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.25} />
-          </mesh>
-          <RoundedBox args={[0.14, 0.1, 0.11]} radius={0.015} smoothness={2} position={[0, 0.36, 0.26]} castShadow>
-            <meshStandardMaterial color="#c49563" roughness={0.88} />
-          </RoundedBox>
+          <mesh geometry={bicycleGeometry('#6ee7b7')} material={toyMaterial('gloss')} castShadow />
         </group>
       </group>
 
@@ -1443,32 +1292,16 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         </RoundedBox>
         {/* 5-Stripe Scalloped Market Canopy */}
         <group position={[0, 1.68, 0.06]} rotation={[0.18, 0, 0]}>
-          {Array.from({ length: 5 }, (_, i) => (
-            <RoundedBox
-              key={i}
-              args={[0.48, 0.1, 1.62]}
-              radius={0.03}
-              smoothness={2}
-              position={[-0.96 + i * 0.48, 0, 0]}
-              castShadow={!marketLocked}
-            >
-              <meshStandardMaterial
-                color={marketLocked ? '#e2e8f0' : i % 2 === 0 ? '#d96b47' : '#fdf6ea'}
-                transparent={marketLocked}
-                opacity={marketLocked ? 0.5 : 1}
-                roughness={0.86}
-              />
-            </RoundedBox>
-          ))}
+          <ToyAwning colors={MARKET_AWNING} stripe={0.48} depth={1.62} front={1} fogged={marketLocked} />
         </group>
         {/* 6 Rich Clickable 3D Fruit Crates (Apple, Banana, Orange, Strawberry, Grapes, Watermelon) */}
         {[
-          { id: 'fruit_apple', pos: [-0.82, 0.78, 0.16] as [number, number, number], color: '#ef4444', kind: 'apple' },
-          { id: 'fruit_banana', pos: [-0.28, 0.78, 0.16] as [number, number, number], color: '#facc15', kind: 'banana' },
-          { id: 'fruit_orange', pos: [0.26, 0.78, 0.16] as [number, number, number], color: '#f97316', kind: 'orange' },
-          { id: 'fruit_strawberry', pos: [0.8, 0.78, 0.16] as [number, number, number], color: '#e11d48', kind: 'strawberry' },
-          { id: 'fruit_grapes', pos: [-0.68, 0.2, 0.85] as [number, number, number], color: '#7e22ce', kind: 'grapes' },
-          { id: 'fruit_watermelon', pos: [-0.05, 0.2, 0.85] as [number, number, number], color: '#15803d', kind: 'watermelon' },
+          { id: 'fruit_apple', pos: [-0.82, 0.78, 0.16] as [number, number, number], color: '#ef4444', kind: 'apple' as const },
+          { id: 'fruit_banana', pos: [-0.28, 0.78, 0.16] as [number, number, number], color: '#facc15', kind: 'banana' as const },
+          { id: 'fruit_orange', pos: [0.26, 0.78, 0.16] as [number, number, number], color: '#f97316', kind: 'orange' as const },
+          { id: 'fruit_strawberry', pos: [0.8, 0.78, 0.16] as [number, number, number], color: '#e11d48', kind: 'strawberry' as const },
+          { id: 'fruit_grapes', pos: [-0.68, 0.2, 0.85] as [number, number, number], color: '#7e22ce', kind: 'grapes' as const },
+          { id: 'fruit_watermelon', pos: [-0.05, 0.2, 0.85] as [number, number, number], color: '#15803d', kind: 'watermelon' as const },
         ].map((crate) => (
           <group
             key={crate.id}
@@ -1488,43 +1321,11 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
             }}
             onPointerOut={handleDoorPointerOut}
           >
-            <RoundedBox args={[0.46, 0.2, 0.36]} radius={0.02} smoothness={2} castShadow={!marketLocked}>
-              <meshStandardMaterial
-                color={marketLocked ? '#cbd5e1' : '#b47b4e'}
-                transparent={marketLocked}
-                opacity={marketLocked ? 0.55 : 1}
-                roughness={0.86}
-              />
-            </RoundedBox>
-            {crate.kind === 'watermelon' ? (
-              <mesh position={[0, 0.15, 0]} scale={[1.3, 0.85, 0.9]} castShadow={!marketLocked}>
-                <sphereGeometry args={[0.13, 12, 12]} />
-                <meshStandardMaterial color="#15803d" roughness={0.55} />
-              </mesh>
-            ) : crate.kind === 'banana' ? (
-              <>
-                {[-0.08, 0.08].map((bx, i) => (
-                  <mesh key={i} position={[bx, 0.14, 0]} rotation={[0.4, 0.2, Math.PI * 0.18]} castShadow={!marketLocked}>
-                    <torusGeometry args={[0.075, 0.028, 8, 12, Math.PI]} />
-                    <meshStandardMaterial color="#facc15" roughness={0.5} />
-                  </mesh>
-                ))}
-              </>
-            ) : (
-              <>
-                {[
-                  [-0.1, 0.13, -0.05],
-                  [0.02, 0.14, 0.04],
-                  [0.12, 0.13, -0.03],
-                  [-0.04, 0.15, 0.06],
-                ].map(([fx, fy, fz], i) => (
-                  <mesh key={i} position={[fx, fy, fz]} castShadow={!marketLocked}>
-                    <sphereGeometry args={[crate.kind === 'grapes' ? 0.048 : 0.068, 10, 10]} />
-                    <meshStandardMaterial color={crate.color} roughness={0.48} />
-                  </mesh>
-                ))}
-              </>
-            )}
+            <mesh
+              geometry={fruitCrateGeometry(crate.kind, crate.color)}
+              material={toyMaterial(marketLocked ? 'fog' : 'matte')}
+              castShadow={!marketLocked}
+            />
           </group>
         ))}
         {!marketLocked && (
