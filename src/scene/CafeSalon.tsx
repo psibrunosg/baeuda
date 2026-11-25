@@ -114,17 +114,17 @@ export const SALON_GUESTS: ReadonlyArray<{
   look: StylizedHumanoidProps;
 }> = [
   {
-    pos: [-1.45, 0.34, 0.95],
+    pos: [-2.5, 0.34, 1.5],
     facing: 0,
     speech: 'cafe_guest_cake',
-    tray: [-1.45, 0.8, 1.5],
+    tray: [-2.5, 0.8, 2.05],
     look: { shirtColor: '#db2777', hat: 'sunhat', hatColor: '#fde68a', skinColor: '#c68642' },
   },
   {
-    pos: [1.45, 0.34, 1.15],
+    pos: [2.5, 0.34, 1.75],
     facing: 0,
     speech: 'cafe_guest_coffee',
-    tray: [1.45, 0.8, 1.7],
+    tray: [2.5, 0.8, 2.3],
     look: { shirtColor: '#2563eb', hat: 'cap', hatColor: '#facc15' },
   },
   {
@@ -322,36 +322,44 @@ export function CafeSalon({
   return (
     <group name="ENV_Salon">
       {/* side walls and a timber ceiling close the room */}
-      {[-3.4, 3.4].map((x) => (
-        <mesh key={x} position={[x, 1.9, 1.7]} receiveShadow>
-          <boxGeometry args={[0.18, 3.8, 6.7]} />
+      {[-5.2, 5.2].map((x) => (
+        <mesh key={x} position={[x, 1.9, 3.4]} receiveShadow>
+          <boxGeometry args={[0.18, 3.8, 10.2]} />
           <meshStandardMaterial color="#ffffff" map={textures.plasterColor} bumpMap={textures.plasterBump} bumpScale={0.012} roughness={0.92} />
         </mesh>
       ))}
       {/* single-sided, faces down: invisible from above so the camera can dive in from the street */}
-      <mesh position={[0, 3.45, 1.7]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[6.8, 6.7]} />
+      <mesh position={[0, 3.45, 3.4]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[10.4, 10.2]} />
         <meshStandardMaterial color="#e9dcc6" roughness={0.9} />
       </mesh>
       {/* warm rug under the seating */}
-      <mesh position={[0, 0.006, 1.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[5.2, 2.6]} />
+      <mesh position={[0, 0.006, 2.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[8.2, 4.2]} />
         <meshStandardMaterial color="#c2703d" roughness={1} />
       </mesh>
-      <mesh position={[0, 0.008, 1.5]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[4.9, 2.3]} />
+      <mesh position={[0, 0.008, 2.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[7.9, 3.9]} />
         <meshStandardMaterial color="#e6c9a0" roughness={1} />
       </mesh>
 
       {/* table 1 (west) and table 2 (east): guests sit across so the camera sees their faces */}
-      <RoundTable position={[-1.45, 0, 1.5]} mugPhase={0.5} />
-      <Chair position={[-1.45, 0, 0.95]} />
-      <Chair position={[-0.8, 0, 1.5]} rotation={-Math.PI / 2} />
-      <PendantLamp position={[-1.45, 2.45, 1.5]} />
-      <RoundTable position={[1.45, 0, 1.7]} mugPhase={2.4} />
-      <Chair position={[1.45, 0, 1.15]} />
-      <Chair position={[0.8, 0, 1.7]} rotation={Math.PI / 2} />
-      <PendantLamp position={[1.45, 2.45, 1.7]} />
+      <RoundTable position={[-2.5, 0, 2.05]} mugPhase={0.5} />
+      <Chair position={[-2.5, 0, 1.5]} />
+      <Chair position={[-1.85, 0, 2.05]} rotation={-Math.PI / 2} />
+      <PendantLamp position={[-2.5, 2.45, 2.05]} />
+      <RoundTable position={[2.5, 0, 2.3]} mugPhase={2.4} />
+      <Chair position={[2.5, 0, 1.75]} />
+      <Chair position={[1.85, 0, 2.3]} rotation={Math.PI / 2} />
+      <PendantLamp position={[2.5, 2.45, 2.3]} />
+
+      {/* two more tables further back so the room feels lived in */}
+      <RoundTable position={[-1.0, 0, 4.4]} mugPhase={1.2} />
+      <Chair position={[-1.0, 0, 3.85]} />
+      <Chair position={[-1.0, 0, 4.95]} rotation={Math.PI} />
+      <RoundTable position={[1.2, 0, 4.6]} mugPhase={3.3} />
+      <Chair position={[1.2, 0, 4.05]} />
+      <Chair position={[1.2, 0, 5.15]} rotation={Math.PI} />
 
       {/* reading corner near the door */}
       <mesh position={[2.35, 0.24, -0.45]} castShadow>
@@ -371,14 +379,16 @@ export function CafeSalon({
 
       <Door position={[2.55, 0, -1.54]} onTap={tap} />
 
-      <Plant position={[-3.0, 0, 2.6]} scale={1.3} />
-      <Plant position={[3.0, 0, 2.7]} scale={1.1} />
-      <Plant position={[-3.0, 0, -0.9]} />
+      <Plant position={[-4.7, 0, 3.4]} scale={1.3} />
+      <Plant position={[4.7, 0, 3.6]} scale={1.1} />
+      <Plant position={[-4.7, 0, -0.8]} />
+      <Plant position={[-4.7, 0, 6.0]} scale={1.2} />
+      <Plant position={[4.7, 0, 6.0]} />
 
       <group rotation={[0, Math.PI / 2, 0]}>
-        <Frame position={[-0.6, 1.9, -3.3]} size={[0.7, 0.5]} color="#e9c46a" />
-        <Frame position={[0.4, 1.7, -3.3]} size={[0.5, 0.65]} color="#8ab17d" />
-        <Frame position={[2.0, 1.85, -3.3]} size={[0.6, 0.45]} color="#e76f51" />
+        <Frame position={[-0.6, 1.9, -5.1]} size={[0.7, 0.5]} color="#e9c46a" />
+        <Frame position={[0.4, 1.7, -5.1]} size={[0.5, 0.65]} color="#8ab17d" />
+        <Frame position={[2.0, 1.85, -5.1]} size={[0.6, 0.45]} color="#e76f51" />
       </group>
     </group>
   );

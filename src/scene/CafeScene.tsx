@@ -554,8 +554,8 @@ export function CafeEnvironmentStatic({
     <group name="ENV_Static">
       <CafeSalon onGuestTap={onGuestTap} guestStates={guestStates} delivery={delivery} />
       {/* Plank wooden floor */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8.5, 8.5]} />
+      <mesh position={[0, 0, 2.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[13, 13]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.floorPlankColor}
@@ -567,7 +567,7 @@ export function CafeEnvironmentStatic({
 
       {/* Handmade lime-wash plaster back wall */}
       <mesh position={[0, 1.9, -1.65]} receiveShadow>
-        <boxGeometry args={[6.8, 3.8, 0.18]} />
+        <boxGeometry args={[10.4, 3.8, 0.18]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.plasterColor}
@@ -579,7 +579,7 @@ export function CafeEnvironmentStatic({
 
       {/* Warm ceramic subway-tile backsplash behind counter */}
       <mesh position={[0, 1.18, -1.53]} receiveShadow>
-        <boxGeometry args={[6.8, 0.72, 0.04]} />
+        <boxGeometry args={[10.4, 0.72, 0.04]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.tileColor}
@@ -591,7 +591,7 @@ export function CafeEnvironmentStatic({
 
       {/* Warm wooden wainscoting lower back-wall trim */}
       <mesh position={[0, 0.41, -1.52]} receiveShadow>
-        <boxGeometry args={[6.8, 0.82, 0.06]} />
+        <boxGeometry args={[10.4, 0.82, 0.06]} />
         <meshStandardMaterial
           color="#8b5a3c"
           bumpMap={textures.woodCounterBump}

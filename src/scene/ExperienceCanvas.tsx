@@ -99,6 +99,7 @@ function CameraRig({
   cameraMode,
   cameraOffset,
   cameraTargetOffset,
+  portraitPullback,
   cameraSnapSeq,
   avatarPoseRef,
 }: {
@@ -108,6 +109,7 @@ function CameraRig({
   cameraMode: CameraMode;
   cameraOffset: readonly [number, number, number];
   cameraTargetOffset: readonly [number, number, number];
+  portraitPullback: number;
   cameraSnapSeq: number;
   avatarPoseRef: MutableRefObject<AvatarPose>;
 }) {
@@ -147,11 +149,13 @@ function CameraRig({
     if (isMapView && cameraMode === 'fixed_2_5d') {
       if (controlsRef.current) controlsRef.current.enabled = false;
       const p = avatarPoseRef.current;
+      const aspect = size.width / Math.max(1, size.height);
+      const k = aspect < 1 ? 1 + (1 - aspect) * portraitPullback : 1;
       // Fixed 3/4 oblique 2.5D camera driven by active WorldMapConfig
       desiredPosRef.current.set(
-        p.x + cameraOffset[0],
-        cameraOffset[1],
-        p.z + cameraOffset[2],
+        p.x + cameraOffset[0] * k,
+        cameraOffset[1] * k,
+        p.z + cameraOffset[2] * k,
       );
       desiredTargetRef.current.set(
         p.x + cameraTargetOffset[0],
@@ -467,6 +471,7 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         cameraMode={inCafe ? 'fixed_2_5d' : cameraMode}
         cameraOffset={camConfig.cameraOffset}
         cameraTargetOffset={camConfig.cameraTargetOffset}
+        portraitPullback={camConfig.portraitPullback ?? 0}
         cameraSnapSeq={props.cameraSnapSeq ?? 0}
         avatarPoseRef={avatarPoseRef}
       />

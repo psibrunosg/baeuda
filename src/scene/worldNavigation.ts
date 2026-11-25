@@ -40,6 +40,8 @@ export interface WorldMapConfig {
   cameraTargetOffset: readonly [number, number, number];
   shadowFrustum: ShadowFrustumSpec;
   contactShadowScale: number;
+  /** Extra camera distance on tall screens, so wide rooms keep their sides in frame. */
+  portraitPullback?: number;
   bgColor?: string;
 }
 
@@ -107,12 +109,13 @@ export const WORLD_MAP_REGISTRY: Record<WorldMapId, WorldMapConfig> = {
     icon: '☕',
     label: 'Corner Café',
     kind: 'interior',
-    defaultSpawn: { x: 0, y: 0.06, z: 2.9, yaw: Math.PI },
-    bounds: { minX: -3.0, maxX: 3.0, minZ: -1.2, maxZ: 4.6 },
-    cameraOffset: [0, 7.6, 5.4],
-    cameraTargetOffset: [0, 0.6, -2.3],
-    shadowFrustum: { left: -7, right: 7, top: 7, bottom: -7, far: 26 },
-    contactShadowScale: 9,
+    defaultSpawn: { x: 0, y: 0.06, z: 3.2, yaw: Math.PI },
+    bounds: { minX: -4.9, maxX: 4.9, minZ: -1.2, maxZ: 6.6 },
+    cameraOffset: [0, 9.6, 6.6],
+    cameraTargetOffset: [0, 0.6, -2.6],
+    shadowFrustum: { left: -9, right: 9, top: 9, bottom: -9, far: 30 },
+    contactShadowScale: 14,
+    portraitPullback: 0.9,
     bgColor: '#f3e5cf',
   },
   farm: {
