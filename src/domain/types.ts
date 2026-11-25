@@ -160,7 +160,7 @@ export type BiomeMapId =
   | 'station'
   | 'festival';
 
-export type InteriorMapId = 'interior_house_leo';
+export type InteriorMapId = 'interior_house_leo' | 'interior_cafe';
 
 export type WorldMapId = BiomeMapId | InteriorMapId;
 
@@ -445,6 +445,10 @@ export type SpeechKey =
   | 'a2_yesterday_went'
   | 'a2_bought_bread'
   | 'a2_asked_help'
+  | 'cafe_guest_coffee'
+  | 'cafe_guest_cake'
+  | 'cafe_guest_book'
+  | 'cafe_door_welcome'
   | HomeSpeechKey
   | FarmSpeechKey;
 

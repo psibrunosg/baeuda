@@ -1,11 +1,12 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject } from 'react';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
-import type { PropName } from '../domain/types';
+import type { PropName, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
+import { CafeSalon, type GuestState } from './CafeSalon';
 import { findPropName, type AssetMode } from './contracts';
 import { ModelErrorBoundary } from './ModelErrorBoundary';
 
@@ -23,7 +24,19 @@ export interface CafeSceneProps {
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
+  onGuestTap?: (key: SpeechKey) => void;
 }
+
+/** The room follows the lesson: guests start waiting and are "served" as the phases progress. */
+const LESSON_GUESTS: Record<LessonPhase, readonly GuestState[]> = {
+  map_arrival: ['idle', 'idle', 'idle'],
+  counter_intro: ['idle', 'idle', 'idle'],
+  thermal_contrast: ['ordering', 'idle', 'idle'],
+  action_pour: ['ordering', 'idle', 'idle'],
+  personal_choice: ['served', 'ordering', 'idle'],
+  micro_echo: ['served', 'served', 'ordering'],
+  farewell_constellation: ['served', 'served', 'served'],
+};
 
 const DUST_MOTE_COUNT = 26;
 
@@ -523,15 +536,26 @@ function SculptedIcedGlass({
  * sunlit window + dust motes, shelf, espresso machine, pendant lamp, and fluted oak counter.
  * Reused across Lesson 1 (CafeScene) and Cycles 2/3/Shift/A1 (CafeDynamicSession).
  */
-export function CafeEnvironmentStatic({ showCloche = true }: { showCloche?: boolean }) {
+export function CafeEnvironmentStatic({
+  showCloche = true,
+  onGuestTap,
+  guestStates,
+  delivery,
+}: {
+  showCloche?: boolean;
+  onGuestTap?: (key: SpeechKey) => void;
+  guestStates?: readonly GuestState[];
+  delivery?: { guest: number; seq: number } | null;
+}) {
   const geos = useMemo(() => getCafeGeometries(), []);
   const textures = useMemo(() => getCafeTextures(), []);
 
   return (
     <group name="ENV_Static">
+      <CafeSalon onGuestTap={onGuestTap} guestStates={guestStates} delivery={delivery} />
       {/* Plank wooden floor */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8.5, 8.5]} />
+      <mesh position={[0, 0, 2.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[13, 13]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.floorPlankColor}
@@ -543,7 +567,7 @@ export function CafeEnvironmentStatic({ showCloche = true }: { showCloche?: bool
 
       {/* Handmade lime-wash plaster back wall */}
       <mesh position={[0, 1.9, -1.65]} receiveShadow>
-        <boxGeometry args={[6.8, 3.8, 0.18]} />
+        <boxGeometry args={[10.4, 3.8, 0.18]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.plasterColor}
@@ -555,7 +579,7 @@ export function CafeEnvironmentStatic({ showCloche = true }: { showCloche?: bool
 
       {/* Warm ceramic subway-tile backsplash behind counter */}
       <mesh position={[0, 1.18, -1.53]} receiveShadow>
-        <boxGeometry args={[6.8, 0.72, 0.04]} />
+        <boxGeometry args={[10.4, 0.72, 0.04]} />
         <meshStandardMaterial
           color="#ffffff"
           map={textures.tileColor}
@@ -567,7 +591,7 @@ export function CafeEnvironmentStatic({ showCloche = true }: { showCloche?: bool
 
       {/* Warm wooden wainscoting lower back-wall trim */}
       <mesh position={[0, 0.41, -1.52]} receiveShadow>
-        <boxGeometry args={[6.8, 0.82, 0.06]} />
+        <boxGeometry args={[10.4, 0.82, 0.06]} />
         <meshStandardMaterial
           color="#8b5a3c"
           bumpMap={textures.woodCounterBump}
@@ -916,6 +940,7 @@ function CafeGreybox({
   onPropTap,
   onPourStart,
   onPourEnd,
+  onGuestTap,
 }: Omit<CafeSceneProps, 'assetMode' | 'visible'>) {
   const jarPourRef = useRef<THREE.Group>(null);
   const waterPourRef = useRef<THREE.Group>(null);
@@ -926,6 +951,9 @@ function CafeGreybox({
 
   const geos = useMemo(() => getCafeGeometries(), []);
   const textures = useMemo(() => getCafeTextures(), []);
+  const { size } = useThree();
+  // On tall screens the wide room shrinks the counter; scale the props so they stay tappable.
+  const itemScale = size.width < size.height ? 1 + (1 - size.width / size.height) * 0.9 : 1;
 
   useGlobalPourRelease(phase, onPourEnd);
 
@@ -1023,9 +1051,12 @@ function CafeGreybox({
   });
 
   const handleGroupClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
+    // Only swallow clicks on interactive props: the contact-shadow plane sits at counter height
+    // above the floor, and consuming its clicks would stop the avatar from walking.
     const prop = findPropName(e.object);
-    if (prop) onPropTap(prop);
+    if (!prop) return;
+    e.stopPropagation();
+    onPropTap(prop);
   };
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -1079,8 +1110,11 @@ function CafeGreybox({
       />
 
       {/* ENV_Static: shared warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
-      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} />
+      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} guestStates={LESSON_GUESTS[phase].map((g, i) => (i === 0 && customerMood && g === 'ordering' ? customerMood : g))} />
 
+      {/* Counter props (and their halo), scaled about the counter centre */}
+      <group position={[0, 0.973, 0.12]} scale={itemScale}>
+        <group position={[0, -0.973, -0.12]}>
       {/* Subtle highlight halo rendered beneath whichever prop is currently highlighted */}
       {highlightedProp && highlightedProp !== 'prop_cafe_door' && (
         <mesh
@@ -1141,63 +1175,6 @@ function CafeGreybox({
             />
           </group>
 
-          {/* Expressive Claybound-style customer cue silhouette (framed cleanly inside counter view) */}
-          {customerMood && (
-            <group position={[-0.86, 1.14, -0.24]} rotation={[0, 0.36, 0]}>
-              <mesh castShadow>
-                <capsuleGeometry args={[0.145, 0.28, 8, 14]} />
-                <meshStandardMaterial
-                  color={customerMood === 'cold' ? '#3b82f6' : '#f59e0b'}
-                  bumpMap={textures.clayBump}
-                  bumpScale={0.006}
-                  roughness={0.85}
-                />
-              </mesh>
-              {/* Cozy scarf for cold customer */}
-              {customerMood === 'cold' && (
-                <mesh position={[0, 0.2, 0.01]} rotation={[0.1, 0, 0]} castShadow>
-                  <torusGeometry args={[0.115, 0.036, 10, 20]} />
-                  <meshStandardMaterial color="#93c5fd" roughness={0.92} />
-                </mesh>
-              )}
-              <mesh position={[0, 0.35, 0]} castShadow>
-                <sphereGeometry args={[0.14, 16, 16]} />
-                <meshStandardMaterial
-                  color="#f3c6a0"
-                  bumpMap={textures.clayBump}
-                  bumpScale={0.004}
-                  roughness={0.82}
-                />
-              </mesh>
-              {/* Expressive glossy customer eyes */}
-              <mesh position={[-0.045, 0.36, 0.125]}>
-                <sphereGeometry args={[0.016, 10, 10]} />
-                <meshStandardMaterial color="#1c1917" roughness={0.15} />
-              </mesh>
-              <mesh position={[0.045, 0.36, 0.125]}>
-                <sphereGeometry args={[0.016, 10, 10]} />
-                <meshStandardMaterial color="#1c1917" roughness={0.15} />
-              </mesh>
-              {/* Beanie (cold) or sporty visor cap (warm) */}
-              <mesh position={[0, 0.43, 0]} castShadow>
-                <sphereGeometry args={[0.142, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-                <meshStandardMaterial
-                  color={customerMood === 'cold' ? '#1d4ed8' : '#ea580c'}
-                  roughness={0.88}
-                />
-              </mesh>
-              {/* Floating mood cue gem (blue ice crystal vs golden sun) */}
-              <mesh position={[0, 0.66, 0]}>
-                <octahedronGeometry args={[0.088, 0]} />
-                <meshStandardMaterial
-                  color={customerMood === 'cold' ? '#bae6fd' : '#fef08a'}
-                  emissive={customerMood === 'cold' ? '#38bdf8' : '#f97316'}
-                  emissiveIntensity={0.85}
-                  roughness={0.2}
-                />
-              </mesh>
-            </group>
-          )}
         </group>
       )}
 
@@ -1345,6 +1322,8 @@ function CafeGreybox({
           </group>
         </group>
       )}
+        </group>
+      </group>
     </group>
   );
 }

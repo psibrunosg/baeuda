@@ -21,6 +21,7 @@ import { CAMERA_ANCHORS, type AssetMode } from './contracts';
 import { AtmosphericSky } from './AtmosphericSky';
 import { CafeDynamicSession } from './CafeDynamicSession';
 import { CafeScene } from './CafeScene';
+import { CafeWalkRoom } from './CafeWalkRoom';
 import { LeoBarista } from './LeoBarista';
 import { MarketScene, type MarketStage } from './MarketScene';
 import { NeighborhoodMap } from './NeighborhoodMap';
@@ -84,6 +85,8 @@ export interface ExperienceCanvasProps {
   onExploreObject?: (key: SpeechKey) => void;
   onInspectCuriosity?: (curiosityId: string) => void;
   onMapBlockedBump?: () => void;
+  /** Leave an interior that is not a map (the café) and go back to the street. */
+  onExitInterior?: () => void;
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
@@ -96,6 +99,7 @@ function CameraRig({
   cameraMode,
   cameraOffset,
   cameraTargetOffset,
+  portraitPullback,
   cameraSnapSeq,
   avatarPoseRef,
 }: {
@@ -105,6 +109,7 @@ function CameraRig({
   cameraMode: CameraMode;
   cameraOffset: readonly [number, number, number];
   cameraTargetOffset: readonly [number, number, number];
+  portraitPullback: number;
   cameraSnapSeq: number;
   avatarPoseRef: MutableRefObject<AvatarPose>;
 }) {
@@ -144,11 +149,13 @@ function CameraRig({
     if (isMapView && cameraMode === 'fixed_2_5d') {
       if (controlsRef.current) controlsRef.current.enabled = false;
       const p = avatarPoseRef.current;
+      const aspect = size.width / Math.max(1, size.height);
+      const k = aspect < 1 ? 1 + (1 - aspect) * portraitPullback : 1;
       // Fixed 3/4 oblique 2.5D camera driven by active WorldMapConfig
       desiredPosRef.current.set(
-        p.x + cameraOffset[0],
-        cameraOffset[1],
-        p.z + cameraOffset[2],
+        p.x + cameraOffset[0] * k,
+        cameraOffset[1] * k,
+        p.z + cameraOffset[2] * k,
       );
       desiredTargetRef.current.set(
         p.x + cameraTargetOffset[0],
@@ -312,6 +319,21 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
   const isMap = props.activeView === 'map' || isBadges;
   const isLesson = props.activeView === 'lesson';
   const isCafeCycle = props.activeView === 'cafe_cycle';
+  const inCafe = isLesson || isCafeCycle;
+  const camConfig = inCafe ? WORLD_MAP_REGISTRY.interior_cafe : mapConfig;
+  // Entering the café parks the town pose and spawns at the door; leaving restores it.
+  const townPoseRef = useRef<AvatarPose | null>(null);
+  const wasInCafe = useRef(false);
+  if (inCafe !== wasInCafe.current) {
+    wasInCafe.current = inCafe;
+    if (inCafe) {
+      townPoseRef.current = { ...avatarPoseRef.current };
+      Object.assign(avatarPoseRef.current, WORLD_MAP_REGISTRY.interior_cafe.defaultSpawn);
+    } else if (townPoseRef.current) {
+      Object.assign(avatarPoseRef.current, townPoseRef.current);
+      townPoseRef.current = null;
+    }
+  }
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
   const isPizzeria = props.activeView === 'pizzeria';
@@ -409,11 +431,11 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
 
       {/* Key sunlight / moonlight / overcast rain light with dynamic per-map / avatar-following shadow frustum */}
       <DynamicKeyLight
-        isMap={isMap}
+        isMap={isMap || inCafe}
         isExteriorMap={isExteriorMap}
         cameraMode={cameraMode}
         avatarPoseRef={avatarPoseRef}
-        shadowFrustum={mapConfig.shadowFrustum}
+        shadowFrustum={camConfig.shadowFrustum}
         isNight={isNightOutdoor}
         isRainy={isRainyOutdoor}
       />
@@ -445,10 +467,11 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
       <CameraRig
         anchorId={effectiveAnchor}
         orbitEnabled={props.activeView === 'map' && cameraMode === 'overview'}
-        isMapView={isMap}
-        cameraMode={cameraMode}
-        cameraOffset={mapConfig.cameraOffset}
-        cameraTargetOffset={mapConfig.cameraTargetOffset}
+        isMapView={isMap || inCafe}
+        cameraMode={inCafe ? 'fixed_2_5d' : cameraMode}
+        cameraOffset={camConfig.cameraOffset}
+        cameraTargetOffset={camConfig.cameraTargetOffset}
+        portraitPullback={camConfig.portraitPullback ?? 0}
         cameraSnapSeq={props.cameraSnapSeq ?? 0}
         avatarPoseRef={avatarPoseRef}
       />
@@ -545,40 +568,47 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         />
       )}
 
-      {isLesson && (
-        <CafeScene
-          assetMode={props.assetMode}
-        phase={props.phase}
-        highlightedProp={props.highlightedProp}
-        hintMode={props.hintMode}
-        customerMood={props.customerMood}
-        activePourLiquid={props.activePourLiquid}
-        pourProgressRef={props.pourProgressRef}
-        isPouringRef={props.isPouringRef}
-        mysteryBoxVisible={props.mysteryBoxVisible}
-        visible={isLesson}
-        onPropTap={props.onPropTap}
-        onPourStart={props.onPourStart}
-        onPourEnd={props.onPourEnd}
-      />
-      )}
-
-      {isCafeCycle && (
-        <CafeDynamicSession
-          visible={isCafeCycle}
-          cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
-          onPlayAudio={props.onExploreObject ?? (() => {})}
-          onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
-        />
-      )}
-
-      {(isLesson || isCafeCycle) && (
-        <LeoBarista
-          assetMode={props.assetMode}
-          animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
-          speechRef={props.speechRef}
-          visible={isLesson || isCafeCycle}
-        />
+      {inCafe && (
+        <CafeWalkRoom
+          visible
+          avatarStyle={props.avatarStyle}
+          avatarPoseRef={avatarPoseRef}
+          onExploreObject={props.onExploreObject}
+          onExit={props.onExitInterior}
+        >
+          {isLesson && (
+            <CafeScene
+              assetMode={props.assetMode}
+              phase={props.phase}
+              highlightedProp={props.highlightedProp}
+              hintMode={props.hintMode}
+              customerMood={props.customerMood}
+              activePourLiquid={props.activePourLiquid}
+              pourProgressRef={props.pourProgressRef}
+              isPouringRef={props.isPouringRef}
+              mysteryBoxVisible={props.mysteryBoxVisible}
+              visible={isLesson}
+              onPropTap={props.onPropTap}
+              onPourStart={props.onPourStart}
+              onPourEnd={props.onPourEnd}
+              onGuestTap={props.onExploreObject}
+            />
+          )}
+          {isCafeCycle && (
+            <CafeDynamicSession
+              visible={isCafeCycle}
+              cycleId={props.activeCafeCycle ?? 'cafe_c2_food'}
+              onPlayAudio={props.onExploreObject ?? (() => {})}
+              onCompleteCycle={props.onCompleteCafeCycle ?? (() => {})}
+            />
+          )}
+          <LeoBarista
+            assetMode={props.assetMode}
+            animation={isCafeCycle ? 'idle_breathe' : props.leoAnim}
+            speechRef={props.speechRef}
+            visible
+          />
+        </CafeWalkRoom>
       )}
 
       {/* Selective Bloom on emissive windows, oven fire, pharmacy cross, lamps & sun/moon + WebGL2 MSAA */}

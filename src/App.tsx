@@ -1014,6 +1014,7 @@ export default function App() {
   return (
     <main className="app-shell">
       <ExperienceCanvas
+        onExitInterior={() => handleSelectView('map')}
         activeView={activeView}
         currentMapId={currentMapId}
         cameraSnapSeq={cameraSnapSeq}

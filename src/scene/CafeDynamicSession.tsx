@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import type * as THREE from 'three';
 import {
@@ -11,7 +11,28 @@ import type { CafeCycleId, ConceptId, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
 import { CafeEnvironmentStatic } from './CafeScene';
+import type { GuestState } from './CafeSalon';
 import { getWorldGeometries } from './worldGeometries';
+
+/** Which guest ordered each item in the food and quantity cycles. */
+const ITEM_GUEST: Record<string, number> = {
+  milk: 0,
+  sugar: 1,
+  cake: 2,
+  one_big: 0,
+  two_small: 1,
+  full: 2,
+};
+
+/** Invisible, generous tap target so small counter items are easy to hit on touch screens. */
+function HitPad() {
+  return (
+    <mesh position={[0, 0.1, 0]}>
+      <boxGeometry args={[0.5, 0.32, 0.42]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
 
 export interface CafeDynamicSessionProps {
   visible: boolean;
@@ -134,8 +155,14 @@ export function CafeDynamicSession({
   const [shiftHintVisible, setShiftHintVisible] = useState(false);
   const [a1PlacedNextTo, setA1PlacedNextTo] = useState(false);
   const [a1CoinsPaid, setA1CoinsPaid] = useState(false);
+  const [shiftServedAll, setShiftServedAll] = useState(false);
+  const [delivery, setDelivery] = useState<{ guest: number; seq: number } | null>(null);
+  const deliverySeq = useRef(0);
 
   const ringRef = useRef<THREE.Mesh>(null);
+  const { size } = useThree();
+  // On tall screens the wide room shrinks the counter; scale the items so they stay tappable.
+  const itemScale = size.width < size.height ? 1 + (1 - size.width / size.height) * 0.9 : 1;
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const busyRef = useRef(false);
   const geos = useMemo(() => getCafeGeometries(), []);
@@ -162,6 +189,8 @@ export function CafeDynamicSession({
     setShiftHintVisible(false);
     setA1PlacedNextTo(false);
     setA1CoinsPaid(false);
+    setShiftServedAll(false);
+    setDelivery(null);
     return () => clearTimers();
   }, [cycleId, visible]);
 
@@ -199,6 +228,9 @@ export function CafeDynamicSession({
     if (busyRef.current) return;
     onPlayAudio(audio);
     const next = stepDone.includes(id) ? stepDone : [...stepDone, id];
+    if (!stepDone.includes(id) && id in ITEM_GUEST) {
+      setDelivery({ guest: ITEM_GUEST[id], seq: deliverySeq.current++ });
+    }
     setStepDone(next);
     if (required.every((r) => next.includes(r))) {
       busyRef.current = true;
@@ -231,21 +263,37 @@ export function CafeDynamicSession({
       return;
     }
 
-    if (shiftOrderIndex === 0) {
-      setShiftOrderIndex(1);
-      onPlayAudio('cafe_shift_order_2');
-    } else if (shiftOrderIndex === 1) {
-      setShiftOrderIndex(2);
-      onPlayAudio('cafe_shift_order_3');
-    } else {
-      busyRef.current = true;
-      onPlayAudio('cafe_shift_graduate');
-      schedule(() => {
+    // right item: the tray flies to the guest who ordered, then the next guest orders
+    busyRef.current = true;
+    const guest = shiftOrderIndex;
+    setDelivery({ guest, seq: deliverySeq.current++ });
+    schedule(() => {
+      if (guest < 2) {
+        setShiftOrderIndex(guest + 1);
+        onPlayAudio(guest === 0 ? 'cafe_shift_order_2' : 'cafe_shift_order_3');
         busyRef.current = false;
-        onCompleteCycle('cafe_pre_a1_shift', []);
-      }, 1800);
-    }
+      } else {
+        setShiftServedAll(true);
+        onPlayAudio('cafe_shift_graduate');
+        schedule(() => {
+          busyRef.current = false;
+          onCompleteCycle('cafe_pre_a1_shift', []);
+        }, 1800);
+      }
+    }, 1100);
   };
+
+  const itemOrdered = (guest: number) => stepDone.some((id) => ITEM_GUEST[id] === guest);
+  const guestStates: GuestState[] | undefined =
+    cycleId === 'cafe_pre_a1_shift'
+      ? [0, 1, 2].map((i) =>
+          shiftServedAll || i < shiftOrderIndex ? 'served' : i === shiftOrderIndex ? 'ordering' : 'idle',
+        )
+      : cycleId === 'cafe_c2_food' || cycleId === 'cafe_c3_quantity'
+        ? [0, 1, 2].map((i) => (itemOrdered(i) ? 'served' : 'ordering'))
+        : cycleId === 'cafe_a1_spiral'
+          ? [a1CoinsPaid ? 'served' : 'ordering', 'idle', 'idle']
+          : undefined;
 
   return (
     <group name="Cafe_Dynamic_Session">
@@ -261,8 +309,11 @@ export function CafeDynamicSession({
       />
 
       {/* Full shared Café interior backdrop (espresso machine, pendant lamp, window, dust motes, fluted counter) */}
-      <CafeEnvironmentStatic showCloche={false} />
+      <CafeEnvironmentStatic showCloche={false} onGuestTap={onPlayAudio} guestStates={guestStates} delivery={delivery} />
 
+      {/* Counter items, scaled about the counter centre */}
+      <group position={[0, 0.973, 0.14]} scale={itemScale}>
+        <group position={[0, -0.973, -0.14]}>
       {/* CYCLE 2: Food & Mixing (milk, sugar, cake, sweet, more) */}
       {cycleId === 'cafe_c2_food' && (
         <group>
@@ -275,6 +326,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <MilkPitcher highlighted={!stepDone.includes('milk')} />
           </group>
 
@@ -287,6 +339,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <SugarJar highlighted={!stepDone.includes('sugar')} />
           </group>
 
@@ -299,6 +352,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <CakeSlice highlighted={!stepDone.includes('cake')} />
           </group>
         </group>
@@ -318,6 +372,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <mesh geometry={geos.mug} castShadow>
               <meshStandardMaterial color="#dc5a2c" roughness={0.3} />
             </mesh>
@@ -336,6 +391,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {[-0.1, 0.1].map((ox, idx) => (
               <group key={idx} position={[ox, 0, 0]} scale={0.72}>
                 <mesh geometry={geos.mug} castShadow>
@@ -359,6 +415,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {glassFull && (
               <mesh position={[0, 0.11, 0]}>
                 <cylinderGeometry args={[0.072, 0.06, 0.18, 18]} />
@@ -385,6 +442,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <group position={[-0.1, 0, 0]} scale={1.15}>
               <mesh geometry={geos.mug} castShadow>
                 <meshStandardMaterial color="#dc5a2c" roughness={0.3} />
@@ -405,6 +463,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {[-0.1, 0.1].map((ox, idx) => (
               <group key={idx} position={[ox, 0, 0]} scale={0.85}>
                 <mesh position={[0, 0.1, 0]}>
@@ -428,6 +487,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <MilkPitcher highlighted={shiftHintVisible && shiftOrderIndex === 2} />
             <group position={[0.14, 0, 0.04]} scale={0.75}>
               <SugarJar highlighted={shiftHintVisible && shiftOrderIndex === 2} />
@@ -474,6 +534,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             <CakeSlice highlighted={!a1PlacedNextTo} />
           </group>
 
@@ -485,6 +546,7 @@ export function CafeDynamicSession({
               if (!a1PlacedNextTo || a1CoinsPaid || busyRef.current) return;
               busyRef.current = true;
               setA1CoinsPaid(true);
+              setDelivery({ guest: 0, seq: deliverySeq.current++ });
               onPlayAudio('cafe_a1_like_done');
               schedule(() => {
                 busyRef.current = false;
@@ -494,6 +556,7 @@ export function CafeDynamicSession({
             onPointerOver={() => setPointer(true)}
             onPointerOut={() => setPointer(false)}
           >
+            <HitPad />
             {[-0.06, 0.06].map((cx, idx) => (
               <mesh key={idx} position={[cx, 0.015, idx * 0.03]} castShadow>
                 <cylinderGeometry args={[0.055, 0.055, 0.018, 18]} />
@@ -518,6 +581,8 @@ export function CafeDynamicSession({
           </mesh>
         </group>
       )}
+        </group>
+      </group>
     </group>
   );
 }
