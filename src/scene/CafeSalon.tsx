@@ -318,8 +318,9 @@ export function CafeSalon({
           <meshStandardMaterial color="#ffffff" map={textures.plasterColor} bumpMap={textures.plasterBump} bumpScale={0.012} roughness={0.92} />
         </mesh>
       ))}
-      <mesh position={[0, 3.45, 1.7]}>
-        <boxGeometry args={[6.8, 0.1, 6.7]} />
+      {/* single-sided, faces down: invisible from above so the camera can dive in from the street */}
+      <mesh position={[0, 3.45, 1.7]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[6.8, 6.7]} />
         <meshStandardMaterial color="#e9dcc6" roughness={0.9} />
       </mesh>
       {[-0.8, 0.9, 2.6, 4.2].map((z) => (

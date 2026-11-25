@@ -315,9 +315,18 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
   const isCafeCycle = props.activeView === 'cafe_cycle';
   const inCafe = isLesson || isCafeCycle;
   // Open every café scene with a ~2.6 s establishing shot of the room, then dolly to the counter.
+  // In the lesson the room is shown again after each served guest (personal choice, micro echo),
+  // because the counter close-up keeps the guests out of frame.
+  const introKey = !inCafe
+    ? ''
+    : isLesson
+      ? props.phase === 'personal_choice' || props.phase === 'micro_echo'
+        ? props.phase
+        : 'lesson'
+      : String(props.activeCafeCycle);
   const [salonIntro, setSalonIntro] = useState(true);
   useEffect(() => {
-    if (!inCafe) return;
+    if (!introKey) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       setSalonIntro(false);
       return;
@@ -325,7 +334,7 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
     setSalonIntro(true);
     const id = window.setTimeout(() => setSalonIntro(false), 2600);
     return () => window.clearTimeout(id);
-  }, [inCafe, props.activeCafeCycle]);
+  }, [introKey]);
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
   const isPizzeria = props.activeView === 'pizzeria';
