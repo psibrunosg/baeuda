@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useEffect, useLayoutEffect, useRef, type ComponentRef, type MutableRefObject } from 'react';
+import { lazy, memo, Suspense, useEffect, useLayoutEffect, useRef, useState, type ComponentRef, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
@@ -129,7 +129,8 @@ function CameraRig({
     }
     const pose = CAMERA_ANCHORS[anchorId];
     // Pull interior counter cameras back gently on portrait screens so outer counter props never crop
-    const portraitZPullback = !isMapView && aspect < 1 ? (1 - aspect) * 1.45 : 0;
+    const wide = anchorId === 'cam_servico' || anchorId === 'cam_salao'; // must keep the guests in frame
+    const portraitZPullback = !isMapView && aspect < 1 ? (1 - aspect) * (wide ? 5.6 : 1.45) : 0;
     desiredPosRef.current.set(pose.position[0], pose.position[1], pose.position[2] + portraitZPullback);
     desiredTargetRef.current.set(pose.target[0], pose.target[1], pose.target[2]);
     isTransitioningRef.current = true;
@@ -312,6 +313,19 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
   const isMap = props.activeView === 'map' || isBadges;
   const isLesson = props.activeView === 'lesson';
   const isCafeCycle = props.activeView === 'cafe_cycle';
+  const inCafe = isLesson || isCafeCycle;
+  // Open every café scene with a ~2.6 s establishing shot of the room, then dolly to the counter.
+  const [salonIntro, setSalonIntro] = useState(true);
+  useEffect(() => {
+    if (!inCafe) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setSalonIntro(false);
+      return;
+    }
+    setSalonIntro(true);
+    const id = window.setTimeout(() => setSalonIntro(false), 2600);
+    return () => window.clearTimeout(id);
+  }, [inCafe, props.activeCafeCycle]);
   const isMarket = props.activeView === 'market';
   const isPlaza = props.activeView === 'plaza';
   const isPizzeria = props.activeView === 'pizzeria';
@@ -324,13 +338,17 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
 
   const effectiveAnchor: CameraAnchorId = isMap
     ? 'cam_mapa'
-    : isCafeCycle || isPizzeria || isPharmacy
-      ? 'cam_balcao'
-      : isMarket
-        ? 'cam_mercado'
-        : isPlaza
-          ? 'cam_praca'
-          : props.cameraAnchor;
+    : inCafe && salonIntro
+      ? 'cam_salao'
+      : isCafeCycle
+        ? 'cam_servico'
+        : isPizzeria || isPharmacy
+          ? 'cam_balcao'
+          : isMarket
+            ? 'cam_mercado'
+            : isPlaza
+              ? 'cam_praca'
+              : props.cameraAnchor;
 
   const bgColor = isInteriorMap && mapConfig.bgColor
     ? mapConfig.bgColor
@@ -560,6 +578,7 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         onPropTap={props.onPropTap}
         onPourStart={props.onPourStart}
         onPourEnd={props.onPourEnd}
+        onGuestTap={props.onExploreObject}
       />
       )}
 

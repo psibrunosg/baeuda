@@ -271,7 +271,9 @@ export type CameraAnchorId =
   | 'cam_caixa'
   | 'cam_constelacao'
   | 'cam_mercado'
-  | 'cam_praca';
+  | 'cam_praca'
+  | 'cam_salao'
+  | 'cam_servico';
 
 export type SpeechKey =
   | 'hi_leo'
@@ -445,6 +447,10 @@ export type SpeechKey =
   | 'a2_yesterday_went'
   | 'a2_bought_bread'
   | 'a2_asked_help'
+  | 'cafe_guest_coffee'
+  | 'cafe_guest_cake'
+  | 'cafe_guest_book'
+  | 'cafe_door_welcome'
   | HomeSpeechKey
   | FarmSpeechKey;
 

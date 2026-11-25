@@ -3,9 +3,10 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { ContactShadows, RoundedBox, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { HintMode, LessonPhase } from '../domain/lessonEngine';
-import type { PropName } from '../domain/types';
+import type { PropName, SpeechKey } from '../domain/types';
 import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
+import { CafeSalon, type GuestState } from './CafeSalon';
 import { findPropName, type AssetMode } from './contracts';
 import { ModelErrorBoundary } from './ModelErrorBoundary';
 
@@ -23,6 +24,7 @@ export interface CafeSceneProps {
   onPropTap: (prop: PropName) => void;
   onPourStart: () => void;
   onPourEnd: () => void;
+  onGuestTap?: (key: SpeechKey) => void;
 }
 
 const DUST_MOTE_COUNT = 26;
@@ -523,12 +525,23 @@ function SculptedIcedGlass({
  * sunlit window + dust motes, shelf, espresso machine, pendant lamp, and fluted oak counter.
  * Reused across Lesson 1 (CafeScene) and Cycles 2/3/Shift/A1 (CafeDynamicSession).
  */
-export function CafeEnvironmentStatic({ showCloche = true }: { showCloche?: boolean }) {
+export function CafeEnvironmentStatic({
+  showCloche = true,
+  onGuestTap,
+  guestStates,
+  delivery,
+}: {
+  showCloche?: boolean;
+  onGuestTap?: (key: SpeechKey) => void;
+  guestStates?: readonly GuestState[];
+  delivery?: { guest: number; seq: number } | null;
+}) {
   const geos = useMemo(() => getCafeGeometries(), []);
   const textures = useMemo(() => getCafeTextures(), []);
 
   return (
     <group name="ENV_Static">
+      <CafeSalon onGuestTap={onGuestTap} guestStates={guestStates} delivery={delivery} />
       {/* Plank wooden floor */}
       <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[8.5, 8.5]} />
@@ -916,6 +929,7 @@ function CafeGreybox({
   onPropTap,
   onPourStart,
   onPourEnd,
+  onGuestTap,
 }: Omit<CafeSceneProps, 'assetMode' | 'visible'>) {
   const jarPourRef = useRef<THREE.Group>(null);
   const waterPourRef = useRef<THREE.Group>(null);
@@ -1079,7 +1093,7 @@ function CafeGreybox({
       />
 
       {/* ENV_Static: shared warm textured café interior, fluted wood counter, pendant lamp, espresso machine */}
-      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} />
+      <CafeEnvironmentStatic showCloche={phase !== 'thermal_contrast'} onGuestTap={onGuestTap} />
 
       {/* Subtle highlight halo rendered beneath whichever prop is currently highlighted */}
       {highlightedProp && highlightedProp !== 'prop_cafe_door' && (

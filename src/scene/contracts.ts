@@ -17,6 +17,10 @@ export const CAMERA_ANCHORS: Record<CameraAnchorId, CameraPose> = {
   cam_constelacao: { position: [0, 7.1, 6.95], target: [0, 6.75, 0] },
   cam_mercado: { position: [0, 1.72, 2.45], target: [0, 1.16, -0.2] },
   cam_praca: { position: [0, 1.78, 2.75], target: [0, 1.05, -0.15] },
+  // establishing shot of the whole room, used for ~2.6 s when a café scene opens
+  // mid shot that keeps the counter items tappable and all three tables visible
+  cam_servico: { position: [0, 1.95, 4.5], target: [0, 1.0, 0.45] },
+  cam_salao: { position: [0, 2.1, 5.2], target: [0, 1.0, -0.2] },
 };
 
 const VALID_PROPS = new Set<string>([

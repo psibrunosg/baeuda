@@ -1154,6 +1154,30 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: 'viseme_ee' },
     { at: 1.95, viseme: null },
   ]),
+  cafe_guest_coffee: line('cafe_guest_coffee', 'A coffee, please.', 1500, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.4, viseme: 'viseme_fv' },
+    { at: 0.9, viseme: 'viseme_ee' },
+    { at: 1.4, viseme: null },
+  ]),
+  cafe_guest_cake: line('cafe_guest_cake', 'This cake is yummy!', 1650, [
+    { at: 0.0, viseme: 'viseme_ee' },
+    { at: 0.5, viseme: 'viseme_aa' },
+    { at: 1.1, viseme: 'viseme_ee' },
+    { at: 1.55, viseme: null },
+  ]),
+  cafe_guest_book: line('cafe_guest_book', 'I like this book.', 1500, [
+    { at: 0.0, viseme: 'viseme_aa' },
+    { at: 0.5, viseme: 'viseme_oo' },
+    { at: 1.0, viseme: 'viseme_oo' },
+    { at: 1.4, viseme: null },
+  ]),
+  cafe_door_welcome: line('cafe_door_welcome', 'Welcome to the café!', 1700, [
+    { at: 0.0, viseme: 'viseme_oo' },
+    { at: 0.5, viseme: 'viseme_ee' },
+    { at: 1.1, viseme: 'viseme_aa' },
+    { at: 1.6, viseme: null },
+  ]),
   ...WORLD_AUDIO_LINES,
 };
 
