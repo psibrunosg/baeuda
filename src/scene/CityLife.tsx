@@ -18,15 +18,30 @@ import {
   punishWaiting,
   scatterPlants,
   stepCars,
-  zebraClear,
   type Car,
   type Plant,
   type Vec,
   type Walker,
 } from './cityLifeLogic';
+import { cityBrains, critterStep, driveShare, mayCross, type CritterState } from './cityBrains';
 import type { Aabb, AvatarPose } from './worldNavigation';
 
 const N_CARS = 14;
+
+/** Nearest moving car within the street band, as a hazard for animals. */
+function nearestCar(cars: readonly Car[], x: number, z: number): Vec | null {
+  let best: Vec | null = null;
+  let bd = 3;
+  for (const c of cars) {
+    if (!c.active) continue;
+    const d = Math.hypot(c.x - x, c.z - z);
+    if (d < bd) {
+      bd = d;
+      best = c;
+    }
+  }
+  return best;
+}
 
 // ------------------------------------------------------------------ flora
 
@@ -114,6 +129,7 @@ function Traffic({ cars, people, avatarPoseRef }: { cars: Car[]; people: Vec[]; 
   const greenRef = useRef<THREE.MeshStandardMaterial>(null);
   const pedRef = useRef<THREE.MeshStandardMaterial>(null);
   const rand = useMemo(() => mulberry32(77), []);
+  const brains = useMemo(cityBrains, []);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -124,7 +140,7 @@ function Traffic({ cars, people, avatarPoseRef }: { cars: Car[]; people: Vec[]; 
       me.x = avatarPoseRef.current.x;
       me.z = avatarPoseRef.current.z;
     }
-    stepCars(cars, dt, { green, people, rand });
+    stepCars(cars, dt, { green, people, rand, driver: (g, v) => driveShare(brains.driver, g, v) });
     for (let i = 0; i < cars.length; i++) {
       const g = refs.current[i];
       if (!g) continue;
@@ -235,18 +251,33 @@ function Pet({ fur, size, ears }: { fur: string; size: number; ears: 'floppy' | 
 }
 
 function Birds() {
+  const brains = useMemo(cityBrains, []);
+  const flock = useMemo<CritterState[]>(() => Array.from({ length: 6 }, (_, i) => ({ x: -2 + i, z: -5, th: i })), []);
   const refs = useRef<Array<THREE.Group | null>>([]);
   const wings = useRef<Array<THREE.Mesh | null>>([]);
   const N = 6;
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
+    const dt = Math.min(delta, 0.05);
     for (let i = 0; i < N; i++) {
       const g = refs.current[i];
       if (!g) continue;
+      // each bird's neural net chases its orbit slot and sidesteps its nearest flock-mate
       const a = t * (0.35 + i * 0.03) + i * 1.9;
       const r = 5 + (i % 3) * 2.2;
-      g.position.set(-2 + Math.cos(a) * r, 3.4 + Math.sin(t * 0.7 + i) * 0.3 + (i % 2) * 0.5, -5 + Math.sin(a) * r * 0.7);
-      g.rotation.y = -a - Math.PI / 2;
+      const b = flock[i];
+      let mate: Vec | null = null;
+      let md = 3;
+      for (let j = 0; j < N; j++) {
+        const d = j === i ? Infinity : Math.hypot(flock[j].x - b.x, flock[j].z - b.z);
+        if (d < md) {
+          md = d;
+          mate = flock[j];
+        }
+      }
+      critterStep(brains.critter, b, { x: -2 + Math.cos(a) * r, z: -5 + Math.sin(a) * r * 0.7 }, mate, 4.5, dt);
+      g.position.set(b.x, 3.4 + Math.sin(t * 0.7 + i) * 0.3 + (i % 2) * 0.5, b.z);
+      g.rotation.y = -b.th;
       const flap = Math.sin(t * 14 + i) * 0.7;
       const l = wings.current[i * 2];
       const rr = wings.current[i * 2 + 1];
@@ -319,6 +350,16 @@ function Pedestrians({ cars, people }: { cars: Car[]; people: Vec[] }) {
   const refs = useRef<Array<THREE.Group | null>>([]);
   const dogRef = useRef<THREE.Group>(null);
   const catRef = useRef<THREE.Group>(null);
+  const brains = useMemo(cityBrains, []);
+  const pets = useMemo(
+    () => ({
+      dog: { x: -4, z: -2, th: 0 } as CritterState,
+      cat: { x: -3.4, z: -1.85, th: 0 } as CritterState,
+      catGoal: { x: -3.4, z: -1.85, until: 0 },
+      rand: mulberry32(404),
+    }),
+    [],
+  );
   const state = useMemo<Motion[]>(
     () =>
       WALKERS.map((s, i) => ({
@@ -346,7 +387,7 @@ function Pedestrians({ cars, people }: { cars: Car[]; people: Vec[] }) {
         const next = chooseNext(m.w, m.rand);
         const ci = crossingIndex(m.w.node, next);
         // signalled zebra: wait for the red phase; plain zebras: wait for a gap in traffic
-        const mayGo = ci < 0 || (ci === SIGNALLED_CROSSING ? canStartCrossing(t) : zebraClear(cars, CROSSWALK_XS[ci]));
+        const mayGo = ci < 0 || (ci === SIGNALLED_CROSSING ? canStartCrossing(t) : mayCross(brains.crosser, cars, CROSSWALK_XS[ci]));
         if (!mayGo) {
           punishWaiting(m.w, next, dt);
         } else {
@@ -373,26 +414,28 @@ function Pedestrians({ cars, people }: { cars: Car[]; people: Vec[] }) {
       g.position.set(x, 0.06 + (m.moving ? Math.abs(Math.sin(t * 7 + i)) * 0.025 : 0), z);
       if (m.moving) g.rotation.y = Math.atan2(m.tx - m.fx, m.tz - m.fz);
     }
-    // Dog trails the first walker
+    // Dog: a learned steering net follows a spot behind its owner and shies away from cars
     const dog = dogRef.current;
     const owner = refs.current[0];
     if (dog && owner) {
       const ang = owner.rotation.y;
-      const gx = owner.position.x - Math.sin(ang) * 0.55 + Math.cos(ang) * 0.2;
-      const gz = owner.position.z - Math.cos(ang) * 0.55 - Math.sin(ang) * 0.2;
-      const dx = gx - dog.position.x;
-      const dz = gz - dog.position.z;
-      dog.position.x += dx * Math.min(1, dt * 3);
-      dog.position.z += dz * Math.min(1, dt * 3);
-      dog.position.y = 0.06 + Math.abs(Math.sin(t * 9)) * 0.02 * Math.min(1, Math.hypot(dx, dz) * 4);
-      if (Math.hypot(dx, dz) > 0.02) dog.rotation.y = Math.atan2(-dz, dx);
+      const goal = { x: owner.position.x - Math.sin(ang) * 0.55 + Math.cos(ang) * 0.2, z: owner.position.z - Math.cos(ang) * 0.55 - Math.sin(ang) * 0.2 };
+      const sp = critterStep(brains.critter, pets.dog, goal, nearestCar(cars, pets.dog.x, pets.dog.z), 1.6, dt);
+      dog.position.set(pets.dog.x, 0.06 + Math.abs(Math.sin(t * 9)) * 0.02 * Math.min(1, sp), pets.dog.z);
+      dog.rotation.y = -pets.dog.th;
     }
-    // Cat strolls the café-side kerb
+    // Cat: same net, wanders between kerb spots, and keeps clear of traffic
     const cat = catRef.current;
     if (cat) {
-      const a = t * 0.18;
-      cat.position.set(-3.4 + Math.sin(a) * 1.6, 0.06, -1.85);
-      cat.rotation.y = Math.cos(a) > 0 ? 0 : Math.PI;
+      const g = pets.catGoal;
+      if (t > g.until) {
+        g.x = -5 + pets.rand() * 3.4;
+        g.z = -1.95 + pets.rand() * 0.25;
+        g.until = t + 3 + pets.rand() * 5;
+      }
+      const sp = critterStep(brains.critter, pets.cat, g, nearestCar(cars, pets.cat.x, pets.cat.z), 0.9, dt);
+      cat.position.set(pets.cat.x, 0.06 + Math.abs(Math.sin(t * 8)) * 0.01 * Math.min(1, sp), pets.cat.z);
+      cat.rotation.y = -pets.cat.th;
     }
   });
 
