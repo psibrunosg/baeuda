@@ -64,19 +64,14 @@ export const FarmBiomeMap = memo(function FarmBiomeMap({
       {({ onGroundWalkClick, onTriggerExplore }) => (
         <group name="Biome_Sunny_Farm">
           {/* Lush Rolling Farmland Plateau */}
-          <RoundedBox args={[26.4, 0.48, 20.4]} radius={0.35} smoothness={3} position={[0, -0.34, 0]} receiveShadow>
+          <mesh position={[0, -0.34, 0]} receiveShadow>
+            <boxGeometry args={[26.4, 0.48, 20.4]} />
             <meshStandardMaterial color="#8f653f" bumpMap={textures.clayBump} bumpScale={0.015} roughness={0.95} />
-          </RoundedBox>
-          <RoundedBox
-            args={[26.0, 0.12, 20.0]}
-            radius={0.25}
-            smoothness={3}
-            position={[0, -0.05, 0]}
-            receiveShadow
-            onClick={onGroundWalkClick}
-          >
+          </mesh>
+          <mesh position={[0, -0.05, 0]} receiveShadow onClick={onGroundWalkClick}>
+            <boxGeometry args={[26.0, 0.12, 20.0]} />
             <meshStandardMaterial color="#9ec17a" bumpMap={textures.clayBump} bumpScale={0.012} roughness={0.94} />
-          </RoundedBox>
+          </mesh>
 
           {/* Warm Dirt Road from East Town Gate into Farmyard */}
           <mesh position={[2.8, 0.02, 0.2]} receiveShadow onClick={onGroundWalkClick}>
