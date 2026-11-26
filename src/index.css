@@ -2734,6 +2734,15 @@ button:focus-visible {
     max-width: calc(100% - 2 * var(--hud-side));
   }
 
+  /* inside a map the return pill owns the second row, so quest and subtitle move down one */
+  .app-shell:has(.world-map-return-pill) .quest-pill {
+    top: calc(var(--hud-top) + var(--hud-ctl) + 12px + 52px);
+  }
+
+  .app-shell:has(.world-map-return-pill) .speech-subtitle-pill {
+    top: calc(var(--hud-top) + var(--hud-ctl) + 12px + 104px);
+  }
+
   .inventory-bar {
     max-width: calc(100% - 2 * var(--hud-side) - 72px);
   }
@@ -2741,6 +2750,13 @@ button:focus-visible {
   .guidance-pill {
     border-radius: var(--r-2);
     padding: 8px 14px;
+  }
+}
+
+/* Wide screens have a free top centre: keep the return pill off the stage */
+@media (min-width: 900px) {
+  .world-map-return-pill {
+    top: var(--hud-top);
   }
 }
 
