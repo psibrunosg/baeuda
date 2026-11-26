@@ -32,7 +32,7 @@ function LeoGlb({
 }: Omit<LeoBaristaProps, 'assetMode' | 'visible'>) {
   const groupRef = useRef<THREE.Group>(null);
   const activeActionRef = useRef<THREE.AnimationAction | null>(null);
-  const { scene, animations } = useGLTF('/models/leo_barista.glb');
+  const { scene, animations } = useGLTF(`${import.meta.env.BASE_URL}models/leo_barista.glb`);
   const { actions, mixer } = useAnimations(animations, groupRef);
 
   const faceMesh = useMemo<THREE.Mesh | null>(() => {
