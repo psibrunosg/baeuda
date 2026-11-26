@@ -657,6 +657,7 @@ export default function App() {
         world_post_package: { id: 'package', toast: '🎒 +1 📦 Package in backpack!' },
         bakery_done: { id: 'bread', toast: '🎒 +1 🥖 Warm bread in backpack!' },
         school_done: { id: 'notebook', toast: '🎒 +1 📓 School notebook in backpack!' },
+        family_done: { id: 'cookie', toast: '🎒 +1 🍪 Cookie from Grandma in backpack!' },
       };
       const pickup = itemMap[key];
       if (key.startsWith('world_') || pickup) {
@@ -954,6 +955,8 @@ export default function App() {
                   ? 'bakery_task'
                 : activeView === 'map' && currentMapId === 'school'
                   ? 'school_task'
+                : activeView === 'map' && currentMapId === 'interior_house_leo'
+                  ? 'home_task'
                 : activeView === 'map'
               ? mapBlockedHint
                 ? 'map_locked_border'

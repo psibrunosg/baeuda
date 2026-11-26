@@ -26,6 +26,7 @@ export const INVENTORY_CATALOG: Record<string, InventoryItem> = {
   strawberry: { id: 'strawberry', icon: '🍓', label: 'Strawberry', speechKey: 'fruit_strawberry' },
   grapes: { id: 'grapes', icon: '🍇', label: 'Grapes', speechKey: 'fruit_grapes' },
   watermelon: { id: 'watermelon', icon: '🍉', label: 'Watermelon', speechKey: 'fruit_watermelon' },
+  cookie: { id: 'cookie', icon: '🍪', label: 'Cookie', speechKey: 'family_cookie' },
 };
 
 export interface NpcQuest {

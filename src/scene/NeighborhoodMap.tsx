@@ -10,6 +10,7 @@ import { PortalTrigger } from './PortalTrigger';
 import { BAKERY_TOWN_DOOR } from './bakeryLayout';
 import { SchoolFacade } from './SchoolFacade';
 import { SCHOOL_TOWN_DOOR } from './schoolLayout';
+import { HOUSE_TOWN_DOOR } from './familyHomeLayout';
 import { lotBox, resolveObstacleCollision as resolveCollision, type Aabb, type AvatarPose } from './worldNavigation';
 import {
   CafeCatNpc,
@@ -736,12 +737,10 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
       {/* Door portal into Leo's House 2.5D Interior */}
       {onTravelToMap && (
         <PortalTrigger
-          position={[-15.2, 0.04, -7.05]}
+          {...HOUSE_TOWN_DOOR}
           color="#a855f7"
-          radius={0.44}
           avatarPoseRef={avatarPoseRef}
           enableProximity
-          proximityRadius={0.62}
           onEnter={() => onTravelToMap('interior_house_leo')}
         />
       )}
