@@ -76,6 +76,7 @@ export const ACTIVE_WORLD_MAPS: readonly WorldMapId[] = [
   'town',
   'interior_house_leo',
   'farm',
+  'interior_bakery',
 ];
 
 export const WORLD_MAP_REGISTRY: Record<WorldMapId, WorldMapConfig> = {
@@ -117,6 +118,20 @@ export const WORLD_MAP_REGISTRY: Record<WorldMapId, WorldMapConfig> = {
     contactShadowScale: 14,
     portraitPullback: 0.9,
     bgColor: '#f3e5cf',
+  },
+  interior_bakery: {
+    id: 'interior_bakery',
+    icon: '🥖',
+    label: 'Artisan Bakery',
+    kind: 'interior',
+    defaultSpawn: { x: 0, y: 0.06, z: 2.2, yaw: Math.PI },
+    bounds: { minX: -3.1, maxX: 3.1, minZ: -2.4, maxZ: 3.9 },
+    cameraOffset: [0, 9.8, 5.6],
+    cameraTargetOffset: [0, 0.5, -2.8],
+    shadowFrustum: { left: -6, right: 6, top: 5.5, bottom: -5.5, far: 28 },
+    contactShadowScale: 10,
+    portraitPullback: 0.55,
+    bgColor: '#2b1d16',
   },
   farm: {
     id: 'farm',

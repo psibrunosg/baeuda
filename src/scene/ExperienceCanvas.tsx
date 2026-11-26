@@ -37,6 +37,7 @@ import {
 
 const InteriorHouseLeo = lazy(() => import('./maps/InteriorHouseLeo'));
 const FarmBiomeMap = lazy(() => import('./maps/FarmBiomeMap'));
+const InteriorBakery = lazy(() => import('./maps/InteriorBakery'));
 
 export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'pizzeria' | 'pharmacy' | 'badges';
 export type CameraMode = 'fixed_2_5d' | 'overview';
@@ -512,6 +513,19 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
             onExploreObject={props.onExploreObject}
             onInspectCuriosity={props.onInspectCuriosity}
             onOpenWardrobe={props.onOpenWardrobe}
+            onTravelToMap={props.onTravelToMap ?? (() => {})}
+          />
+        </Suspense>
+      )}
+
+      {isMap && currentMapId === 'interior_bakery' && (
+        <Suspense fallback={null}>
+          <InteriorBakery
+            visible={isMap}
+            avatarStyle={props.avatarStyle}
+            avatarPoseRef={avatarPoseRef}
+            teleportRequest={props.teleportRequest}
+            onExploreObject={props.onExploreObject}
             onTravelToMap={props.onTravelToMap ?? (() => {})}
           />
         </Suspense>
