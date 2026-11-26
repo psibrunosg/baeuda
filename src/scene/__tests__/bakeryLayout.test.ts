@@ -42,6 +42,24 @@ describe('bakery interior layout', () => {
   });
 
   it.each([
+    [375, 812],
+    [1280, 720],
+    [1366, 768],
+  ])('shows the whole doormat ring beside the play button at %ix%i', (width, height) => {
+    const camera = spawnCamera(width, height);
+    // the interior view offset of ExperienceCanvas (INTERIOR_ZOOM_OUT, INTERIOR_VIEW_TOP)
+    camera.setViewOffset(width, height, -width * 0.1, height * -0.02, width * 1.2, height * 1.2);
+    const [x, y, z] = BAKERY_EXIT.position;
+    const r = BAKERY_EXIT.radius;
+    for (const [dx, dz] of [[-r, 0], [r, 0], [0, -r], [0, r]]) {
+      const n = new THREE.Vector3(x + dx, y, z + dz).project(camera);
+      expect(((n.x + 1) / 2) * width).toBeGreaterThan(0);
+      expect(((n.x + 1) / 2) * width).toBeLessThan(width / 2 - 32);
+      expect(((1 - n.y) / 2) * height).toBeLessThan(height);
+    }
+  });
+
+  it.each([
     // width, height, top bars, bottom guidance pill and buttons
     [375, 812, 150, 190],
     [1366, 768, 100, 130],
