@@ -42,6 +42,8 @@ export interface WorldMapConfig {
   contactShadowScale: number;
   /** Extra camera distance on tall screens, so wide rooms keep their sides in frame. */
   portraitPullback?: number;
+  /** Rooms that fit on screen in depth: the camera stays at this z and only follows sideways. */
+  cameraFixedZ?: number;
   bgColor?: string;
 }
 
@@ -97,12 +99,15 @@ export const WORLD_MAP_REGISTRY: Record<WorldMapId, WorldMapConfig> = {
     icon: '🏡',
     label: "Leo's House",
     kind: 'interior',
-    defaultSpawn: { x: 0, y: 0.06, z: 3.1, yaw: Math.PI },
-    bounds: { minX: -5.2, maxX: 5.2, minZ: -3.6, maxZ: 3.8 },
-    cameraOffset: [0, 8.8, 7.2],
-    cameraTargetOffset: [0, 0.35, -0.3],
-    shadowFrustum: { left: -7.5, right: 7.5, top: 6.5, bottom: -6.5, far: 24 },
-    contactShadowScale: 14,
+    defaultSpawn: { x: 0, y: 0.06, z: 2.6, yaw: Math.PI },
+    bounds: { minX: -5.2, maxX: 9.3, minZ: -3.6, maxZ: 3.8 },
+    // Far enough, and panned half a step west, to show the whole routine from the doormat.
+    cameraOffset: [-0.5, 16.2, 10.26],
+    cameraTargetOffset: [-0.5, 0.35, -4.4],
+    shadowFrustum: { left: -7.5, right: 10.5, top: 6.5, bottom: -7.5, far: 24 },
+    contactShadowScale: 20,
+    portraitPullback: 0.3,
+    cameraFixedZ: 2.6,
     bgColor: '#261e1a',
   },
   interior_cafe: {
