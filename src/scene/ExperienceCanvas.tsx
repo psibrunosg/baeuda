@@ -94,6 +94,10 @@ export interface ExperienceCanvasProps {
   onPourEnd: () => void;
 }
 
+/** Interiors are framed inside the HUD: 20% more of the room, window starting 2% above the screen. */
+const INTERIOR_ZOOM_OUT = 1.2;
+const INTERIOR_VIEW_TOP = -0.02;
+
 function CameraRig({
   anchorId,
   orbitEnabled,
@@ -102,6 +106,7 @@ function CameraRig({
   cameraOffset,
   cameraTargetOffset,
   portraitPullback,
+  fitInsideHud,
   cameraSnapSeq,
   avatarPoseRef,
 }: {
@@ -112,6 +117,7 @@ function CameraRig({
   cameraOffset: readonly [number, number, number];
   cameraTargetOffset: readonly [number, number, number];
   portraitPullback: number;
+  fitInsideHud: boolean;
   cameraSnapSeq: number;
   avatarPoseRef: MutableRefObject<AvatarPose>;
 }) {
@@ -133,6 +139,12 @@ function CameraRig({
         camera.fov = responsiveFov;
         camera.updateProjectionMatrix();
       }
+      // a view offset shifts the picture and keeps raycasting (taps) aligned with it
+      if (fitInsideHud) {
+        const w = size.width * INTERIOR_ZOOM_OUT;
+        const h = size.height * INTERIOR_ZOOM_OUT;
+        camera.setViewOffset(size.width, size.height, (size.width - w) / 2, size.height * INTERIOR_VIEW_TOP, w, h);
+      } else camera.clearViewOffset();
     }
     const pose = CAMERA_ANCHORS[anchorId];
     // Pull interior counter cameras back gently on portrait screens so outer counter props never crop
@@ -143,7 +155,7 @@ function CameraRig({
     if (controlsRef.current) {
       controlsRef.current.enabled = false;
     }
-  }, [anchorId, camera, isMapView, orbitEnabled, cameraMode, size.height, size.width]);
+  }, [anchorId, camera, isMapView, orbitEnabled, cameraMode, fitInsideHud, size.height, size.width]);
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -474,6 +486,7 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
         cameraOffset={camConfig.cameraOffset}
         cameraTargetOffset={camConfig.cameraTargetOffset}
         portraitPullback={camConfig.portraitPullback ?? 0}
+        fitInsideHud={isInteriorMap && cameraMode === 'fixed_2_5d'}
         cameraSnapSeq={props.cameraSnapSeq ?? 0}
         avatarPoseRef={avatarPoseRef}
       />
