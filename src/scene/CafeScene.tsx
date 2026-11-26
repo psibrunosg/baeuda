@@ -170,7 +170,7 @@ function CafeGlb({
   onPourStart,
   onPourEnd,
 }: CafeGlbProps) {
-  const { scene } = useGLTF('/models/cafe_esquina.glb');
+  const { scene } = useGLTF(`${import.meta.env.BASE_URL}models/cafe_esquina.glb`);
   useGlobalPourRelease(phase, onPourEnd);
 
   useEffect(() => {
