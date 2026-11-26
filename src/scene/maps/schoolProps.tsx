@@ -391,7 +391,7 @@ export function Pencil({ to }: { to: Vec3 }) {
   );
 }
 
-/** Homework sheet that flies from the desk and, with size 0, vanishes into the bag. */
+/** Homework sheet: rises when taken and, shrinking to nothing, flies into the bag. */
 export function HomeworkSheet({ to, size }: { to: Vec3; size: number }) {
   return (
     <Glide to={to} size={size}>
@@ -529,7 +529,7 @@ export function SchoolWindows() {
               <meshBasicMaterial
                 map={sunbeamAlpha}
                 transparent
-                opacity={0.4}
+                opacity={0.9}
                 blending={THREE.AdditiveBlending}
                 depthWrite={false}
                 side={THREE.DoubleSide}

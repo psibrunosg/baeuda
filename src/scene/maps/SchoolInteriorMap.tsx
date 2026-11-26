@@ -109,8 +109,8 @@ const BOARD_HINT = {
   hit: [2.6, 0.6, 0.16] as [number, number, number],
 };
 
-const PENCIL_ON_NOTEBOOK = between('pencil', 'notebook', [0.17, 0.04, 0.02]);
-const SHEET_OVER_BAG = between('homework', 'backpack', [0, 0.9, 0]);
+// A taken object only rises over its own spot: moved elsewhere, tapping it would name another one.
+const TAKEN: [number, number, number] = [0, 0.16, 0];
 const SHEET_IN_BAG = between('homework', 'backpack', [0, 0.4, 0]);
 
 export const SchoolInteriorMap = memo(function SchoolInteriorMap({
@@ -243,10 +243,10 @@ export const SchoolInteriorMap = memo(function SchoolInteriorMap({
             {target('board')}
 
             {target('notebook', <Notebook open={reached(game, 'notebook')} />)}
-            {target('pencil', <Pencil to={reached(game, 'pencil') ? PENCIL_ON_NOTEBOOK : [0, 0, 0]} />)}
+            {target('pencil', <Pencil to={reached(game, 'pencil') ? TAKEN : [0, 0, 0]} />)}
             {target(
               'homework',
-              <HomeworkSheet to={packed ? SHEET_IN_BAG : handedOut ? SHEET_OVER_BAG : [0, 0, 0]} size={packed ? 0.001 : 1} />,
+              <HomeworkSheet to={packed ? SHEET_IN_BAG : handedOut ? TAKEN : [0, 0, 0]} size={packed ? 0.001 : 1} />,
             )}
             {target('globe', <Globe fast={reached(game, 'globe')} />)}
             {target(
