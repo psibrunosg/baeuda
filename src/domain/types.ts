@@ -1,4 +1,5 @@
 import type { BakerySpeechKey } from '../content/speech/bakery';
+import type { BarberSpeechKey } from '../content/speech/barber';
 import type { SchoolSpeechKey } from '../content/speech/school';
 import type { FamilyHomeSpeechKey } from '../content/speech/familyHome';
 export type ConceptId =
@@ -163,7 +164,7 @@ export type BiomeMapId =
   | 'station'
   | 'festival';
 
-export type InteriorMapId = 'interior_house_leo' | 'interior_cafe' | 'interior_bakery' | 'school';
+export type InteriorMapId = 'interior_house_leo' | 'interior_cafe' | 'interior_bakery' | 'interior_barber' | 'school';
 
 export type WorldMapId = BiomeMapId | InteriorMapId;
 
@@ -453,6 +454,7 @@ export type SpeechKey =
   | 'cafe_guest_book'
   | 'cafe_door_welcome'
   | BakerySpeechKey
+  | BarberSpeechKey
   | SchoolSpeechKey
   | FamilyHomeSpeechKey
   | HomeSpeechKey

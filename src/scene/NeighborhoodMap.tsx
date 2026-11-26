@@ -8,6 +8,7 @@ import { getCafeTextures } from './cafeTextures';
 import { MapVisibleRefContext, useMapVisibleRef } from './mapVisibility';
 import { PortalTrigger } from './PortalTrigger';
 import { BAKERY_TOWN_DOOR } from './bakeryLayout';
+import { BARBER_TOWN_DOOR } from './barberLayout';
 import { SchoolFacade } from './SchoolFacade';
 import { SCHOOL_TOWN_DOOR } from './schoolLayout';
 import { HOUSE_TOWN_DOOR } from './familyHomeLayout';
@@ -884,6 +885,16 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={handleShopAudio}
       />
+      {/* Door portal into the Barber Shop 2.5D Interior */}
+      {onTravelToMap && (
+        <PortalTrigger
+          {...BARBER_TOWN_DOOR}
+          color="#ef4444"
+          avatarPoseRef={avatarPoseRef}
+          enableProximity
+          onEnter={() => onTravelToMap('interior_barber')}
+        />
+      )}
       <InteractiveTechShop
         position={[16.6, 0.06, -3.5]}
         rotationY={0}
