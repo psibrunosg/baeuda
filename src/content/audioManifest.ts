@@ -1,5 +1,6 @@
 import type { ConceptId, SpeechKey } from '../domain/types';
 import { BAKERY_AUDIO_LINES } from './speech/bakery';
+import { BARBER_AUDIO_LINES } from './speech/barber';
 import { line, type SpeechLine } from './speech/line';
 import { WORLD_AUDIO_LINES } from './worldAudio';
 
@@ -1164,6 +1165,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: null },
   ]),
   ...BAKERY_AUDIO_LINES,
+  ...BARBER_AUDIO_LINES,
   ...WORLD_AUDIO_LINES,
 };
 

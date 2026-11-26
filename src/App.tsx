@@ -656,6 +656,7 @@ export default function App() {
         world_barber_scissors: { id: 'scissors', toast: '🎒 +1 ✂️ Barber scissors in backpack!' },
         world_post_package: { id: 'package', toast: '🎒 +1 📦 Package in backpack!' },
         bakery_done: { id: 'bread', toast: '🎒 +1 🥖 Warm bread in backpack!' },
+        barber_done: { id: 'scissors', toast: '🎒 +1 ✂️ Barber scissors in backpack!' },
       };
       const pickup = itemMap[key];
       if (key.startsWith('world_') || pickup) {
@@ -951,6 +952,8 @@ export default function App() {
                 ? 'pharmacy_counter'
                 : activeView === 'map' && currentMapId === 'interior_bakery'
                   ? 'bakery_task'
+                : activeView === 'map' && currentMapId === 'interior_barber'
+                  ? 'barber_task'
                 : activeView === 'map'
               ? mapBlockedHint
                 ? 'map_locked_border'
@@ -1057,6 +1060,12 @@ export default function App() {
         onOpenWardrobe={() => {
           stopVoice();
           setWardrobeOpen(true);
+        }}
+        onOpenBarberDialogue={() => {
+          audioPlayer.stop();
+          stopVoice();
+          setActiveDialogueScenarioId('barber');
+          setTravelDialogueOpen(true);
         }}
         onMarketStageChange={setMarketStage}
         onCompleteMarket={handleCompleteMarket}

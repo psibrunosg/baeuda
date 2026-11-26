@@ -38,6 +38,7 @@ import {
 const InteriorHouseLeo = lazy(() => import('./maps/InteriorHouseLeo'));
 const FarmBiomeMap = lazy(() => import('./maps/FarmBiomeMap'));
 const InteriorBakery = lazy(() => import('./maps/InteriorBakery'));
+const InteriorBarber = lazy(() => import('./maps/InteriorBarber'));
 
 export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'pizzeria' | 'pharmacy' | 'badges';
 export type CameraMode = 'fixed_2_5d' | 'overview';
@@ -80,6 +81,7 @@ export interface ExperienceCanvasProps {
   onCompletePharmacy?: () => void;
   onTravelToMap?: (target: WorldMapId, spawn?: AvatarPose) => void;
   onOpenWardrobe?: () => void;
+  onOpenBarberDialogue?: () => void;
   onMarketStageChange?: (stage: MarketStage) => void;
   onCompleteMarket?: () => void;
   onPlazaStageChange?: (stage: PlazaStage) => void;
@@ -539,6 +541,21 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
             avatarPoseRef={avatarPoseRef}
             teleportRequest={props.teleportRequest}
             onExploreObject={props.onExploreObject}
+            onTravelToMap={props.onTravelToMap ?? (() => {})}
+          />
+        </Suspense>
+      )}
+
+      {isMap && currentMapId === 'interior_barber' && (
+        <Suspense fallback={null}>
+          <InteriorBarber
+            visible={isMap}
+            avatarStyle={props.avatarStyle}
+            avatarPoseRef={avatarPoseRef}
+            teleportRequest={props.teleportRequest}
+            onExploreObject={props.onExploreObject}
+            onOpenWardrobe={props.onOpenWardrobe}
+            onOpenDialogue={props.onOpenBarberDialogue}
             onTravelToMap={props.onTravelToMap ?? (() => {})}
           />
         </Suspense>
