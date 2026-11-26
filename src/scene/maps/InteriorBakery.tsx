@@ -362,7 +362,7 @@ export const InteriorBakery = memo(function InteriorBakery({
             <FlourSack position={[2.75, 0, 1.6]} />
 
             {/* Doormat and exit back to the street */}
-            <mesh position={[0, 0.02, 3.65]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <mesh position={[BAKERY_EXIT.position[0], 0.02, BAKERY_EXIT.position[2] + 0.05]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
               <planeGeometry args={[1.4, 0.76]} />
               <meshStandardMaterial color="#7c2d12" roughness={1} />
             </mesh>

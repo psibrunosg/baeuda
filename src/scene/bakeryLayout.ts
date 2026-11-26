@@ -18,9 +18,9 @@ export const BAKERY_TARGETS: Record<
 
 export const BAKERY_BASKET_AT: [number, number, number] = [0, 0.62, 0.46];
 
-/** Doormat inside the bakery. */
+/** Doormat inside the bakery, left of centre so the HUD does not cover it. */
 export const BAKERY_EXIT = {
-  position: [0, 0.04, 3.6] as [number, number, number],
+  position: [-1.4, 0.04, 2.9] as [number, number, number],
   radius: 0.5,
   proximityRadius: 0.55,
 };
