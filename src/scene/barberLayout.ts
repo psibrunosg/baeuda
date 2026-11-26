@@ -27,12 +27,12 @@ export const BARBER_EXIT = {
   proximityRadius: 0.55,
 };
 
-/** Gap between the barber and tech shops: the west side has the pole and the river. */
+/** Gap between the barber and tech shops, in front of the headphones stand (front face at z -2.41). */
 export const BARBER_TOWN_DOOR = {
-  position: [15.05, 0.04, -2.2] as [number, number, number],
-  radius: 0.34,
-  proximityRadius: 0.35,
+  position: [14.97, 0.04, -2.1] as [number, number, number],
+  radius: 0.3,
+  proximityRadius: 0.3,
 };
 
 /** Road in front of the door; (13.5, -1.4) belongs to the quest NPC. */
-export const BARBER_TOWN_RETURN: AvatarPose = { x: 15.05, y: 0.06, z: -1.4, yaw: 0 };
+export const BARBER_TOWN_RETURN: AvatarPose = { x: 14.97, y: 0.06, z: -1.4, yaw: 0 };

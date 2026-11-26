@@ -44,6 +44,8 @@ describe('barber interior layout', () => {
     const [x, , z] = BARBER_TOWN_DOOR.position;
     const reach = Math.max(BARBER_TOWN_DOOR.radius, BARBER_TOWN_DOOR.proximityRadius);
     expect(z + reach).toBeLessThan(-1.7);
+    // Behind this line the tech shop's headphones stand takes the taps meant for the ring.
+    expect(z - BARBER_TOWN_DOOR.radius).toBeGreaterThan(-2.41);
     // Barber and tech shop obstacles, copied from NeighborhoodMap.
     for (const box of [lotBox(13.5, -3.5, 1.4, 1.05), lotBox(16.6, -3.5, 1.4, 1.05)]) {
       for (const p of [{ x, z }, BARBER_TOWN_RETURN]) {
