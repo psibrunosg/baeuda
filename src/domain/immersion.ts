@@ -43,6 +43,7 @@ export type GuidanceContext =
   | 'plaza_rhythm'
   | 'pizzeria_kitchen'
   | 'pharmacy_counter'
+  | 'bakery_task'
   | 'constellation';
 
 export interface GuidanceSegment {
@@ -345,6 +346,20 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: 'band-aid', highlight: true },
       { text: ' & ' },
       { text: 'medicine', highlight: true },
+    ],
+  },
+  bakery_task: {
+    onboarding: [{ text: 'Toque no que o padeiro pedir · toque no padeiro para ouvir de novo' }],
+    blended: [
+      { text: 'Toque no que o ' },
+      { text: 'baker', highlight: true },
+      { text: ' pedir · toque nele para ' },
+      { text: 'listen', highlight: true },
+    ],
+    immersive: [
+      { text: 'Tap what the ' },
+      { text: 'baker', highlight: true },
+      { text: ' asks for · tap the baker to listen again' },
     ],
   },
   constellation: {
