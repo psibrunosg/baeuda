@@ -27,6 +27,7 @@ const NO_PLANT_RECTS: ReadonlyArray<readonly [number, number, number, number]> =
   [11.8, 18.2, -4.9, -1.5],
   [11.8, 18.2, 1.7, 5.3],
   [0.8, 7.6, -11.2, -5.0], // park lake + sand
+  [-13.0, -10.6, 9.6, 11.6], // school door and forecourt
 ];
 
 export function isPlantable(x: number, z: number, obstacles: readonly Aabb[]): boolean {

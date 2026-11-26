@@ -45,6 +45,7 @@ export type GuidanceContext =
   | 'pharmacy_counter'
   | 'bakery_task'
   | 'barber_task'
+  | 'school_task'
   | 'home_task'
   | 'constellation';
 
@@ -376,6 +377,20 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: 'Tap what the ' },
       { text: 'barber', highlight: true },
       { text: ' asks for · when done, tap him to talk' },
+    ],
+  },
+  school_task: {
+    onboarding: [{ text: 'Toque no que a professora pedir · toque nela para ouvir de novo' }],
+    blended: [
+      { text: 'Toque no que a ' },
+      { text: 'teacher', highlight: true },
+      { text: ' pedir · toque nela para ' },
+      { text: 'listen', highlight: true },
+    ],
+    immersive: [
+      { text: 'Tap what the ' },
+      { text: 'teacher', highlight: true },
+      { text: ' asks for · tap the teacher to listen again' },
     ],
   },
   home_task: {

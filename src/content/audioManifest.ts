@@ -3,6 +3,7 @@ import { BAKERY_AUDIO_LINES } from './speech/bakery';
 import { BARBER_AUDIO_LINES } from './speech/barber';
 import { FAMILY_HOME_AUDIO_LINES } from './speech/familyHome';
 import { line, type SpeechLine } from './speech/line';
+import { SCHOOL_AUDIO_LINES } from './speech/school';
 import { WORLD_AUDIO_LINES } from './worldAudio';
 
 export type { SpeechKey } from '../domain/types';
@@ -1167,6 +1168,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
   ]),
   ...BAKERY_AUDIO_LINES,
   ...BARBER_AUDIO_LINES,
+  ...SCHOOL_AUDIO_LINES,
   ...FAMILY_HOME_AUDIO_LINES,
   ...WORLD_AUDIO_LINES,
 };
