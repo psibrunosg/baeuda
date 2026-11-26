@@ -2743,8 +2743,14 @@ button:focus-visible {
     top: calc(var(--hud-top) + var(--hud-ctl) + 12px + 104px);
   }
 
+  /* stop short of the centred 64px play button */
   .inventory-bar {
-    max-width: calc(100% - 2 * var(--hud-side) - 72px);
+    max-width: calc(50% - var(--hud-side) - 40px);
+  }
+
+  /* shortcut: extra items scroll sideways; wrap or collapse the bag if learners miss them */
+  .inventory-bar > * {
+    flex-shrink: 0;
   }
 
   .guidance-pill {
