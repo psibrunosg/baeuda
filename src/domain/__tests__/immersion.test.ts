@@ -23,6 +23,7 @@ const ALL_CONTEXTS: readonly GuidanceContext[] = [
   'cafe_echo',
   'bakery_task',
   'barber_task',
+  'home_task',
   'constellation',
 ];
 

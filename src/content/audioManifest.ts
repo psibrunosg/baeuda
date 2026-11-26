@@ -1,6 +1,7 @@
 import type { ConceptId, SpeechKey } from '../domain/types';
 import { BAKERY_AUDIO_LINES } from './speech/bakery';
 import { BARBER_AUDIO_LINES } from './speech/barber';
+import { FAMILY_HOME_AUDIO_LINES } from './speech/familyHome';
 import { line, type SpeechLine } from './speech/line';
 import { WORLD_AUDIO_LINES } from './worldAudio';
 
@@ -1166,6 +1167,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
   ]),
   ...BAKERY_AUDIO_LINES,
   ...BARBER_AUDIO_LINES,
+  ...FAMILY_HOME_AUDIO_LINES,
   ...WORLD_AUDIO_LINES,
 };
 
