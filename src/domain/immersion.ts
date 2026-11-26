@@ -44,6 +44,7 @@ export type GuidanceContext =
   | 'pizzeria_kitchen'
   | 'pharmacy_counter'
   | 'bakery_task'
+  | 'home_task'
   | 'constellation';
 
 export interface GuidanceSegment {
@@ -360,6 +361,23 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: 'Tap what the ' },
       { text: 'baker', highlight: true },
       { text: ' asks for · tap the baker to listen again' },
+    ],
+  },
+  home_task: {
+    onboarding: [{ text: 'Toque na Mom para ajudar · depois no que a família faz' }],
+    blended: [
+      { text: 'Toque na ' },
+      { text: 'Mom', highlight: true },
+      { text: ' para ajudar · depois no que a ' },
+      { text: 'family', highlight: true },
+      { text: ' faz' },
+    ],
+    immersive: [
+      { text: 'Tap ' },
+      { text: 'Mom', highlight: true },
+      { text: ' to help · then tap what the ' },
+      { text: 'family', highlight: true },
+      { text: ' does' },
     ],
   },
   constellation: {

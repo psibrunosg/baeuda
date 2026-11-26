@@ -1,4 +1,5 @@
 import type { BakerySpeechKey } from '../content/speech/bakery';
+import type { FamilyHomeSpeechKey } from '../content/speech/familyHome';
 export type ConceptId =
   | 'cup'
   | 'coffee'
@@ -451,6 +452,7 @@ export type SpeechKey =
   | 'cafe_guest_book'
   | 'cafe_door_welcome'
   | BakerySpeechKey
+  | FamilyHomeSpeechKey
   | HomeSpeechKey
   | FarmSpeechKey;
 
