@@ -1,3 +1,4 @@
+import type { BakerySpeechKey } from '../content/speech/bakery';
 export type ConceptId =
   | 'cup'
   | 'coffee'
@@ -449,19 +450,7 @@ export type SpeechKey =
   | 'cafe_guest_cake'
   | 'cafe_guest_book'
   | 'cafe_door_welcome'
-  | 'bakery_welcome'
-  | 'bakery_baking'
-  | 'bakery_ready'
-  | 'bakery_ask_bread'
-  | 'bakery_ask_butter'
-  | 'bakery_ask_croissant'
-  | 'bakery_ask_slice'
-  | 'bakery_ring'
-  | 'bakery_done'
-  | 'bakery_that_bread'
-  | 'bakery_that_butter'
-  | 'bakery_that_croissant'
-  | 'bakery_that_slice'
+  | BakerySpeechKey
   | HomeSpeechKey
   | FarmSpeechKey;
 
