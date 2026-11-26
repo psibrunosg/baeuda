@@ -7,6 +7,7 @@ import { getCafeGeometries } from './cafeGeometries';
 import { getCafeTextures } from './cafeTextures';
 import { MapVisibleRefContext, useMapVisibleRef } from './mapVisibility';
 import { PortalTrigger } from './PortalTrigger';
+import { BAKERY_TOWN_DOOR } from './bakeryLayout';
 import { lotBox, resolveObstacleCollision as resolveCollision, type Aabb, type AvatarPose } from './worldNavigation';
 import {
   CafeCatNpc,
@@ -805,6 +806,16 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={makeFlippedShopAudio([3.8, 0.06, -3.5])}
       />
+      {/* Door portal into the Artisan Bakery 2.5D Interior */}
+      {onTravelToMap && (
+        <PortalTrigger
+          {...BAKERY_TOWN_DOOR}
+          color="#f59e0b"
+          avatarPoseRef={avatarPoseRef}
+          enableProximity
+          onEnter={() => onTravelToMap('interior_bakery')}
+        />
+      )}
       <InteractivePizzeria
         position={[-3.6, 0.06, 3.4]}
         rotationY={Math.PI}

@@ -655,6 +655,7 @@ export default function App() {
         world_pet_food: { id: 'petfood', toast: '🎒 +1 🦴 Pet food in backpack!' },
         world_barber_scissors: { id: 'scissors', toast: '🎒 +1 ✂️ Barber scissors in backpack!' },
         world_post_package: { id: 'package', toast: '🎒 +1 📦 Package in backpack!' },
+        bakery_done: { id: 'bread', toast: '🎒 +1 🥖 Warm bread in backpack!' },
       };
       const pickup = itemMap[key];
       if (key.startsWith('world_') || pickup) {
@@ -948,6 +949,8 @@ export default function App() {
               ? 'pizzeria_kitchen'
               : activeView === 'pharmacy'
                 ? 'pharmacy_counter'
+                : activeView === 'map' && currentMapId === 'interior_bakery'
+                  ? 'bakery_task'
                 : activeView === 'map'
               ? mapBlockedHint
                 ? 'map_locked_border'
@@ -1179,7 +1182,8 @@ export default function App() {
               stopVoice();
               playRewardFanfare();
               audioPlayer.play(quest.doneSpeechKey);
-              if (quest.npcPosition) {
+              // npcPosition is a town coordinate; inside another map it can land in a wall.
+              if (quest.npcPosition && currentMapId === 'town') {
                 setTeleportRequest((prev) => ({
                   x: quest.npcPosition!.x,
                   z: quest.npcPosition!.z,
