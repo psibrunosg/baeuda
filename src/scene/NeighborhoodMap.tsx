@@ -8,6 +8,8 @@ import { getCafeTextures } from './cafeTextures';
 import { MapVisibleRefContext, useMapVisibleRef } from './mapVisibility';
 import { PortalTrigger } from './PortalTrigger';
 import { BAKERY_TOWN_DOOR } from './bakeryLayout';
+import { SchoolFacade } from './SchoolFacade';
+import { SCHOOL_TOWN_DOOR } from './schoolLayout';
 import { HOUSE_TOWN_DOOR } from './familyHomeLayout';
 import { lotBox, resolveObstacleCollision as resolveCollision, type Aabb, type AvatarPose } from './worldNavigation';
 import {
@@ -95,6 +97,7 @@ const OBSTACLE_AABBS: readonly Aabb[] = [
   lotBox(0.0, 3.4, 1.4, 1.05),    // Pharmacy
   lotBox(3.8, 3.4, 1.4, 1.05),    // Pet Shop
   lotBox(0.0, 8.8, 1.45, 1.0),    // Post & Bank
+  lotBox(-11.8, 8.8, 1.5, 1.0),   // Baeuda Academy (school)
   // Z2: Bairro Residencial & Cultura (West)
   lotBox(-15.2, -8.2, 1.25, 1.0), // Casa do Leo
   lotBox(-12.2, -8.2, 1.25, 1.0), // Casa da Ana
@@ -845,6 +848,17 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={makeFlippedShopAudio([0.0, 0.06, 8.8])}
       />
+      <SchoolFacade position={[-11.8, 0.04, 8.8]} isNight={timeOfDay === 'night'} />
+      {/* Door portal into the Baeuda Academy 2.5D Interior */}
+      {onTravelToMap && (
+        <PortalTrigger
+          {...SCHOOL_TOWN_DOOR}
+          color="#3b82f6"
+          avatarPoseRef={avatarPoseRef}
+          enableProximity
+          onEnter={() => onTravelToMap('school')}
+        />
+      )}
 
       {/* Z2 Cultura & Estilo (West of West Street) */}
       <InteractiveBookshop
