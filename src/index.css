@@ -362,7 +362,8 @@ body,
   text-align: center;
 }
 
-.guidance-pill-dark {
+/* two classes: later light-theme .guidance-pill rules must not win at night */
+.guidance-pill.guidance-pill-dark {
   background: rgba(15, 23, 42, 0.82);
   color: var(--ink-light);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -2465,7 +2466,7 @@ button:focus-visible {
   color: var(--ink-muted);
 }
 
-.guidance-pill-dark .guidance-next-bucket {
+.guidance-pill-dark .guidance-next-btn .guidance-next-bucket {
   background: rgba(255, 255, 255, 0.14);
   color: var(--ink-light);
 }
