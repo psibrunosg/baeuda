@@ -1,6 +1,7 @@
 import type { ConceptId, SpeechKey } from '../domain/types';
 import { BAKERY_AUDIO_LINES } from './speech/bakery';
 import { BARBER_AUDIO_LINES } from './speech/barber';
+import { BOOKSHOP_AUDIO_LINES } from './speech/bookshop';
 import { FAMILY_HOME_AUDIO_LINES } from './speech/familyHome';
 import { line, type SpeechLine } from './speech/line';
 import { SCHOOL_AUDIO_LINES } from './speech/school';
@@ -1167,6 +1168,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
     { at: 1.6, viseme: null },
   ]),
   ...BAKERY_AUDIO_LINES,
+  ...BOOKSHOP_AUDIO_LINES,
   ...BARBER_AUDIO_LINES,
   ...SCHOOL_AUDIO_LINES,
   ...FAMILY_HOME_AUDIO_LINES,
@@ -1212,4 +1214,11 @@ export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
   comb: 'barber_that_comb',
   scissors: 'barber_that_scissors',
   beard: 'barber_that_beard',
+  book: 'bookshop_that_book',
+  pen: 'bookshop_that_pen',
+  read: 'bookshop_word_read',
+  write: 'bookshop_word_write',
+  story: 'bookshop_word_story',
+  page: 'bookshop_word_page',
+  chapter: 'bookshop_word_chapter',
 };

@@ -660,6 +660,7 @@ export default function App() {
         barber_done: { id: 'scissors', toast: '🎒 +1 ✂️ Barber scissors in backpack!' },
         school_done: { id: 'notebook', toast: '🎒 +1 📓 School notebook in backpack!' },
         family_done: { id: 'cookie', toast: '🎒 +1 🍪 Cookie from Grandma in backpack!' },
+        bookshop_done: { id: 'book', toast: '🎒 +1 📖 New book in backpack!' },
       };
       const pickup = itemMap[key];
       if (key.startsWith('world_') || pickup) {
@@ -965,6 +966,8 @@ export default function App() {
                   ? 'barber_task'
                 : activeView === 'map' && currentMapId === 'school'
                   ? 'school_task'
+                : activeView === 'map' && currentMapId === 'interior_bookshop'
+                  ? 'bookshop_task'
                 : activeView === 'map' && currentMapId === 'interior_house_leo'
                   ? 'home_task'
                 : activeView === 'map'

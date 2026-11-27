@@ -9,6 +9,7 @@ import { MapVisibleRefContext, useMapVisibleRef } from './mapVisibility';
 import { PortalTrigger } from './PortalTrigger';
 import { BAKERY_TOWN_DOOR } from './bakeryLayout';
 import { BARBER_TOWN_DOOR } from './barberLayout';
+import { BOOKSHOP_TOWN_DOOR } from './bookshopLayout';
 import { SchoolFacade } from './SchoolFacade';
 import { SCHOOL_TOWN_DOOR } from './schoolLayout';
 import { HOUSE_TOWN_DOOR } from './familyHomeLayout';
@@ -869,6 +870,16 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={makeFlippedShopAudio([-13.8, 0.06, -3.5])}
       />
+      {/* Door portal into the Bookshop & Stationery 2.5D Interior */}
+      {onTravelToMap && (
+        <PortalTrigger
+          {...BOOKSHOP_TOWN_DOOR}
+          color="#22c55e"
+          avatarPoseRef={avatarPoseRef}
+          enableProximity
+          onEnter={() => onTravelToMap('interior_bookshop')}
+        />
+      )}
       <InteractiveClothingStore
         position={[-9.8, 0.06, -3.5]}
         rotationY={Math.PI}
