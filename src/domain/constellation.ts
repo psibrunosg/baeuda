@@ -46,11 +46,27 @@ export const LESSON3_CONCEPTS: readonly ConceptId[] = [
   'slow',
 ] as const;
 
+/** Words taught by the bakery, school, family home and barber tasks. */
+export const INTERIOR_TASK_CONCEPTS: readonly ConceptId[] = [
+  'butter',
+  'croissant',
+  'notebook',
+  'pencil',
+  'globe',
+  'bed',
+  'stove',
+  'desk',
+  'comb',
+  'scissors',
+  'beard',
+] as const;
+
 export const ALL_CONCEPTS: readonly ConceptId[] = [
   ...LESSON1_CONCEPTS,
   ...CAFE_EXTENDED_CONCEPTS,
   ...LESSON2_CONCEPTS,
   ...LESSON3_CONCEPTS,
+  ...INTERIOR_TASK_CONCEPTS,
 ] as const;
 
 export const LESSON1_EDGES: readonly ConstellationEdge[] = [

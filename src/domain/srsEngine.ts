@@ -31,6 +31,17 @@ const CONCEPT_META: Record<ConceptId, { icon: string; label: string; hint: strin
   bird: { icon: '🐦', label: 'Bird', hint: 'Singing wings' },
   fast: { icon: '⚡', label: 'Fast', hint: 'Quick tempo' },
   slow: { icon: '🐢', label: 'Slow', hint: 'Calm tempo' },
+  butter: { icon: '🧈', label: 'Butter', hint: 'Spread on bread' },
+  croissant: { icon: '🥐', label: 'Croissant', hint: 'Curved pastry' },
+  notebook: { icon: '📓', label: 'Notebook', hint: 'Write in it' },
+  pencil: { icon: '✏️', label: 'Pencil', hint: 'Draws a line' },
+  globe: { icon: '🌍', label: 'Globe', hint: 'Round world map' },
+  bed: { icon: '🛏️', label: 'Bed', hint: 'Where you sleep' },
+  stove: { icon: '🍳', label: 'Stove', hint: 'Where you cook' },
+  desk: { icon: '📚', label: 'Desk', hint: 'Where you study' },
+  comb: { icon: '💈', label: 'Comb', hint: 'Tidies hair' },
+  scissors: { icon: '✂️', label: 'Scissors', hint: 'Cuts hair' },
+  beard: { icon: '🧔', label: 'Beard', hint: 'Hair on the chin' },
 };
 
 export const URGENT_REVIEW_THRESHOLD = 35;

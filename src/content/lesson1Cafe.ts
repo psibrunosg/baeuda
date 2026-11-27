@@ -147,6 +147,18 @@ export const CONCEPT_VISUALS: Record<ConceptId, ConceptVisualMeta> = {
   music: { id: 'music', color: '#a855f7', position3D: [2.35, -0.65, 0.55], iconSymbol: '🎵' },
   fast: { id: 'fast', color: '#f43f5e', position3D: [2.5, 0.95, -0.25], iconSymbol: '⚡' },
   slow: { id: 'slow', color: '#34d399', position3D: [1.85, -0.85, 0.15], iconSymbol: '🍃' },
+  // Interior tasks: bakery, school, family home, barber (bottom row)
+  butter: { id: 'butter', color: '#fcd34d', position3D: [-1.5, -1.5, 0.2], iconSymbol: '🧈' },
+  croissant: { id: 'croissant', color: '#f59e0b', position3D: [-1.2, -1.5, 0.2], iconSymbol: '🥐' },
+  notebook: { id: 'notebook', color: '#8b5cf6', position3D: [-0.9, -1.5, 0.2], iconSymbol: '📓' },
+  pencil: { id: 'pencil', color: '#facc15', position3D: [-0.6, -1.5, 0.2], iconSymbol: '✏️' },
+  globe: { id: 'globe', color: '#3b82f6', position3D: [-0.3, -1.5, 0.2], iconSymbol: '🌍' },
+  bed: { id: 'bed', color: '#10b981', position3D: [0.0, -1.5, 0.2], iconSymbol: '🛏️' },
+  stove: { id: 'stove', color: '#ef4444', position3D: [0.3, -1.5, 0.2], iconSymbol: '🍳' },
+  desk: { id: 'desk', color: '#a16207', position3D: [0.6, -1.5, 0.2], iconSymbol: '📚' },
+  comb: { id: 'comb', color: '#14b8a6', position3D: [0.9, -1.5, 0.2], iconSymbol: '💈' },
+  scissors: { id: 'scissors', color: '#94a3b8', position3D: [1.2, -1.5, 0.2], iconSymbol: '✂️' },
+  beard: { id: 'beard', color: '#92400e', position3D: [1.5, -1.5, 0.2], iconSymbol: '🧔' },
 };
 
 export const LESSON1_CAFE_SCRIPT: Lesson1Script = {
