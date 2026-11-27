@@ -117,18 +117,21 @@ export function evaluateNeighborhoodBadges(profile: LearnerProfile): Neighborhoo
   const discoveries = profile.streetDiscoveries ?? [];
   const cycles = profile.completedCafeCycles ?? [];
   const concepts = Object.keys(profile.constellation);
+  // A finished interior task is stronger evidence than street taps, so it earns the whole badge.
+  const withInterior = (activityId: string, street: number) =>
+    profile.completedLessonIds.includes(activityId) ? 2 : Math.min(2, street);
 
   const cafeProgress = Math.min(3, cycles.length + (concepts.includes('coffee') ? 1 : 0));
-  const bakeryProgress = Math.min(3, countPrefix(discoveries, 'world_bakery_'));
+  const bakeryProgress = withInterior('interior_bakery', countPrefix(discoveries, 'world_bakery_'));
   const tireProgress = Math.min(3, countPrefix(discoveries, 'world_tire_'));
   const clothesProgress = Math.min(3, countPrefix(discoveries, 'world_clothes_'));
   const techProgress = Math.min(3, countPrefix(discoveries, 'world_tech_'));
   const constructionProgress = Math.min(3, countPrefix(discoveries, 'world_construction_'));
-  const pharmacyProgress = Math.min(2, countPrefix(discoveries, 'world_pharmacy_') + (discoveries.includes('world_job_pharmacist') ? 1 : 0));
+  const pharmacyProgress = withInterior('interior_pharmacy', countPrefix(discoveries, 'world_pharmacy_') + (discoveries.includes('world_job_pharmacist') ? 1 : 0));
   const petProgress = Math.min(2, countPrefix(discoveries, 'world_pet_') + (discoveries.includes('world_job_vet') ? 1 : 0));
-  const barberProgress = Math.min(2, countPrefix(discoveries, 'world_barber_') + (discoveries.includes('world_job_barber') ? 1 : 0));
+  const barberProgress = withInterior('interior_barber', countPrefix(discoveries, 'world_barber_') + (discoveries.includes('world_job_barber') ? 1 : 0));
   const bookProgress = Math.min(2, countPrefix(discoveries, 'world_book_') + (discoveries.includes('world_job_librarian') ? 1 : 0));
-  const pizzaProgress = Math.min(2, countPrefix(discoveries, 'world_pizza_') + (discoveries.includes('world_job_chef') ? 1 : 0));
+  const pizzaProgress = withInterior('interior_pizzeria', countPrefix(discoveries, 'world_pizza_') + (discoveries.includes('world_job_chef') ? 1 : 0));
   const postProgress = Math.min(2, countPrefix(discoveries, 'world_post_') + countPrefix(discoveries, 'world_bank_') + (discoveries.includes('world_job_postal') ? 1 : 0));
   const marketProgress = profile.locations.market === 'familiar' ? 2 : profile.locations.market === 'discovered' ? 1 : 0;
   const plazaProgress = profile.locations.plaza === 'familiar' ? 2 : profile.locations.plaza === 'discovered' ? 1 : 0;
