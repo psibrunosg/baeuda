@@ -2,6 +2,7 @@ import type { ConceptId, SpeechKey } from '../domain/types';
 import { BAKERY_AUDIO_LINES } from './speech/bakery';
 import { BARBER_AUDIO_LINES } from './speech/barber';
 import { BOOKSHOP_AUDIO_LINES } from './speech/bookshop';
+import { PET_SHOP_AUDIO_LINES } from './speech/petShop';
 import { FAMILY_HOME_AUDIO_LINES } from './speech/familyHome';
 import { line, type SpeechLine } from './speech/line';
 import { SCHOOL_AUDIO_LINES } from './speech/school';
@@ -1169,6 +1170,7 @@ export const AUDIO_MANIFEST: Record<SpeechKey, SpeechLine> = {
   ]),
   ...BAKERY_AUDIO_LINES,
   ...BOOKSHOP_AUDIO_LINES,
+  ...PET_SHOP_AUDIO_LINES,
   ...BARBER_AUDIO_LINES,
   ...SCHOOL_AUDIO_LINES,
   ...FAMILY_HOME_AUDIO_LINES,
@@ -1221,4 +1223,12 @@ export const CONCEPT_AUDIO_KEY: Record<ConceptId, SpeechKey> = {
   story: 'bookshop_word_story',
   page: 'bookshop_word_page',
   chapter: 'bookshop_word_chapter',
+  dog: 'petshop_word_dog',
+  cat: 'petshop_word_cat',
+  feed: 'petshop_word_feed',
+  wash: 'petshop_word_wash',
+  brush: 'petshop_word_brush',
+  play: 'petshop_word_play',
+  happy: 'petshop_word_happy',
+  gentle: 'petshop_word_gentle',
 };

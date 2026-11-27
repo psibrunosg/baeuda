@@ -82,6 +82,7 @@ export const ACTIVE_WORLD_MAPS: readonly WorldMapId[] = [
   'interior_barber',
   'school',
   'interior_bookshop',
+  'interior_pet_shop',
 ];
 
 export const WORLD_MAP_REGISTRY: Record<WorldMapId, WorldMapConfig> = {
@@ -182,6 +183,20 @@ export const WORLD_MAP_REGISTRY: Record<WorldMapId, WorldMapConfig> = {
     contactShadowScale: 10,
     portraitPullback: 0.25,
     bgColor: '#1f2a22',
+  },
+  interior_pet_shop: {
+    id: 'interior_pet_shop',
+    icon: '🐶',
+    label: 'Pet Shop & Vet',
+    kind: 'interior',
+    defaultSpawn: { x: 0, y: 0.06, z: 1.7, yaw: Math.PI },
+    bounds: { minX: -3.1, maxX: 3.1, minZ: -1.9, maxZ: 3.8 },
+    cameraOffset: [0, 11.8, 6.7],
+    cameraTargetOffset: [0, 0.5, -1.6],
+    shadowFrustum: { left: -6, right: 6, top: 5.5, bottom: -5.5, far: 28 },
+    contactShadowScale: 10,
+    portraitPullback: 0.25,
+    bgColor: '#16323a',
   },
   farm: {
     id: 'farm',

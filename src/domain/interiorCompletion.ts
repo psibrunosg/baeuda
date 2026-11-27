@@ -21,6 +21,11 @@ export const INTERIOR_TASKS: Partial<
     concepts: ['book', 'notebook', 'pen'],
     heard: ['read', 'write', 'story', 'page', 'chapter'],
   },
+  pet_shop_done: {
+    activityId: 'interior_pet_shop',
+    concepts: ['dog', 'cat', 'feed', 'wash', 'brush', 'play'],
+    heard: ['happy', 'gentle'],
+  },
 };
 
 /**

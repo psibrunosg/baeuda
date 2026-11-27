@@ -47,6 +47,7 @@ export type GuidanceContext =
   | 'barber_task'
   | 'school_task'
   | 'bookshop_task'
+  | 'pet_shop_task'
   | 'home_task'
   | 'constellation';
 
@@ -406,6 +407,20 @@ const GUIDANCE_TABLE: Record<GuidanceContext, Record<ImmersionTier, readonly Gui
       { text: 'Tap what the ' },
       { text: 'librarian', highlight: true },
       { text: ' asks for · tap the librarian to listen again' },
+    ],
+  },
+  pet_shop_task: {
+    onboarding: [{ text: 'Toque no que a veterinária pedir · toque nela para ouvir de novo' }],
+    blended: [
+      { text: 'Toque no que a ' },
+      { text: 'vet', highlight: true },
+      { text: ' pedir · toque nela para ' },
+      { text: 'listen', highlight: true },
+    ],
+    immersive: [
+      { text: 'Tap what the ' },
+      { text: 'vet', highlight: true },
+      { text: ' asks for · tap the vet to listen again' },
     ],
   },
   home_task: {
