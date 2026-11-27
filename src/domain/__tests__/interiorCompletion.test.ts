@@ -15,8 +15,9 @@ describe('interior task completion', () => {
     const start = createInitialProfile();
     const done = recordInteriorCompletion(start, key as SpeechKey, now);
 
-    for (const id of task!.concepts) {
-      expect(done.constellation[id]?.stage, id).toBe('root');
+    const heard = task!.heard ?? [];
+    for (const id of [...task!.concepts, ...heard]) {
+      expect(done.constellation[id]?.stage, id).toBe(heard.includes(id) ? 'seed' : 'root');
       expect(ALL_CONCEPTS, id).toContain(id);
       expect(CONCEPT_VISUALS[id], id).toBeDefined();
       expect(AUDIO_MANIFEST[CONCEPT_AUDIO_KEY[id]].phrase.toLowerCase(), id).toContain(id);
