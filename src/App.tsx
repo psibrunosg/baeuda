@@ -42,6 +42,7 @@ import {
 import { computeNextBestStep } from './domain/nextBestStep';
 import type { DialogueScenarioId } from './domain/travelDialogues';
 import { resolveWorldAtmosphere, type GuidanceContext } from './domain/immersion';
+import { INTERIOR_TASK_REWARD_COINS, recordInteriorCompletion } from './domain/interiorCompletion';
 import type {
   CafeCycleId,
   ConceptId,
@@ -664,10 +665,16 @@ export default function App() {
       if (key.startsWith('world_') || pickup) {
         updateProfile((prev) => {
           let next = key.startsWith('world_') ? recordStreetDiscovery(prev, key) : prev;
+          const recorded = recordInteriorCompletion(next, key, new Date().toISOString());
+          const coins = recorded !== next ? ` +${INTERIOR_TASK_REWARD_COINS} coins` : '';
+          next = recorded;
           if (pickup && !(next.inventoryIds ?? []).includes(pickup.id)) {
             playSuccessChime();
-            showRewardToast(pickup.toast);
+            showRewardToast(pickup.toast + coins);
             next = addInventoryItem(next, pickup.id);
+          } else if (coins) {
+            playSuccessChime();
+            showRewardToast(`⭐${coins}`);
           }
           return next;
         });
