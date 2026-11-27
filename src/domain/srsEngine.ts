@@ -42,6 +42,13 @@ const CONCEPT_META: Record<ConceptId, { icon: string; label: string; hint: strin
   comb: { icon: '💈', label: 'Comb', hint: 'Tidies hair' },
   scissors: { icon: '✂️', label: 'Scissors', hint: 'Cuts hair' },
   beard: { icon: '🧔', label: 'Beard', hint: 'Hair on the chin' },
+  book: { icon: '📖', label: 'Book', hint: 'Pages with a cover' },
+  pen: { icon: '🖊️', label: 'Pen', hint: 'Full of blue ink' },
+  read: { icon: '👀', label: 'Read', hint: 'Look at words' },
+  write: { icon: '✍️', label: 'Write', hint: 'Make letters' },
+  story: { icon: '🏰', label: 'Story', hint: 'A tale to tell' },
+  page: { icon: '📄', label: 'Page', hint: 'One side of paper' },
+  chapter: { icon: '🔖', label: 'Chapter', hint: 'Part of a book' },
 };
 
 export const URGENT_REVIEW_THRESHOLD = 35;

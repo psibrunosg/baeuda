@@ -2,6 +2,7 @@ import type { BakerySpeechKey } from '../content/speech/bakery';
 import type { BarberSpeechKey } from '../content/speech/barber';
 import type { SchoolSpeechKey } from '../content/speech/school';
 import type { FamilyHomeSpeechKey } from '../content/speech/familyHome';
+import type { BookshopSpeechKey } from '../content/speech/bookshop';
 export type ConceptId =
   | 'cup'
   | 'coffee'
@@ -40,7 +41,14 @@ export type ConceptId =
   | 'desk'
   | 'comb'
   | 'scissors'
-  | 'beard';
+  | 'beard'
+  | 'book'
+  | 'pen'
+  | 'read'
+  | 'write'
+  | 'story'
+  | 'page'
+  | 'chapter';
 
 export type CefrLevel = 'pre_a1' | 'a1' | 'a2' | 'b1';
 
@@ -175,7 +183,7 @@ export type BiomeMapId =
   | 'station'
   | 'festival';
 
-export type InteriorMapId = 'interior_house_leo' | 'interior_cafe' | 'interior_bakery' | 'interior_barber' | 'school';
+export type InteriorMapId = 'interior_house_leo' | 'interior_cafe' | 'interior_bakery' | 'interior_barber' | 'school' | 'interior_bookshop';
 
 export type WorldMapId = BiomeMapId | InteriorMapId;
 
@@ -465,6 +473,7 @@ export type SpeechKey =
   | 'cafe_guest_book'
   | 'cafe_door_welcome'
   | BakerySpeechKey
+  | BookshopSpeechKey
   | BarberSpeechKey
   | SchoolSpeechKey
   | FamilyHomeSpeechKey

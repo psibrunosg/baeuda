@@ -159,6 +159,14 @@ export const CONCEPT_VISUALS: Record<ConceptId, ConceptVisualMeta> = {
   comb: { id: 'comb', color: '#14b8a6', position3D: [0.9, -1.5, 0.2], iconSymbol: '💈' },
   scissors: { id: 'scissors', color: '#94a3b8', position3D: [1.2, -1.5, 0.2], iconSymbol: '✂️' },
   beard: { id: 'beard', color: '#92400e', position3D: [1.5, -1.5, 0.2], iconSymbol: '🧔' },
+  // Bookshop task (second bottom row)
+  book: { id: 'book', color: '#dc2626', position3D: [-0.9, -1.85, 0.2], iconSymbol: '📖' },
+  pen: { id: 'pen', color: '#2563eb', position3D: [-0.6, -1.85, 0.2], iconSymbol: '🖊️' },
+  read: { id: 'read', color: '#16a34a', position3D: [-0.3, -1.85, 0.2], iconSymbol: '👀' },
+  write: { id: 'write', color: '#0891b2', position3D: [0.0, -1.85, 0.2], iconSymbol: '✍️' },
+  story: { id: 'story', color: '#c026d3', position3D: [0.3, -1.85, 0.2], iconSymbol: '🏰' },
+  page: { id: 'page', color: '#e2e8f0', position3D: [0.6, -1.85, 0.2], iconSymbol: '📄' },
+  chapter: { id: 'chapter', color: '#ea580c', position3D: [0.9, -1.85, 0.2], iconSymbol: '🔖' },
 };
 
 export const LESSON1_CAFE_SCRIPT: Lesson1Script = {

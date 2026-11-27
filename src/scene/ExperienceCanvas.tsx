@@ -40,6 +40,7 @@ const FarmBiomeMap = lazy(() => import('./maps/FarmBiomeMap'));
 const InteriorBakery = lazy(() => import('./maps/InteriorBakery'));
 const InteriorBarber = lazy(() => import('./maps/InteriorBarber'));
 const SchoolInteriorMap = lazy(() => import('./maps/SchoolInteriorMap'));
+const InteriorBookshop = lazy(() => import('./maps/InteriorBookshop'));
 
 export type ActiveView = 'map' | 'lesson' | 'cafe_cycle' | 'market' | 'plaza' | 'pizzeria' | 'pharmacy' | 'badges';
 export type CameraMode = 'fixed_2_5d' | 'overview';
@@ -569,6 +570,19 @@ export const ExperienceCanvas = memo(function ExperienceCanvas(props: Experience
       {isMap && currentMapId === 'school' && (
         <Suspense fallback={null}>
           <SchoolInteriorMap
+            visible={isMap}
+            avatarStyle={props.avatarStyle}
+            avatarPoseRef={avatarPoseRef}
+            teleportRequest={props.teleportRequest}
+            onExploreObject={props.onExploreObject}
+            onTravelToMap={props.onTravelToMap ?? (() => {})}
+          />
+        </Suspense>
+      )}
+
+      {isMap && currentMapId === 'interior_bookshop' && (
+        <Suspense fallback={null}>
+          <InteriorBookshop
             visible={isMap}
             avatarStyle={props.avatarStyle}
             avatarPoseRef={avatarPoseRef}
