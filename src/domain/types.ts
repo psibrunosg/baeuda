@@ -29,7 +29,18 @@ export type ConceptId =
   | 'music'
   | 'bird'
   | 'fast'
-  | 'slow';
+  | 'slow'
+  | 'butter'
+  | 'croissant'
+  | 'notebook'
+  | 'pencil'
+  | 'globe'
+  | 'bed'
+  | 'stove'
+  | 'desk'
+  | 'comb'
+  | 'scissors'
+  | 'beard';
 
 export type CefrLevel = 'pre_a1' | 'a1' | 'a2' | 'b1';
 
