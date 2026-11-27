@@ -10,6 +10,7 @@ import { PortalTrigger } from './PortalTrigger';
 import { BAKERY_TOWN_DOOR } from './bakeryLayout';
 import { BARBER_TOWN_DOOR } from './barberLayout';
 import { BOOKSHOP_TOWN_DOOR } from './bookshopLayout';
+import { PET_SHOP_TOWN_DOOR } from './petShopLayout';
 import { SchoolFacade } from './SchoolFacade';
 import { SCHOOL_TOWN_DOOR } from './schoolLayout';
 import { HOUSE_TOWN_DOOR } from './familyHomeLayout';
@@ -843,6 +844,16 @@ export const NeighborhoodMap = memo(function NeighborhoodMap({
         onInspectCuriosity={onInspectCuriosity}
         onTriggerAudio={handleShopAudio}
       />
+      {/* Door portal into the Pet Shop & Vet 2.5D Interior */}
+      {onTravelToMap && (
+        <PortalTrigger
+          {...PET_SHOP_TOWN_DOOR}
+          color="#38bdf8"
+          avatarPoseRef={avatarPoseRef}
+          enableProximity
+          onEnter={() => onTravelToMap('interior_pet_shop')}
+        />
+      )}
       <InteractivePostBank
         position={[0.0, 0.06, 8.8]}
         rotationY={Math.PI}

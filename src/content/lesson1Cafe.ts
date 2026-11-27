@@ -167,6 +167,15 @@ export const CONCEPT_VISUALS: Record<ConceptId, ConceptVisualMeta> = {
   story: { id: 'story', color: '#c026d3', position3D: [0.3, -1.85, 0.2], iconSymbol: '🏰' },
   page: { id: 'page', color: '#e2e8f0', position3D: [0.6, -1.85, 0.2], iconSymbol: '📄' },
   chapter: { id: 'chapter', color: '#ea580c', position3D: [0.9, -1.85, 0.2], iconSymbol: '🔖' },
+  // Pet shop task (third bottom row)
+  dog: { id: 'dog', color: '#c08a52', position3D: [-1.05, -2.2, 0.2], iconSymbol: '🐶' },
+  cat: { id: 'cat', color: '#fb923c', position3D: [-0.75, -2.2, 0.2], iconSymbol: '🐱' },
+  feed: { id: 'feed', color: '#b45309', position3D: [-0.45, -2.2, 0.2], iconSymbol: '🦴' },
+  wash: { id: 'wash', color: '#7dd3fc', position3D: [-0.15, -2.2, 0.2], iconSymbol: '🧼' },
+  brush: { id: 'brush', color: '#db2777', position3D: [0.15, -2.2, 0.2], iconSymbol: '🖌️' },
+  play: { id: 'play', color: '#ef4444', position3D: [0.45, -2.2, 0.2], iconSymbol: '🎾' },
+  happy: { id: 'happy', color: '#fde047', position3D: [0.75, -2.2, 0.2], iconSymbol: '😊' },
+  gentle: { id: 'gentle', color: '#c4b5fd', position3D: [1.05, -2.2, 0.2], iconSymbol: '🤲' },
 };
 
 export const LESSON1_CAFE_SCRIPT: Lesson1Script = {

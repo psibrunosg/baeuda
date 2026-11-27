@@ -128,7 +128,7 @@ export function evaluateNeighborhoodBadges(profile: LearnerProfile): Neighborhoo
   const techProgress = Math.min(3, countPrefix(discoveries, 'world_tech_'));
   const constructionProgress = Math.min(3, countPrefix(discoveries, 'world_construction_'));
   const pharmacyProgress = withInterior('interior_pharmacy', countPrefix(discoveries, 'world_pharmacy_') + (discoveries.includes('world_job_pharmacist') ? 1 : 0));
-  const petProgress = Math.min(2, countPrefix(discoveries, 'world_pet_') + (discoveries.includes('world_job_vet') ? 1 : 0));
+  const petProgress = withInterior('interior_pet_shop', countPrefix(discoveries, 'world_pet_') + (discoveries.includes('world_job_vet') ? 1 : 0));
   const barberProgress = withInterior('interior_barber', countPrefix(discoveries, 'world_barber_') + (discoveries.includes('world_job_barber') ? 1 : 0));
   const bookProgress = withInterior('interior_bookshop', countPrefix(discoveries, 'world_book_') + (discoveries.includes('world_job_librarian') ? 1 : 0));
   const pizzaProgress = withInterior('interior_pizzeria', countPrefix(discoveries, 'world_pizza_') + (discoveries.includes('world_job_chef') ? 1 : 0));

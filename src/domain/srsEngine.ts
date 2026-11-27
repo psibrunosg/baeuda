@@ -49,6 +49,14 @@ const CONCEPT_META: Record<ConceptId, { icon: string; label: string; hint: strin
   story: { icon: '🏰', label: 'Story', hint: 'A tale to tell' },
   page: { icon: '📄', label: 'Page', hint: 'One side of paper' },
   chapter: { icon: '🔖', label: 'Chapter', hint: 'Part of a book' },
+  dog: { icon: '🐶', label: 'Dog', hint: 'Wags its tail' },
+  cat: { icon: '🐱', label: 'Cat', hint: 'Soft and says meow' },
+  feed: { icon: '🦴', label: 'Feed', hint: 'Give food' },
+  wash: { icon: '🧼', label: 'Wash', hint: 'Soap and water' },
+  brush: { icon: '🖌️', label: 'Brush', hint: 'Tidy the fur' },
+  play: { icon: '🎾', label: 'Play', hint: 'Have fun' },
+  happy: { icon: '😊', label: 'Happy', hint: 'Feeling good' },
+  gentle: { icon: '🤲', label: 'Gentle', hint: 'Soft and careful' },
 };
 
 export const URGENT_REVIEW_THRESHOLD = 35;

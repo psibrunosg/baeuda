@@ -31,6 +31,7 @@ describe('badgesAndGames', () => {
     ['interior_bakery', 'badge_baker'],
     ['interior_barber', 'badge_barber'],
     ['interior_bookshop', 'badge_bookshop'],
+    ['interior_pet_shop', 'badge_petshop'],
     ['interior_pharmacy', 'badge_pharmacy'],
     ['interior_pizzeria', 'badge_pizzeria'],
   ])('gives the whole badge for finishing %s', (activityId, badgeId) => {
