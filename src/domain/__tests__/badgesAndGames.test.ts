@@ -27,6 +27,17 @@ describe('badgesAndGames', () => {
     expect(countEarnedBadges(updated)).toBe(2);
   });
 
+  it.each([
+    ['interior_bakery', 'badge_baker'],
+    ['interior_barber', 'badge_barber'],
+    ['interior_pharmacy', 'badge_pharmacy'],
+    ['interior_pizzeria', 'badge_pizzeria'],
+  ])('gives the whole badge for finishing %s', (activityId, badgeId) => {
+    const profile = { ...createInitialProfile(), completedLessonIds: [activityId] };
+    const earned = evaluateNeighborhoodBadges(profile).filter((b) => b.tier !== 'locked');
+    expect(earned.map((b) => [b.id, b.tier, b.progress])).toEqual([[badgeId, 'gold', 2]]);
+  });
+
   it('builds 12 matched icon/word memory cards and shuffled connect columns for all decks including professions', () => {
     expect(EVALUATION_DECKS.map((d) => d.id)).toContain('professions');
     expect(EVALUATION_DECKS.map((d) => d.id)).toContain('a2_directions');
