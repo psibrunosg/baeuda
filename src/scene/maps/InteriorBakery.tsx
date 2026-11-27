@@ -14,13 +14,13 @@ import type { AvatarStyle, SpeechKey, WorldMapId } from '../../domain/types';
 import { playRewardFanfare } from '../../services/soundEngine';
 import { BAKERY_BASKET_AT, BAKERY_EXIT, BAKERY_TARGETS, BAKERY_TOWN_RETURN } from '../bakeryLayout';
 import { getCafeTextures } from '../cafeTextures';
-import { useMapFrame } from '../mapVisibility';
 import { PortalTrigger } from '../PortalTrigger';
 import { StylizedHumanoid } from '../StylizedCharacters';
 import { WorldMapBase, type WorldMapBaseRenderApi } from '../WorldMapBase';
 import { lotBox, WORLD_MAP_REGISTRY, type Aabb, type AvatarPose } from '../worldNavigation';
 import { getWorldGeometries } from '../worldGeometries';
 import { Basket, BrassBell, BreadShelf, FlourSack, HintMarker, Prop, Steam } from './bakeryProps';
+import { Target } from './InteriorTarget';
 
 const BAKE_MS = 3500;
 const HINT_MS = 5000;
@@ -42,54 +42,6 @@ const BAKERY_OBSTACLES: readonly Aabb[] = [
 ];
 
 const noRaycast = () => null;
-
-/** A clickable counter object: generous invisible hit box plus a short wobble after a wrong tap. */
-function Target({
-  id,
-  shake,
-  onTap,
-  children,
-}: {
-  id: BakeryTarget;
-  shake: number;
-  onTap: (id: BakeryTarget) => void;
-  children?: ReactNode;
-}) {
-  const { at, hit } = BAKERY_TARGETS[id];
-  const ref = useRef<THREE.Group>(null);
-  const shakeRef = useRef(0);
-  useEffect(() => {
-    if (shake) shakeRef.current = 1;
-  }, [shake]);
-  useMapFrame((_, delta) => {
-    if (!ref.current) return;
-    shakeRef.current = Math.max(0, shakeRef.current - Math.min(delta, 0.05) * 1.8);
-    ref.current.rotation.z = Math.sin(shakeRef.current * Math.PI * 6) * 0.18 * shakeRef.current;
-  });
-
-  return (
-    <group
-      position={at}
-      onClick={(e) => {
-        e.stopPropagation();
-        onTap(id);
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = 'auto';
-      }}
-    >
-      <mesh position={[0, hit[1] / 2, 0]}>
-        <boxGeometry args={hit} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
-      <group ref={ref}>{children}</group>
-    </group>
-  );
-}
 
 export const InteriorBakery = memo(function InteriorBakery({
   visible,
@@ -202,6 +154,7 @@ export const InteriorBakery = memo(function InteriorBakery({
       {({ onGroundWalkClick, onTriggerExplore }) => {
         const target = (id: BakeryTarget, children?: ReactNode) => (
           <Target
+            {...BAKERY_TARGETS[id]}
             id={id}
             shake={wrong?.target === id ? wrong.seq : 0}
             onTap={(t) => handleTap(t, onTriggerExplore)}
