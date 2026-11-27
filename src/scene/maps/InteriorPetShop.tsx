@@ -1,5 +1,4 @@
 import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
-import * as THREE from 'three';
 import {
   expectedTarget,
   INITIAL,
@@ -12,13 +11,13 @@ import {
 import type { AvatarStyle, SpeechKey, WorldMapId } from '../../domain/types';
 import { playRewardFanfare } from '../../services/soundEngine';
 import { getCafeTextures } from '../cafeTextures';
-import { useMapFrame } from '../mapVisibility';
 import { PET_SHOP_EXIT, PET_SHOP_OBSTACLES, PET_SHOP_TARGETS, PET_SHOP_TOWN_RETURN } from '../petShopLayout';
 import { PortalTrigger } from '../PortalTrigger';
 import { CafeCatNpc, StylizedHumanoid } from '../StylizedCharacters';
 import { WorldMapBase, type WorldMapBaseRenderApi } from '../WorldMapBase';
 import { WORLD_MAP_REGISTRY, type AvatarPose } from '../worldNavigation';
 import { HintMarker } from './bakeryProps';
+import { Target } from './InteriorTarget';
 import { Ball, Bowl, Brush, Bubbles, Hearts, PetShopProp, Pop, Puppy, WaterBowl } from './petShopProps';
 
 const HINT_MS = 5000;
@@ -33,55 +32,6 @@ export interface InteriorPetShopProps {
   teleportRequest?: { x: number; z: number; yaw: number; seq: number } | null;
   onExploreObject?: (key: SpeechKey) => void;
   onTravelToMap: (target: WorldMapId, spawn?: AvatarPose) => void;
-}
-
-// shortcut: fourth copy of the bakery Target; extract when those interior files are free to edit.
-/** A clickable object: generous invisible hit box plus a short wobble after a wrong tap. */
-function Target({
-  id,
-  shake,
-  onTap,
-  children,
-}: {
-  id: PetShopTarget;
-  shake: number;
-  onTap: (id: PetShopTarget) => void;
-  children?: ReactNode;
-}) {
-  const { at, hit } = PET_SHOP_TARGETS[id];
-  const ref = useRef<THREE.Group>(null);
-  const shakeRef = useRef(0);
-  useEffect(() => {
-    if (shake) shakeRef.current = 1;
-  }, [shake]);
-  useMapFrame((_, delta) => {
-    if (!ref.current) return;
-    shakeRef.current = Math.max(0, shakeRef.current - Math.min(delta, 0.05) * 1.8);
-    ref.current.rotation.z = Math.sin(shakeRef.current * Math.PI * 6) * 0.18 * shakeRef.current;
-  });
-
-  return (
-    <group
-      position={at}
-      onClick={(e) => {
-        e.stopPropagation();
-        onTap(id);
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = 'auto';
-      }}
-    >
-      <mesh position={[0, hit[1] / 2, 0]}>
-        <boxGeometry args={hit} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
-      <group ref={ref}>{children}</group>
-    </group>
-  );
 }
 
 export const InteriorPetShop = memo(function InteriorPetShop({
@@ -159,6 +109,7 @@ export const InteriorPetShop = memo(function InteriorPetShop({
       {({ onGroundWalkClick, onTriggerExplore }) => {
         const target = (id: PetShopTarget, children?: ReactNode) => (
           <Target
+            {...PET_SHOP_TARGETS[id]}
             id={id}
             shake={wrong?.target === id ? wrong.seq : 0}
             onTap={(t) => handleTap(t, onTriggerExplore)}

@@ -1,5 +1,4 @@
 import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
-import * as THREE from 'three';
 import {
   expectedTarget,
   INITIAL,
@@ -12,7 +11,6 @@ import type { AvatarStyle, SpeechKey, WorldMapId } from '../../domain/types';
 import { playRewardFanfare } from '../../services/soundEngine';
 import { BARBER_EXIT, BARBER_TARGETS, BARBER_TOWN_RETURN } from '../barberLayout';
 import { getCafeTextures } from '../cafeTextures';
-import { useMapFrame } from '../mapVisibility';
 import { PortalTrigger } from '../PortalTrigger';
 import { StylizedHumanoid } from '../StylizedCharacters';
 import { pottedPlantGeometry } from '../toyProps';
@@ -21,6 +19,7 @@ import { WorldMapBase, type WorldMapBaseRenderApi } from '../WorldMapBase';
 import { lotBox, WORLD_MAP_REGISTRY, type Aabb, type AvatarPose } from '../worldNavigation';
 import { BarberChair, BarberProp, BulbMirror, checkerMaterial, Swivel, WallStripes } from './barberProps';
 import { HintMarker, Steam } from './bakeryProps';
+import { Target } from './InteriorTarget';
 
 const HINT_MS = 5000;
 const WELCOME_MS = 600;
@@ -45,54 +44,6 @@ const BARBER_OBSTACLES: readonly Aabb[] = [
 
 const MANNEQUINS = ['curly', 'straight', 'long', 'short'] as const;
 const CHAIR_AT: [number, number, number] = [0, 0, -0.55];
-
-/** A clickable salon object: generous invisible hit box plus a short wobble after a wrong tap. */
-function Target({
-  id,
-  shake,
-  onTap,
-  children,
-}: {
-  id: BarberTarget;
-  shake: number;
-  onTap: (id: BarberTarget) => void;
-  children?: ReactNode;
-}) {
-  const { at, hit } = BARBER_TARGETS[id];
-  const ref = useRef<THREE.Group>(null);
-  const shakeRef = useRef(0);
-  useEffect(() => {
-    if (shake) shakeRef.current = 1;
-  }, [shake]);
-  useMapFrame((_, delta) => {
-    if (!ref.current) return;
-    shakeRef.current = Math.max(0, shakeRef.current - Math.min(delta, 0.05) * 1.8);
-    ref.current.rotation.z = Math.sin(shakeRef.current * Math.PI * 6) * 0.18 * shakeRef.current;
-  });
-
-  return (
-    <group
-      position={at}
-      onClick={(e) => {
-        e.stopPropagation();
-        onTap(id);
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = 'auto';
-      }}
-    >
-      <mesh position={[0, hit[1] / 2, 0]}>
-        <boxGeometry args={hit} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
-      <group ref={ref}>{children}</group>
-    </group>
-  );
-}
 
 export const InteriorBarber = memo(function InteriorBarber({
   visible,
@@ -180,6 +131,7 @@ export const InteriorBarber = memo(function InteriorBarber({
       {({ onGroundWalkClick, onTriggerExplore }) => {
         const target = (id: BarberTarget, children?: ReactNode) => (
           <Target
+            {...BARBER_TARGETS[id]}
             id={id}
             shake={wrong?.target === id ? wrong.seq : 0}
             onTap={(t) => handleTap(t, onTriggerExplore)}
